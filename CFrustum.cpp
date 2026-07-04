@@ -1,4 +1,4 @@
-#include "CFrustum.h"
+ï»¿#include "CFrustum.h"
 
 CFrustum::CFrustum()
 {
@@ -24,13 +24,13 @@ VOID CFrustum::MakeFrustum(D3DXMATRIX* pMatViewProj)
 	{
 		D3DXVec3TransformCoord(&m_vertex[i], &m_vertex[i], &matInv);
 	}
-	// D3DXPlaneFromPoints´Â ¿Ş¼Õ ÁÂÇ¥°èÀÓ
-	D3DXPlaneFromPoints(&m_plane[0], &m_vertex[7], &m_vertex[3], &m_vertex[0]); // ÁÂ
-	D3DXPlaneFromPoints(&m_plane[1], &m_vertex[6], &m_vertex[5], &m_vertex[1]); // ¿ì
-	D3DXPlaneFromPoints(&m_plane[2], &m_vertex[4], &m_vertex[5], &m_vertex[6]); // »ó
-	D3DXPlaneFromPoints(&m_plane[3], &m_vertex[0], &m_vertex[3], &m_vertex[2]); // ÇÏ
-	D3DXPlaneFromPoints(&m_plane[4], &m_vertex[0], &m_vertex[1], &m_vertex[5]); // ±Ù
-	D3DXPlaneFromPoints(&m_plane[5], &m_vertex[2], &m_vertex[7], &m_vertex[6]); // ¿ø
+	// D3DXPlaneFromPointsëŠ” ì™¼ì† ì¢Œí‘œê³„ì„
+	D3DXPlaneFromPoints(&m_plane[0], &m_vertex[7], &m_vertex[3], &m_vertex[0]); // ì¢Œ
+	D3DXPlaneFromPoints(&m_plane[1], &m_vertex[6], &m_vertex[5], &m_vertex[1]); // ìš°
+	D3DXPlaneFromPoints(&m_plane[2], &m_vertex[4], &m_vertex[5], &m_vertex[6]); // ìƒ
+	D3DXPlaneFromPoints(&m_plane[3], &m_vertex[0], &m_vertex[3], &m_vertex[2]); // í•˜
+	D3DXPlaneFromPoints(&m_plane[4], &m_vertex[0], &m_vertex[1], &m_vertex[5]); // ê·¼
+	D3DXPlaneFromPoints(&m_plane[5], &m_vertex[2], &m_vertex[7], &m_vertex[6]); // ì›
 }
 BOOL CFrustum::IsInFrustum(D3DXVECTOR3* position, FLOAT distance)
 {

@@ -1,9 +1,9 @@
-#include "CExit.h"
+ï»¿#include "CExit.h"
 
 VOID CExit::MakeExit(D3DXVECTOR3 position)
 {
 	MakeNotice(position);
-	// Exit´Â notice countÇÏÁö ¾Ê´Â´Ù.
+	// ExitëŠ” notice countí•˜ì§€ ì•ŠëŠ”ë‹¤.
 	CNotice::m_NoticeCount--;
 	CNotice::m_bIsNotice = FALSE;
 }

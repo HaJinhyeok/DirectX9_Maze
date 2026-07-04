@@ -1,13 +1,13 @@
-#include "CSkyBox.h"
+ï»¿#include "CSkyBox.h"
 
 CSkyBox::CSkyBox()
 {
 	for (int i = 0; i < 6; i++)
 		m_BoxTextures[i] = NULL;
 	m_BoxVertexBuffer = NULL;
-	// vertex Á¤º¸ ÀÔ·Â
+	// vertex ì •ë³´ ìž…ë ¥
 	{
-		// ¾Õ¸é
+		// ì•žë©´
 		m_BoxVertices[0].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
 		m_BoxVertices[1].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
 		m_BoxVertices[2].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
@@ -16,7 +16,7 @@ CSkyBox::CSkyBox()
 		m_BoxVertices[1].v3VerNormal = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
 		m_BoxVertices[2].v3VerNormal = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
 		m_BoxVertices[3].v3VerNormal = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
-		// µÞ¸é
+		// ë’·ë©´
 		m_BoxVertices[4].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
 		m_BoxVertices[5].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
 		m_BoxVertices[6].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
@@ -25,7 +25,7 @@ CSkyBox::CSkyBox()
 		m_BoxVertices[5].v3VerNormal = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
 		m_BoxVertices[6].v3VerNormal = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
 		m_BoxVertices[7].v3VerNormal = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
-		// ¿ÞÂÊ¸é
+		// ì™¼ìª½ë©´
 		m_BoxVertices[8].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
 		m_BoxVertices[9].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
 		m_BoxVertices[10].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
@@ -34,7 +34,7 @@ CSkyBox::CSkyBox()
 		m_BoxVertices[9].v3VerNormal = D3DXVECTOR3(1.0f, 0.0f, 0.0f);
 		m_BoxVertices[10].v3VerNormal = D3DXVECTOR3(1.0f, 0.0f, 0.0f);
 		m_BoxVertices[11].v3VerNormal = D3DXVECTOR3(1.0f, 0.0f, 0.0f);
-		// ¿À¸¥ÂÊ¸é
+		// ì˜¤ë¥¸ìª½ë©´
 		m_BoxVertices[12].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
 		m_BoxVertices[13].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
 		m_BoxVertices[14].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
@@ -43,7 +43,7 @@ CSkyBox::CSkyBox()
 		m_BoxVertices[13].v3VerNormal = D3DXVECTOR3(-1.0f, 0.0f, 0.0f);
 		m_BoxVertices[14].v3VerNormal = D3DXVECTOR3(-1.0f, 0.0f, 0.0f);
 		m_BoxVertices[15].v3VerNormal = D3DXVECTOR3(-1.0f, 0.0f, 0.0f);
-		// À­¸é
+		// ìœ—ë©´
 		m_BoxVertices[16].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
 		m_BoxVertices[17].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
 		m_BoxVertices[18].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
@@ -52,7 +52,7 @@ CSkyBox::CSkyBox()
 		m_BoxVertices[17].v3VerNormal = D3DXVECTOR3(0.0f, -1.0f, 0.0f);
 		m_BoxVertices[18].v3VerNormal = D3DXVECTOR3(0.0f, -1.0f, 0.0f);
 		m_BoxVertices[19].v3VerNormal = D3DXVECTOR3(0.0f, -1.0f, 0.0f);
-		// ¾Æ·§¸é
+		// ì•„ëž«ë©´
 		m_BoxVertices[20].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
 		m_BoxVertices[21].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
 		m_BoxVertices[22].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
@@ -61,7 +61,7 @@ CSkyBox::CSkyBox()
 		m_BoxVertices[21].v3VerNormal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
 		m_BoxVertices[22].v3VerNormal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
 		m_BoxVertices[23].v3VerNormal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
-		// tex ÁÂÇ¥ ÀÔ·Â
+		// tex ì¢Œí‘œ ìž…ë ¥
 		for (int i = 0; i < 6; i++)
 		{
 			m_BoxVertices[i * 4].v2VerTex = D3DXVECTOR2(0.0f, 0.0f);
@@ -85,7 +85,7 @@ CSkyBox::~CSkyBox()
 }
 VOID CSkyBox::LoadTexture()
 {
-	// ¾Õ - µÚ - ÁÂ - ¿ì - »ó - ÇÏ
+	// ì•ž - ë’¤ - ì¢Œ - ìš° - ìƒ - í•˜
 	D3DXCreateTextureFromFile(g_pd3dDevice, "Daylight Box_Pieces/Daylight Box_Front.bmp", &m_BoxTextures[0]);
 	D3DXCreateTextureFromFile(g_pd3dDevice, "Daylight Box_Pieces/Daylight Box_Back.bmp", &m_BoxTextures[1]);
 	D3DXCreateTextureFromFile(g_pd3dDevice, "Daylight Box_Pieces/Daylight Box_Left.bmp", &m_BoxTextures[2]);
@@ -95,7 +95,7 @@ VOID CSkyBox::LoadTexture()
 }
 VOID CSkyBox::CreateVertexBuffer()
 {
-	// vertex buffer »ý¼º
+	// vertex buffer ìƒì„±
 	g_pd3dDevice->CreateVertexBuffer(sizeof(m_BoxVertices), 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &m_BoxVertexBuffer, NULL);
 	VOID** SkyBoxVertices;
 	m_BoxVertexBuffer->Lock(0, sizeof(m_BoxVertices), (void**)&SkyBoxVertices, 0);

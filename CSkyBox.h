@@ -1,11 +1,11 @@
-#pragma once
+ï»¿#pragma once
 #include "main.h"
 extern LPDIRECT3DDEVICE9 g_pd3dDevice;
 
 class CSkyBox
 {
 private:
-	// skybox¿¡ ÀÔÈú texture¿Í À§Ä¡¸¦ ´ãÀ» vertex buffer
+	// skyboxì— ì…í textureì™€ ìœ„ì¹˜ë¥¼ ë‹´ì„ vertex buffer
 	LPDIRECT3DTEXTURE9 m_BoxTextures[6];
 	LPDIRECT3DVERTEXBUFFER9 m_BoxVertexBuffer;
 

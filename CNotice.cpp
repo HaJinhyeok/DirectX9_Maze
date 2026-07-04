@@ -1,4 +1,4 @@
-#include "CNotice.h"
+ï»¿#include "CNotice.h"
 
 WORD CNotice::m_NoticeCount = 0;
 
@@ -36,11 +36,11 @@ VOID CNotice::RotateNotice(D3DXVECTOR3 player_position)
 	D3DXVECTOR3 v3Vertices[4], v3Cross, v3Dst = player_position - m_Position;
 	D3DXMATRIX mtRotation, mtTranslation;
 	v3Dst.y = 0.0f;
-	// player°¡ ¿òÁ÷ÀÌÁö ¾Ê¾ÒÀ¸¸é È¸Àüx
+	// playerê°€ ì›€ì§ì´ì§€ ì•Šì•˜ìœ¼ë©´ íšŒì „x
 	if (m_LookAt == v3Dst) return;
 
 	FLOAT angle, cos, fDst, fCurrent;
-	// ¿øÁ¡À¸·Î ¿Å±â±â
+	// ì›ì ìœ¼ë¡œ ì˜®ê¸°ê¸°
 	D3DXMatrixTranslation(&mtTranslation, -m_Position.x, -m_Position.y, -m_Position.z);
 	D3DXMatrixMultiply(&m_World, &m_World, &mtTranslation);
 	// Calculate angle between current LookAt and goal LookAt, using dot product
@@ -63,7 +63,7 @@ VOID CNotice::RotateNotice(D3DXVECTOR3 player_position)
 		D3DXMatrixRotationY(&mtRotation, -angle);
 	}
 	D3DXMatrixMultiply(&m_World, &m_World, &mtRotation);
-	// Á¦ÀÚ¸®·Î º¹±Í
+	// ì œìë¦¬ë¡œ ë³µê·€
 	D3DXMatrixTranslation(&mtTranslation, m_Position.x, m_Position.y, m_Position.z);
 	D3DXMatrixMultiply(&m_World, &m_World, &mtTranslation);
 }
@@ -81,20 +81,20 @@ BOOL CNotice::IsPossibleInteraction(D3DXVECTOR3 playerPosition)
 {
 	if (bIsNoClipOn)
 		return FALSE;
-	// Ãæµ¹À» °Ë»çÇÒ ºí·ÏÀÇ ¿ŞÂÊ¾Æ·¡(minX, minZ)¿Í ¿À¸¥ÂÊÀ§(maxX,maxZ) µÎ Á¡
+	// ì¶©ëŒì„ ê²€ì‚¬í•  ë¸”ë¡ì˜ ì™¼ìª½ì•„ë˜(minX, minZ)ì™€ ì˜¤ë¥¸ìª½ìœ„(maxX,maxZ) ë‘ ì 
 	D3DXVECTOR2 NoticePoint[2];
 	NoticePoint[0].x = m_Position.x - LENGTH_OF_TILE / 2;
 	NoticePoint[0].y = m_Position.z - LENGTH_OF_TILE / 2;
 	NoticePoint[1].x = m_Position.x + LENGTH_OF_TILE / 2;
 	NoticePoint[1].y = m_Position.z + LENGTH_OF_TILE / 2;
 
-	//Ãæµ¹ ½Ã
+	//ì¶©ëŒ ì‹œ
 	if (NoticePoint[0].x <= playerPosition.x + PLAYER_RADIUS && NoticePoint[1].x >= playerPosition.x - PLAYER_RADIUS
 		&& NoticePoint[0].y <= playerPosition.z + PLAYER_RADIUS && NoticePoint[1].y >= playerPosition.z - PLAYER_RADIUS)
 	{
 		return TRUE;
 	}
-	// Ãæµ¹À» ¹ş¾î³ª¸é ´Ù½Ã ¿ø·¡ ½ÃÁ¡À¸·Î º¹±¸
+	// ì¶©ëŒì„ ë²—ì–´ë‚˜ë©´ ë‹¤ì‹œ ì›ë˜ ì‹œì ìœ¼ë¡œ ë³µêµ¬
 	else
 	{
 		return FALSE;
