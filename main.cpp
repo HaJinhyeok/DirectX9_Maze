@@ -403,7 +403,7 @@ VOID CleanUp()
 		g_pD3D->Release();
 }
 
-VOID __KeyProc()
+VOID UpdateGameStateFromInput()
 {
 	int i;
 
@@ -936,7 +936,7 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 						while (bIsCursorOn >= 0)
 							bIsCursorOn = ShowCursor(FALSE);
 					}
-					__KeyProc();
+					UpdateGameStateFromInput();
 					Render();
 					FPS.Frame();
 				}

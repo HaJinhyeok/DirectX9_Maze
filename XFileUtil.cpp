@@ -152,8 +152,8 @@ VOID CXFileUtil::Move(const char(*map)[NUM_OF_COLUMN + 1])
 				else
 				{
 					// 현재 좌표
-					int nCoX = floorf(currentPosition.x / LENGTH_OF_TILE) + NUM_OF_COLUMN / 2;
-					int nCoZ = NUM_OF_ROW / 2 - floorf(currentPosition.z / LENGTH_OF_TILE) - 1;
+					int nCoX = static_cast<int>(floorf(currentPosition.x / LENGTH_OF_TILE)) + NUM_OF_COLUMN / 2;
+					int nCoZ = NUM_OF_ROW / 2 - static_cast<int>(floorf(currentPosition.z / LENGTH_OF_TILE)) - 1;
 					// random_device로 시드값 생성해 메르센 트위스트 알고리즘으로 난수 생성
 					mt19937 m_Engine(m_Random());
 

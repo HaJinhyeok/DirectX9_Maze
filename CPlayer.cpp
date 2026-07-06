@@ -108,8 +108,8 @@ BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[NUM_OF_COLUMN + 1]
 		// 충돌을 검사할 블록의 왼쪽아래(minX, minZ)와 오른쪽위(maxX,maxZ) 두 점
 		D3DXVECTOR2 WallPoint[2];
 		// 현재 좌표
-		nCoX = floorf(currentPosition.x / LENGTH_OF_TILE) + NUM_OF_COLUMN / 2;
-		nCoZ = NUM_OF_ROW / 2 - floorf(currentPosition.z / LENGTH_OF_TILE) - 1;
+		nCoX = static_cast<int>(floorf(currentPosition.x / LENGTH_OF_TILE)) + NUM_OF_COLUMN / 2;
+		nCoZ = NUM_OF_ROW / 2 - static_cast<int>(floorf(currentPosition.z / LENGTH_OF_TILE)) - 1;
 		// 해결: 외곽 벽에 부딪히는 경우 추가, 몇몇 곳에서 블록 속으로 들어가버리는 버그 수정하기
 		// x축 음의 방향으로 이동일 경우
 		if (vecDirection.x < 0)
