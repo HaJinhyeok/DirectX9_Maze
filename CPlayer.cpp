@@ -1,4 +1,19 @@
 ﻿#include "CPlayer.h"
+
+namespace
+{
+	bool IsWall(const char (*map)[NUM_OF_COLUMN + 1], int row, int column)
+	{
+		if (row < 0 || row >= NUM_OF_ROW ||
+			column < 0 || column >= NUM_OF_COLUMN)
+		{
+			return false;
+		}
+
+		return map[row][column] == '*';
+	}
+}
+
 CPlayer::CPlayer()
 {
 	D3DXMATRIX tmpMatrix;
@@ -125,7 +140,7 @@ BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[NUM_OF_COLUMN + 1]
 						tmpPosition.x = -NUM_OF_COLUMN / 2 * LENGTH_OF_TILE + PLAYER_RADIUS;
 					}
 				}
-				else if (map[nCoZ - 1 + i][nCoX - 1] == '*')
+				else if (IsWall(map, nCoZ - 1 + i, nCoX - 1))
 				{
 					WallPoint[0].x = (nCoX - 1 - NUM_OF_COLUMN / 2) * LENGTH_OF_TILE;
 					WallPoint[0].y = (NUM_OF_ROW / 2 - (nCoZ - 1 + i) - 1) * LENGTH_OF_TILE;
@@ -136,7 +151,7 @@ BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[NUM_OF_COLUMN + 1]
 					if (WallPoint[0].x <= tmpPosition.x + PLAYER_RADIUS && WallPoint[1].x >= tmpPosition.x - PLAYER_RADIUS
 						&& WallPoint[0].y <= tmpPosition.z + PLAYER_RADIUS && WallPoint[1].y >= tmpPosition.z - PLAYER_RADIUS)
 					{
-						if (map[nCoZ][nCoX - 1] == '*')
+						if (IsWall(map, nCoZ, nCoX - 1))
 							tmpPosition.x = WallPoint[1].x + PLAYER_RADIUS + 0.1f;
 						break;
 					}
@@ -157,7 +172,7 @@ BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[NUM_OF_COLUMN + 1]
 						tmpPosition.x = NUM_OF_COLUMN / 2 * LENGTH_OF_TILE - PLAYER_RADIUS;
 					}
 				}
-				else if (map[nCoZ - 1 + i][nCoX + 1] == '*')
+				else if (IsWall(map, nCoZ - 1 + i, nCoX + 1))
 				{
 					WallPoint[0].x = (nCoX + 1 - NUM_OF_COLUMN / 2) * LENGTH_OF_TILE;
 					WallPoint[0].y = (NUM_OF_ROW / 2 - (nCoZ - 1 + i) - 1) * LENGTH_OF_TILE;
@@ -168,7 +183,7 @@ BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[NUM_OF_COLUMN + 1]
 					if (WallPoint[0].x <= tmpPosition.x + PLAYER_RADIUS && WallPoint[1].x >= tmpPosition.x - PLAYER_RADIUS
 						&& WallPoint[0].y <= tmpPosition.z + PLAYER_RADIUS && WallPoint[1].y >= tmpPosition.z - PLAYER_RADIUS)
 					{
-						if (map[nCoZ][nCoX + 1] == '*')
+						if (IsWall(map, nCoZ, nCoX + 1))
 							tmpPosition.x = WallPoint[0].x - PLAYER_RADIUS - 0.1f;
 						break;
 					}
@@ -190,7 +205,7 @@ BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[NUM_OF_COLUMN + 1]
 						tmpPosition.z = -NUM_OF_ROW / 2 * LENGTH_OF_TILE + PLAYER_RADIUS;
 					}
 				}
-				else if (map[nCoZ + 1][nCoX - 1 + i] == '*')
+				else if (IsWall(map, nCoZ + 1, nCoX - 1 + i))
 				{
 					WallPoint[0].x = (nCoX - 1 + i - NUM_OF_COLUMN / 2) * LENGTH_OF_TILE;
 					WallPoint[0].y = (NUM_OF_ROW / 2 - (nCoZ + 1) - 1) * LENGTH_OF_TILE;
@@ -221,7 +236,7 @@ BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[NUM_OF_COLUMN + 1]
 						tmpPosition.z = NUM_OF_ROW / 2 * LENGTH_OF_TILE - PLAYER_RADIUS;
 					}
 				}
-				else if (map[nCoZ - 1][nCoX - 1 + i] == '*')
+				else if (IsWall(map, nCoZ - 1, nCoX - 1 + i))
 				{
 					WallPoint[0].x = (nCoX - 1 + i - NUM_OF_COLUMN / 2) * LENGTH_OF_TILE;
 					WallPoint[0].y = (NUM_OF_ROW / 2 - (nCoZ - 1) - 1) * LENGTH_OF_TILE;
