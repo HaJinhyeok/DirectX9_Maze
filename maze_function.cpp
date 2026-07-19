@@ -4,15 +4,6 @@ D3DXVECTOR3 CalculateMidPoint(D3DXVECTOR3 pos1, D3DXVECTOR3 pos2)
 {
     return D3DXVECTOR3((pos1 + pos2).x / 2, (pos1 + pos2).y / 2, (pos1 + pos2).z / 2);
 }
-vector<D3DXVECTOR3> CalculateDivisionPoints(D3DXVECTOR3 pos1, D3DXVECTOR3 pos2, int div)
-{
-    vector<D3DXVECTOR3> points;
-    for (int i = 1;i <= div - 1;i++)
-    {
-        points.push_back(D3DXVECTOR3((pos1.x * (div - i) + pos2.x * i) / div, (pos1.y * (div - i) + pos2.y * i) / div, (pos1.z * (div - i) + pos2.z * i) / div));
-    }
-    return points;
-}
 
 // 몇 번째 맵을 만들건지 주어지면, (맵 외곽을 제외한) 맵 내부를 구성하는 벽들의 vertex 좌표를 생성
 // 일단 맵은 하나만...
