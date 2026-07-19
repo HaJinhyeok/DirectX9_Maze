@@ -1,4 +1,5 @@
 ﻿#include "XFileUtil.h"
+#include "ComUtils.h"
 
 CXFileUtil::CXFileUtil(D3DXVECTOR3 position)
 {
@@ -25,18 +26,18 @@ CXFileUtil::CXFileUtil(D3DXVECTOR3 position)
 }
 CXFileUtil::~CXFileUtil()
 {
-	if (g_pMesh != NULL)
-		g_pMesh->Release();
+	SafeRelease(g_pMesh);
 	if (g_pMeshTextures != NULL)
 	{
 		for (DWORD i = 0; i < g_dwNumMaterials; i++)
 		{
-			if (g_pMeshTextures[i] != NULL)
-				g_pMeshTextures[i]->Release();
+			SafeRelease(g_pMeshTextures[i]);
 		}
 		delete[] g_pMeshTextures;
+		g_pMeshTextures = nullptr;
 	}
 	delete[] g_pMeshMaterials;
+	g_pMeshMaterials = nullptr;
 }
 
 //---------------------------------------------------------------------------------
@@ -95,7 +96,7 @@ int CXFileUtil::XFileLoad(LPDIRECT3DDEVICE9 pD3DDevice, char* xFileName)
 		}
 	}
 	// 재질 버퍼 사용끝 & 해제
-	pD3DXMtrlBuffer->Release();
+	SafeRelease(pD3DXMtrlBuffer);
 	return S_OK;
 }
 

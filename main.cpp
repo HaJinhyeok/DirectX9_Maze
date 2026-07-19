@@ -5,6 +5,7 @@
 #include "CFrame.h"
 #include "CSkyBox.h"
 #include "XFileUtil.h"
+#include "ComUtils.h"
 
 LPDIRECT3D9 g_pD3D = NULL;
 LPDIRECT3DDEVICE9 g_pd3dDevice = NULL;
@@ -351,56 +352,34 @@ VOID CleanUp()
 	delete g_pCurrentMouse;
 	delete g_pMouse;
 	delete g_pMidPoint;
-	if (g_pSkyboxCube != NULL)
-		g_pSkyboxCube->Release();
-	if (g_pBulletSphere != NULL)
-		g_pBulletSphere->Release();
-	if (g_pPlayerSphere != NULL)
-		g_pPlayerSphere->Release();
-	if (g_pTestFont != NULL)
-		g_pTestFont->Release();
-	if (g_pFrameFont != NULL)
-		g_pFrameFont->Release();
-	if (g_pExitFont != NULL)
-		g_pExitFont->Release();
-	if (g_pSettingFont != NULL)
-		g_pSettingFont->Release();
-	if (g_pClearFont != NULL)
-		g_pClearFont->Release();
-	if (g_pFace2 != NULL)
-		g_pFace2->Release();
-	if (g_pSkyboxTexture != NULL)
-		g_pSkyboxTexture->Release();
-	if (g_pExitTexture != NULL)
-		g_pExitTexture->Release();
-	if (g_pNoticeTexture != NULL)
-		g_pNoticeTexture->Release();
-	if (g_pGrassTexture != NULL)
-		g_pGrassTexture->Release();
-	if (g_pWallTexture != NULL)
-		g_pWallTexture->Release();
-	if (g_pTileTexture != NULL)
-		g_pTileTexture->Release();
+	SafeRelease(g_pSkyboxCube);
+	SafeRelease(g_pBulletSphere);
+	SafeRelease(g_pPlayerSphere);
+	SafeRelease(g_pTestFont);
+	SafeRelease(g_pFrameFont);
+	SafeRelease(g_pExitFont);
+	SafeRelease(g_pSettingFont);
+	SafeRelease(g_pClearFont);
+	SafeRelease(g_pFace2);
+	SafeRelease(g_pSkyboxTexture);
+	SafeRelease(g_pExitTexture);
+	SafeRelease(g_pNoticeTexture);
+	SafeRelease(g_pGrassTexture);
+	SafeRelease(g_pWallTexture);
+	SafeRelease(g_pTileTexture);
 
 	Exit.ReleaseNoticeVB();
 	for (int i = 0; i < notice[0].GetNumOfNotice(); i++)
 	{
 		notice[i].ReleaseNoticeVB();
 	}
-	if (g_pMazeVB != NULL)
-		g_pMazeVB->Release();
-	if (g_pWallVB2 != NULL)
-		g_pWallVB2->Release();
-	if (g_pWallVB != NULL)
-		g_pWallVB->Release();
-	if (g_pTileIB != NULL)
-		g_pTileIB->Release();
-	if (g_pTileVB != NULL)
-		g_pTileVB->Release();
-	if (g_pd3dDevice != NULL)
-		g_pd3dDevice->Release();
-	if (g_pD3D != NULL)
-		g_pD3D->Release();
+	SafeRelease(g_pMazeVB);
+	SafeRelease(g_pWallVB2);
+	SafeRelease(g_pWallVB);
+	SafeRelease(g_pTileIB);
+	SafeRelease(g_pTileVB);
+	SafeRelease(g_pd3dDevice);
+	SafeRelease(g_pD3D);
 }
 
 VOID UpdateGameStateFromInput()

@@ -1,4 +1,5 @@
 ﻿#include "CSkyBox.h"
+#include "ComUtils.h"
 
 CSkyBox::CSkyBox()
 {
@@ -76,12 +77,10 @@ CSkyBox::~CSkyBox()
 	// texture release
 	for (int i = 0; i < 6; i++)
 	{
-		if (m_BoxTextures[i] != NULL)
-			m_BoxTextures[i]->Release();
+		SafeRelease(m_BoxTextures[i]);
 	}
 	// vertex buffer release
-	if (m_BoxVertexBuffer != NULL)
-		m_BoxVertexBuffer->Release();
+	SafeRelease(m_BoxVertexBuffer);
 }
 VOID CSkyBox::LoadTexture()
 {

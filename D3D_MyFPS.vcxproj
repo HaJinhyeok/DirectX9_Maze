@@ -162,6 +162,7 @@
     <ClCompile Include="XFileUtil.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ComUtils.h" />
     <ClInclude Include="CExit.h" />
     <ClInclude Include="CFrame.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>

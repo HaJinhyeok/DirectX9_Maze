@@ -1,4 +1,5 @@
 ﻿#include "CNotice.h"
+#include "ComUtils.h"
 
 WORD CNotice::m_NoticeCount = 0;
 
@@ -74,8 +75,7 @@ VOID CNotice::DrawNotice(LPDIRECT3DDEVICE9 device)
 }
 VOID CNotice::ReleaseNoticeVB()
 {
-	if (m_pNoticeVB != NULL)
-		m_pNoticeVB->Release();
+	SafeRelease(m_pNoticeVB);
 }
 BOOL CNotice::IsPossibleInteraction(D3DXVECTOR3 playerPosition)
 {

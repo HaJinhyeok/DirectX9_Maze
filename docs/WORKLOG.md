@@ -142,3 +142,72 @@
 - 빌드 결과는 경고 0개, 오류 0개다.
 - 실제 맵 네 가장자리와 모서리의 이동 감각은 다음 실행 시 수동으로 추가 확인한다.
 - Roadmap의 `P1-05`를 완료로 변경했다.
+
+## 2026-07-19 - COM 리소스 해제 공통화 분석
+
+### 원인
+
+- COM 포인터 해제가 `main.cpp`, `CNotice.cpp`, `CSkyBox.cpp`, `XFileUtil.cpp`에 반복되어 있다.
+- 대부분 null 검사는 하지만 `Release()` 후 포인터를 null로 돌리지 않아 같은 정리 경로의 재호출에 안전하지 않다.
+- 같은 소유 규칙이 여러 형태로 작성되어 새 리소스 추가 시 해제 누락 가능성이 있다.
+
+### 확인한 범위
+
+- `main.cpp`: 전역 메시, 폰트, 텍스처, 버퍼, 디바이스 등 22개 `Release()` 호출
+- `CNotice.cpp`: 안내판 버텍스 버퍼 1개 `Release()` 호출
+- `CSkyBox.cpp`: 텍스처 배열과 버텍스 버퍼의 2개 `Release()` 호출 지점
+- `XFileUtil.cpp`: 메시, 텍스처 배열 원소와 재질 버퍼의 3개 `Release()` 호출 지점
+- COM 소유 포인터는 전역 초기값, 생성자 또는 멤버 초기값으로 null 초기화되어 있다.
+
+### 수정 방향
+
+- 새 `ComUtils.h`에 포인터 참조를 받는 템플릿 `SafeRelease(T*& resource)`를 정의한다.
+- 포인터가 유효하면 `Release()`를 호출한 뒤 `nullptr`을 대입한다.
+- `main.cpp`, `CNotice.cpp`, `CSkyBox.cpp`, `XFileUtil.cpp`의 직접 `Release()` 호출을 공통 함수로 교체한다.
+- X 파일 텍스처 배열과 재질 배열은 기존 `delete[]`를 유지하고 배열 포인터도 null로 초기화한다.
+- 프로젝트 전체를 `ComPtr`로 전환하는 작업은 전역 상태와 소유 구조를 분리하는 단계에서 검토한다.
+
+### 인접 위험
+
+- `InitD3D()`에서 Direct3D 객체 생성 후 디바이스 생성이 실패하면 현재 `CleanUp()`이 호출되지 않는다.
+- `InitGeometry()`의 리소스 생성과 `Lock()` 결과가 검사되지 않아 부분 초기화 실패를 안전하게 복구하지 못한다.
+- `CleanUp()`의 일반 포인터 `delete` 경로는 이번 COM 공통화 범위에 포함되지 않는다.
+- 위 문제는 `SafeRelease` 적용과 분리해 오류 반환 및 초기화 구조 개선 후보로 남긴다.
+
+### 검증 계획
+
+- 검색으로 직접 `->Release()` 호출이 남지 않았는지 확인한다.
+- `SafeRelease`가 모든 포인터를 해제 후 `nullptr`로 만드는지 확인한다.
+- `Debug|x86` 빌드에서 경고 0개, 오류 0개를 확인한다.
+- 게임 실행 후 일반 종료에서 충돌이나 종료 지연이 없는지 확인한다.
+
+### 상태
+
+- `ComUtils.h`에 `SafeRelease(T*&)` 템플릿을 추가했다.
+- `CNotice.cpp`의 안내판 버텍스 버퍼 해제를 `SafeRelease()`로 교체했다.
+- `CSkyBox.cpp`의 텍스처 배열 원소 해제를 `SafeRelease()`로 교체했다.
+- `XFileUtil.cpp`의 메시와 재질 버퍼 해제를 `SafeRelease()`로 교체했다.
+- `main.cpp`의 전역 COM 포인터 22개 해제를 `SafeRelease()`로 교체했다.
+
+### 중간 검증
+
+- `Debug|x86` 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+- `CSkyBox.cpp`의 버텍스 버퍼와 `XFileUtil.cpp`의 텍스처 배열 원소에 직접 `Release()`가 각각 한 곳 남아 있다.
+- 남은 두 곳을 교체하고 배열 포인터 정리까지 확인한 뒤 Roadmap 완료 여부를 판단한다.
+
+### 완료 작업
+
+- `CSkyBox.cpp`의 버텍스 버퍼 해제를 `SafeRelease()`로 교체했다.
+- `XFileUtil.cpp`의 텍스처 배열 원소 해제를 `SafeRelease()`로 교체했다.
+- X 파일 텍스처와 재질 배열을 `delete[]`한 뒤 배열 포인터를 `nullptr`로 초기화했다.
+- `ComUtils.h`를 Visual Studio 프로젝트와 헤더 파일 필터에 등록했다.
+
+### 최종 검증
+
+- 프로젝트 전체의 직접 `->Release()` 호출은 `SafeRelease()` 구현 내부 한 곳만 남았다.
+- `Debug|x86` 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+- 게임 실행 후 창 닫기 메시지로 `WM_DESTROY`와 `CleanUp()` 경로를 수행했다.
+- 프로세스가 종료 코드 0으로 정상 종료되었다.
+- Roadmap의 `P1-06`을 완료로 변경했다.
