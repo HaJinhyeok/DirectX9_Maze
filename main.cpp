@@ -388,6 +388,16 @@ VOID UpdateGameStateFromInput()
 
 	UpdateInput();
 
+	if (GetKeyDown(VK_ESCAPE) == TRUE)
+	{
+		bIsPaused = !bIsPaused;
+	}
+
+	if (bIsPaused)
+	{
+		return;
+	}
+
 	if (!bIsPaused && bIsPlaying)
 	{
 		// 총알 움직임 계산
@@ -509,18 +519,6 @@ VOID UpdateGameStateFromInput()
 				bIsNoClipOn = TRUE;
 				mtSavedWorld = player.GetPlayerWorld();
 				v3SavedLookAt = player.GetLookAt();
-			}
-		}
-		// preference UI on/off
-		if (GetKeyDown(VK_ESCAPE) == TRUE)
-		{
-			if (bIsPaused == TRUE)
-			{
-				bIsPaused = FALSE;
-			}
-			else
-			{
-				bIsPaused = TRUE;
 			}
 		}
 	}
@@ -846,8 +844,12 @@ LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		g_pMouse->y = HIWORD(lParam);
 		bIsClicked = FALSE;
 		Exit.ButtonUnpressed();
-		player.Attack(g_pMouse);
-		//OutputDebugString("Clicked\n");
+
+		if (bIsPlaying && !bIsPaused)
+		{
+			player.Attack(g_pMouse);
+		}
+
 		if (!bIsPlaying || bIsPaused)
 		{
 			if (PtInRect(&rtExitButton, *g_pMouse))
@@ -855,6 +857,7 @@ LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				PostMessage(hWnd, WM_CLOSE, 0, 0);
 			}
 		}
+
 		break;
 
 	case WM_DESTROY:
