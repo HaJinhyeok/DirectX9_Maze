@@ -852,8 +852,7 @@ LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 			if (PtInRect(&rtExitButton, *g_pMouse))
 			{
-				Sleep(100);
-				exit(0);
+				PostMessage(hWnd, WM_CLOSE, 0, 0);
 			}
 		}
 		break;
