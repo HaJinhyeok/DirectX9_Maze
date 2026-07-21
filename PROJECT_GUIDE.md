@@ -57,7 +57,7 @@
 
 - `README.md`: GitHub 방문자를 위한 프로젝트 소개와 실행 정보
 - `PROJECT_GUIDE.md`: 장기 목표와 개선 원칙
+- `docs/CODING_CONVENTIONS.md`: 프로젝트별 C++ 네이밍과 단계적 적용 기준
 - `docs/ROADMAP.md`: 작업 순서, 상태와 완료 조건
 - `docs/WORKLOG.md`: 변경, 검증과 설계 결정 기록
 - `docs/TECHNICAL_REVIEW.md`: 로컬에서 사용하는 기술 검토 기준선
-

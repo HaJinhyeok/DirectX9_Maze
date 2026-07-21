@@ -125,4 +125,4 @@ Visual Studio 2022 Community 기본 설치 경로를 사용하는 경우, 저장
 - 플레이어 충돌 로직은 경계 검사를 추가했지만 함수가 길고 방향별 코드가 반복됩니다.
 - 현재는 `Debug|x86`만 검증되었으며 `x64`와 `Release` 구성은 별도 정리가 필요합니다.
 
-장기 개선 방향과 진행 상태는 [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)와 [`docs/ROADMAP.md`](docs/ROADMAP.md)를 참고하세요.
+장기 개선 방향과 진행 상태는 [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)와 [`docs/ROADMAP.md`](docs/ROADMAP.md)를 참고하세요. 프로젝트별 C++ 네이밍 기준은 [`docs/CODING_CONVENTIONS.md`](docs/CODING_CONVENTIONS.md)에 정리되어 있습니다.

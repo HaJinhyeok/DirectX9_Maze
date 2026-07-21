@@ -6,11 +6,13 @@
 
 1. `README.md`
 2. `PROJECT_GUIDE.md`
-3. `docs/ROADMAP.md`
-4. `docs/WORKLOG.md`의 최신 기록
-5. 로컬에 존재하는 경우 `docs/TECHNICAL_REVIEW.md`
+3. `docs/CODING_CONVENTIONS.md`
+4. `docs/ROADMAP.md`
+5. `docs/WORKLOG.md`의 최신 기록
+6. 로컬에 존재하는 경우 `docs/TECHNICAL_REVIEW.md`
 
 전역 포트폴리오 검토 기준과 C++ 컨벤션은 `C:\Users\hjhmoon61\.codex` 아래의 문서를 따른다.
+프로젝트 네이밍은 `docs/CODING_CONVENTIONS.md`를 우선한다.
 
 ## 작업 절차
 
@@ -37,4 +39,3 @@
 - 스테이징, 커밋, 브랜치 생성과 원격 작업은 사용자가 명시적으로 요청했을 때만 수행한다.
 - 커밋명은 `[HA]`로 시작하고 한글로 작성한다.
 - 하나의 Roadmap 항목 또는 하나의 명확한 주제를 한 커밋으로 묶는다.
-
