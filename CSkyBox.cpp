@@ -9,55 +9,55 @@ CSkyBox::CSkyBox()
 	// vertex 정보 입력
 	{
 		// 앞면
-		m_BoxVertices[0].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
-		m_BoxVertices[1].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
-		m_BoxVertices[2].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
-		m_BoxVertices[3].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
+		m_BoxVertices[0].v3VerPos = D3DXVECTOR3(-kSkyBoxSize / 2, kSkyBoxSize / 2, kSkyBoxSize / 2);
+		m_BoxVertices[1].v3VerPos = D3DXVECTOR3(kSkyBoxSize / 2, kSkyBoxSize / 2, kSkyBoxSize / 2);
+		m_BoxVertices[2].v3VerPos = D3DXVECTOR3(kSkyBoxSize / 2, -kSkyBoxSize / 2, kSkyBoxSize / 2);
+		m_BoxVertices[3].v3VerPos = D3DXVECTOR3(-kSkyBoxSize / 2, -kSkyBoxSize / 2, kSkyBoxSize / 2);
 		m_BoxVertices[0].v3VerNormal = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
 		m_BoxVertices[1].v3VerNormal = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
 		m_BoxVertices[2].v3VerNormal = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
 		m_BoxVertices[3].v3VerNormal = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
 		// 뒷면
-		m_BoxVertices[4].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
-		m_BoxVertices[5].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
-		m_BoxVertices[6].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
-		m_BoxVertices[7].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
+		m_BoxVertices[4].v3VerPos = D3DXVECTOR3(kSkyBoxSize / 2, kSkyBoxSize / 2, -kSkyBoxSize / 2);
+		m_BoxVertices[5].v3VerPos = D3DXVECTOR3(-kSkyBoxSize / 2, kSkyBoxSize / 2, -kSkyBoxSize / 2);
+		m_BoxVertices[6].v3VerPos = D3DXVECTOR3(-kSkyBoxSize / 2, -kSkyBoxSize / 2, -kSkyBoxSize / 2);
+		m_BoxVertices[7].v3VerPos = D3DXVECTOR3(kSkyBoxSize / 2, -kSkyBoxSize / 2, -kSkyBoxSize / 2);
 		m_BoxVertices[4].v3VerNormal = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
 		m_BoxVertices[5].v3VerNormal = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
 		m_BoxVertices[6].v3VerNormal = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
 		m_BoxVertices[7].v3VerNormal = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
 		// 왼쪽면
-		m_BoxVertices[8].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
-		m_BoxVertices[9].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
-		m_BoxVertices[10].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
-		m_BoxVertices[11].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
+		m_BoxVertices[8].v3VerPos = D3DXVECTOR3(-kSkyBoxSize / 2, kSkyBoxSize / 2, -kSkyBoxSize / 2);
+		m_BoxVertices[9].v3VerPos = D3DXVECTOR3(-kSkyBoxSize / 2, kSkyBoxSize / 2, kSkyBoxSize / 2);
+		m_BoxVertices[10].v3VerPos = D3DXVECTOR3(-kSkyBoxSize / 2, -kSkyBoxSize / 2, kSkyBoxSize / 2);
+		m_BoxVertices[11].v3VerPos = D3DXVECTOR3(-kSkyBoxSize / 2, -kSkyBoxSize / 2, -kSkyBoxSize / 2);
 		m_BoxVertices[8].v3VerNormal = D3DXVECTOR3(1.0f, 0.0f, 0.0f);
 		m_BoxVertices[9].v3VerNormal = D3DXVECTOR3(1.0f, 0.0f, 0.0f);
 		m_BoxVertices[10].v3VerNormal = D3DXVECTOR3(1.0f, 0.0f, 0.0f);
 		m_BoxVertices[11].v3VerNormal = D3DXVECTOR3(1.0f, 0.0f, 0.0f);
 		// 오른쪽면
-		m_BoxVertices[12].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
-		m_BoxVertices[13].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
-		m_BoxVertices[14].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
-		m_BoxVertices[15].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
+		m_BoxVertices[12].v3VerPos = D3DXVECTOR3(kSkyBoxSize / 2, kSkyBoxSize / 2, kSkyBoxSize / 2);
+		m_BoxVertices[13].v3VerPos = D3DXVECTOR3(kSkyBoxSize / 2, kSkyBoxSize / 2, -kSkyBoxSize / 2);
+		m_BoxVertices[14].v3VerPos = D3DXVECTOR3(kSkyBoxSize / 2, -kSkyBoxSize / 2, -kSkyBoxSize / 2);
+		m_BoxVertices[15].v3VerPos = D3DXVECTOR3(kSkyBoxSize / 2, -kSkyBoxSize / 2, kSkyBoxSize / 2);
 		m_BoxVertices[12].v3VerNormal = D3DXVECTOR3(-1.0f, 0.0f, 0.0f);
 		m_BoxVertices[13].v3VerNormal = D3DXVECTOR3(-1.0f, 0.0f, 0.0f);
 		m_BoxVertices[14].v3VerNormal = D3DXVECTOR3(-1.0f, 0.0f, 0.0f);
 		m_BoxVertices[15].v3VerNormal = D3DXVECTOR3(-1.0f, 0.0f, 0.0f);
 		// 윗면
-		m_BoxVertices[16].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
-		m_BoxVertices[17].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
-		m_BoxVertices[18].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
-		m_BoxVertices[19].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
+		m_BoxVertices[16].v3VerPos = D3DXVECTOR3(-kSkyBoxSize / 2, kSkyBoxSize / 2, -kSkyBoxSize / 2);
+		m_BoxVertices[17].v3VerPos = D3DXVECTOR3(kSkyBoxSize / 2, kSkyBoxSize / 2, -kSkyBoxSize / 2);
+		m_BoxVertices[18].v3VerPos = D3DXVECTOR3(kSkyBoxSize / 2, kSkyBoxSize / 2, kSkyBoxSize / 2);
+		m_BoxVertices[19].v3VerPos = D3DXVECTOR3(-kSkyBoxSize / 2, kSkyBoxSize / 2, kSkyBoxSize / 2);
 		m_BoxVertices[16].v3VerNormal = D3DXVECTOR3(0.0f, -1.0f, 0.0f);
 		m_BoxVertices[17].v3VerNormal = D3DXVECTOR3(0.0f, -1.0f, 0.0f);
 		m_BoxVertices[18].v3VerNormal = D3DXVECTOR3(0.0f, -1.0f, 0.0f);
 		m_BoxVertices[19].v3VerNormal = D3DXVECTOR3(0.0f, -1.0f, 0.0f);
 		// 아랫면
-		m_BoxVertices[20].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
-		m_BoxVertices[21].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2, LENGTH_OF_SKYBOX_SURFACE / 2);
-		m_BoxVertices[22].v3VerPos = D3DXVECTOR3(LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
-		m_BoxVertices[23].v3VerPos = D3DXVECTOR3(-LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2, -LENGTH_OF_SKYBOX_SURFACE / 2);
+		m_BoxVertices[20].v3VerPos = D3DXVECTOR3(-kSkyBoxSize / 2, -kSkyBoxSize / 2, kSkyBoxSize / 2);
+		m_BoxVertices[21].v3VerPos = D3DXVECTOR3(kSkyBoxSize / 2, -kSkyBoxSize / 2, kSkyBoxSize / 2);
+		m_BoxVertices[22].v3VerPos = D3DXVECTOR3(kSkyBoxSize / 2, -kSkyBoxSize / 2, -kSkyBoxSize / 2);
+		m_BoxVertices[23].v3VerPos = D3DXVECTOR3(-kSkyBoxSize / 2, -kSkyBoxSize / 2, -kSkyBoxSize / 2);
 		m_BoxVertices[20].v3VerNormal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
 		m_BoxVertices[21].v3VerNormal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
 		m_BoxVertices[22].v3VerNormal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);

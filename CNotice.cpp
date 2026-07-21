@@ -16,10 +16,10 @@ VOID CNotice::MakeNotice(D3DXVECTOR3 position)
 	m_Vertex[2].v2VerTex = D3DXVECTOR2(1.0f, 1.0f);
 	m_Vertex[3].v2VerTex = D3DXVECTOR2(0.0f, 1.0f);
 
-	m_Vertex[0].v3VerPos = D3DXVECTOR3(m_Position.x - LENGTH_OF_TILE / 4, m_Position.y + LENGTH_OF_TILE / 4, m_Position.z);
-	m_Vertex[1].v3VerPos = D3DXVECTOR3(m_Position.x + LENGTH_OF_TILE / 4, m_Position.y + LENGTH_OF_TILE / 4, m_Position.z);
-	m_Vertex[2].v3VerPos = D3DXVECTOR3(m_Position.x + LENGTH_OF_TILE / 4, m_Position.y - LENGTH_OF_TILE / 4, m_Position.z);
-	m_Vertex[3].v3VerPos = D3DXVECTOR3(m_Position.x - LENGTH_OF_TILE / 4, m_Position.y - LENGTH_OF_TILE / 4, m_Position.z);
+	m_Vertex[0].v3VerPos = D3DXVECTOR3(m_Position.x - kTileSize / 4, m_Position.y + kTileSize / 4, m_Position.z);
+	m_Vertex[1].v3VerPos = D3DXVECTOR3(m_Position.x + kTileSize / 4, m_Position.y + kTileSize / 4, m_Position.z);
+	m_Vertex[2].v3VerPos = D3DXVECTOR3(m_Position.x + kTileSize / 4, m_Position.y - kTileSize / 4, m_Position.z);
+	m_Vertex[3].v3VerPos = D3DXVECTOR3(m_Position.x - kTileSize / 4, m_Position.y - kTileSize / 4, m_Position.z);
 
 	m_LookAt = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
 	m_NoticeCount++;
@@ -83,14 +83,14 @@ BOOL CNotice::IsPossibleInteraction(D3DXVECTOR3 playerPosition)
 		return FALSE;
 	// 충돌을 검사할 블록의 왼쪽아래(minX, minZ)와 오른쪽위(maxX,maxZ) 두 점
 	D3DXVECTOR2 NoticePoint[2];
-	NoticePoint[0].x = m_Position.x - LENGTH_OF_TILE / 2;
-	NoticePoint[0].y = m_Position.z - LENGTH_OF_TILE / 2;
-	NoticePoint[1].x = m_Position.x + LENGTH_OF_TILE / 2;
-	NoticePoint[1].y = m_Position.z + LENGTH_OF_TILE / 2;
+	NoticePoint[0].x = m_Position.x - kTileSize / 2;
+	NoticePoint[0].y = m_Position.z - kTileSize / 2;
+	NoticePoint[1].x = m_Position.x + kTileSize / 2;
+	NoticePoint[1].y = m_Position.z + kTileSize / 2;
 
 	//충돌 시
-	if (NoticePoint[0].x <= playerPosition.x + PLAYER_RADIUS && NoticePoint[1].x >= playerPosition.x - PLAYER_RADIUS
-		&& NoticePoint[0].y <= playerPosition.z + PLAYER_RADIUS && NoticePoint[1].y >= playerPosition.z - PLAYER_RADIUS)
+	if (NoticePoint[0].x <= playerPosition.x + kPlayerRadius && NoticePoint[1].x >= playerPosition.x - kPlayerRadius
+		&& NoticePoint[0].y <= playerPosition.z + kPlayerRadius && NoticePoint[1].y >= playerPosition.z - kPlayerRadius)
 	{
 		return TRUE;
 	}

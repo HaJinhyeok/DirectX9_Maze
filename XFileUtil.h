@@ -4,9 +4,8 @@
 #include <time.h>
 #include "main.h"
 
-#define TRANSLATION_DISTANCE_TIGER 0.2f
-#define ROTATION_AMOUNT_TIGER 3
-#define SCALE_AMOUNT_TIGER 7.0f
+constexpr float kTigerMoveDistance = 0.2f;
+constexpr float kTigerScale = 7.0f;
 
 class CXFileUtil
 {
@@ -36,7 +35,7 @@ private:
 public:
 	int XFileDisplay(LPDIRECT3DDEVICE9 pD3DDevice);
 	int XFileLoad(LPDIRECT3DDEVICE9 pD3DDevice, char* xFileName);
-	VOID Move(const char(*map)[NUM_OF_COLUMN + 1]);
+	VOID Move(const char(*map)[kMazeColumnCount + 1]);
 	VOID Rotate(BOOL clockwise);
 
 	VOID SetPosition(D3DXVECTOR3 position)

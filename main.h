@@ -15,40 +15,37 @@ using namespace std;
 
 #define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_TEX1)
 #define D3DFVF_UI_VERTEX (D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1)
-#define TRANSPARENCY_COLOR D3DCOLOR_ARGB(0xff,0x00,0x00,0x00)
-#define BUTTON_DEFAULT D3DCOLOR_XRGB(128, 128, 128)
-#define BUTTON_PRESSED D3DCOLOR_XRGB(64, 64, 64)
 
-#define WINDOW_WIDTH 700
-#define WINDOW_HEIGHT 700
-#define EPSILON 0.001f
-#define SQRT2 sqrtf(2.0f)
+constexpr D3DCOLOR kTextureColorKey = D3DCOLOR_ARGB(0xff, 0x00, 0x00, 0x00);
+constexpr D3DCOLOR kButtonDefaultColor = D3DCOLOR_XRGB(128, 128, 128);
+constexpr D3DCOLOR kButtonPressedColor = D3DCOLOR_XRGB(64, 64, 64);
 
-#define PROGRAM_NAME "DirectX9_Maze"
+constexpr char kProgramName[] = "DirectX9_Maze";
 
 // texture file names
-#define TEXTURE_TILE "tex_tile.bmp"
-#define TEXTURE_GRASS "tex_grass.jpg"
-#define TEXTURE_WALL "tex_wall.jpg"
-#define TEXTURE_NOTICE "tex_question.png"
-#define TEXTURE_EXIT "tex_exit.png"
-#define TEXTURE_SKYBOX "SkyBox1.dds"
+constexpr char kTileTexturePath[] = "tex_tile.bmp";
+constexpr char kGrassTexturePath[] = "tex_grass.jpg";
+constexpr char kWallTexturePath[] = "tex_wall.jpg";
+constexpr char kNoticeTexturePath[] = "tex_question.png";
+constexpr char kExitTexturePath[] = "tex_exit.png";
+constexpr char kSkyBoxTexturePath[] = "SkyBox1.dds";
 
 // constant values
-#define TRANSLATION_DISTANCE 0.3f   // 플레이어 이동거리
-#define LOOKAT_DISTANCE 5.0f    //
-#define ROTATION_AMOUNT D3DX_PI/200 // 플레이어 회전각
-#define ROTATION_LEFT_RIGHT 0.001f // 좌우 1pixel 당 회전각
-#define ROTATION_UP_DOWN 0.001f // 상하 1pixel 당 회전각
-#define NUM_OF_COLUMN 12 // 즉, 가로 길이
-#define NUM_OF_ROW 14    // 즉, 세로 길이
-#define LENGTH_OF_TILE 10.0f
-#define LENGTH_OF_SKYBOX_SURFACE 500.0f
-
-#define PLAYER_RADIUS 2.0f
-#define BULLET_RADIUS 0.4f
-#define X_MOVE 1
-#define Z_MOVE 0
+constexpr int kWindowWidth = 700;
+constexpr int kWindowHeight = 700;
+constexpr float kEpsilon = 0.001f;
+constexpr float kPlayerMoveDistance = 0.3f;   // 플레이어 이동거리
+constexpr float kLookAtDistance = 5.0f;
+constexpr float kPlayerRadius = 2.0f;
+constexpr float kBulletRadius = 0.4f;
+constexpr float kSqrt2 = 1.41421356237f;
+constexpr float kRotationAmount = D3DX_PI / 200.0f; // 플레이어 회전각
+constexpr float kMouseHorizontalRotationSensitivity = 0.001f; // 좌우 1pixel 당 회전각
+constexpr float kMouseVerticalRotationSensitivity = 0.001f; // 상하 1pixel 당 회전각
+constexpr int kMazeColumnCount = 12; // 즉, 가로 길이
+constexpr int kMazeRowCount = 14;    // 즉, 세로 길이
+constexpr float kTileSize = 10.0f;
+constexpr float kSkyBoxSize = 500.0f;
 
 // Calculate the norm of 3-D vector
 inline FLOAT Length(D3DXVECTOR3 myVec)
@@ -132,7 +129,7 @@ const static D3DXVECTOR3 v3EyeCeiling(0.0f, 200.0f, 0.0f);
 const static D3DXVECTOR3 v3UpCeiling(0.0f, 0.0f, 1.0f);
 
 // 맵의 정보를 2차원 배열 형태로 저장
-const static char chMap1[NUM_OF_ROW][NUM_OF_COLUMN + 1] = 
+const static char chMap1[kMazeRowCount][kMazeColumnCount + 1] =
 {
     "X   *@ * @* ",
     "*** ** * ** ",
@@ -178,15 +175,15 @@ static D3DXVECTOR3 v3LookAt(v3CurrentLookAt);
 static D3DXVECTOR3 v3Eye(0.0f, 5.0f, 0.0f);
 static D3DXVECTOR3 v3Up(0.0f, 1.0f, 0.0f);
 static D3DXVECTOR3 v3DefaultPosition(0.0f, 0.0f, 0.0f);
-const static D3DXVECTOR3 v3StartPosition(55.0f, LENGTH_OF_TILE / 2, -65.0f);
+const static D3DXVECTOR3 v3StartPosition(55.0f, kTileSize / 2, -65.0f);
 
-static CUSTOMVERTEX TileVertices[4 * NUM_OF_ROW * NUM_OF_COLUMN];
-static CUSTOMVERTEX WallVertices[4][4 * NUM_OF_ROW];
-static CUSTOMVERTEX WallVertices2[4][4 * NUM_OF_ROW];
+static CUSTOMVERTEX TileVertices[4 * kMazeRowCount * kMazeColumnCount];
+static CUSTOMVERTEX WallVertices[4][4 * kMazeRowCount];
+static CUSTOMVERTEX WallVertices2[4][4 * kMazeRowCount];
 
 static CUSTOMVERTEX MazeWallVertices[72][20];
 
-static WORD wTileIndices[2 * NUM_OF_ROW * NUM_OF_COLUMN][3];
+static WORD wTileIndices[2 * kMazeRowCount * kMazeColumnCount][3];
 
 // 자유 시점으로 전환하기 위해, 현재 플레이어 위치 및 lookat 정보 저장해두기
 static D3DXMATRIX mtSavedWorld;
@@ -197,7 +194,7 @@ static DWORD FPS_Frames = 0;
 static DWORD FPS_Num = 0, FPS_LastTime = timeGetTime();
 static DWORD FPS_Time;
 
-// tile culling 수정: 정사각형 중심으로부터 거리가 변의 길이의 절반 이하(d <= LENGTH_OF_TILE / 2) culling 해주어야 함.
+// tile culling 수정: 정사각형 중심으로부터 거리가 변의 길이의 절반 이하(d <= kTileSize / 2) culling 해주어야 함.
 // 추가할 기능: 플레이어 시점이 qe가 아닌 마우스 움직임에 따라 변하면 좋을 듯? ==> 창모드에서는 뭔가뭔가임 창 밖에서 마우스 움직임 제어는 어케
 
 //// 미로 찾기 게임

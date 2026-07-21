@@ -16,7 +16,7 @@ VOID CExit::ButtonPressed()
 	bIsPressed = TRUE;
 	for (int i = 0; i < 4; i++)
 	{
-		m_ExitButtonVertices[i].VerColor = BUTTON_PRESSED;
+		m_ExitButtonVertices[i].VerColor = kButtonPressedColor;
 	}
 }
 VOID CExit::ButtonUnpressed()
@@ -24,7 +24,7 @@ VOID CExit::ButtonUnpressed()
 	bIsPressed = FALSE;
 	for (int i = 0; i < 4; i++)
 	{
-		m_ExitButtonVertices[i].VerColor = BUTTON_DEFAULT;
+		m_ExitButtonVertices[i].VerColor = kButtonDefaultColor;
 	}
 }
 BOOL CExit::IsButtonPressed()

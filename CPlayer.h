@@ -65,7 +65,7 @@ public:
 		return &m_FlashLight;
 	}
 
-	BOOL Move(MOVE_DIRECTION direction, const char (*map)[NUM_OF_COLUMN+1], BOOL NoClip);
+	BOOL Move(MOVE_DIRECTION direction, const char (*map)[kMazeColumnCount+1], BOOL NoClip);
 	VOID Rotate(BOOL bIsCCW);
 	VOID Rotate(BOOL bIsCCW, BOOL bIsUpDown, FLOAT angle);
 	VOID Attack(LPPOINT CursorPosition);

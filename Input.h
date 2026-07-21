@@ -1,12 +1,15 @@
 ﻿#pragma once
 #include <Windows.h>
 
-#define KEY_UP_REP		0 // 키가 계속 안눌리는 상태
-#define KEY_DOWN		1 // 키가 눌린 상태 (떼졌다가 눌림)
-#define KEY_DOWN_REP	2 // 키가 계속 눌리는 상태
-#define KEY_UP			3 // 키가 안눌린 상태(눌렸다가 떼짐)
+enum class KeyState
+{
+    Idle,       // 계속 눌리지 않은 상태
+    Pressed,    // 이번 프레임에 눌림
+    Held,       // 계속 눌린 상태
+    Released    // 이번 프레임에 떼어짐
+};
 
-static int nKeyState[255];
+static KeyState nKeyState[255];
 
 VOID InitInput();
 VOID UpdateInput();

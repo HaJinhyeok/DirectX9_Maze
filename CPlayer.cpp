@@ -2,10 +2,10 @@
 
 namespace
 {
-	bool IsWall(const char (*map)[NUM_OF_COLUMN + 1], int row, int column)
+	bool IsWall(const char (*map)[kMazeColumnCount + 1], int row, int column)
 	{
-		if (row < 0 || row >= NUM_OF_ROW ||
-			column < 0 || column >= NUM_OF_COLUMN)
+		if (row < 0 || row >= kMazeRowCount ||
+			column < 0 || column >= kMazeColumnCount)
 		{
 			return false;
 		}
@@ -19,10 +19,8 @@ CPlayer::CPlayer()
 	D3DXMATRIX tmpMatrix;
 	// 일반화된 m by n matrix로 미로 정보를 받게 되면 수정해야함
 	// 현재는 고정된 위치 시작
-	//m_Position = D3DXVECTOR3(55.0f, LENGTH_OF_TILE / 2, -65.0f);
-	//m_LookAt = m_Position;
 	m_LookAt = v3StartPosition;
-	m_LookAt.z += LOOKAT_DISTANCE;
+	m_LookAt.z += kLookAtDistance;
 	// player world matrix initialization
 	D3DXMatrixIdentity(&m_PlayerWorld);
 	D3DXMatrixTranslation(&m_PlayerWorld, v3StartPosition.x, v3StartPosition.y, v3StartPosition.z);
@@ -60,7 +58,7 @@ CPlayer::CPlayer()
 // PLAYER MOVE
 // 바꾸어야 할 것: 플레이어 위치, 플레이어 LookAt
 // 필요한 것: 플레이어가 움직일 방향 벡터, 거리, 플에이어 현 위치, 플레이어 현 LookAt, 맵 정보
-BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[NUM_OF_COLUMN + 1], BOOL NoClip)
+BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[kMazeColumnCount + 1], BOOL NoClip)
 {
 	DWORD currentTime = timeGetTime();
 	if (currentTime - m_CurrentMoveTime < 10) return FALSE;
@@ -68,7 +66,7 @@ BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[NUM_OF_COLUMN + 1]
 
 	D3DXVECTOR3 vecDirection, tmpPosition; // 벽을 생각하지 않고 이동된 위치. 주변 8개 벽과 이것을 대조해 최종 위치 결정
 	D3DXVECTOR3 currentPosition = GetPosition();
-	FLOAT fCoefficient = TRANSLATION_DISTANCE;
+	FLOAT fCoefficient = kPlayerMoveDistance;
 	int i, nCoX, nCoZ;
 
 	// y축 움직임은 없으므로 y축 정보는 걍 빼고 계산
@@ -123,8 +121,8 @@ BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[NUM_OF_COLUMN + 1]
 		// 충돌을 검사할 블록의 왼쪽아래(minX, minZ)와 오른쪽위(maxX,maxZ) 두 점
 		D3DXVECTOR2 WallPoint[2];
 		// 현재 좌표
-		nCoX = static_cast<int>(floorf(currentPosition.x / LENGTH_OF_TILE)) + NUM_OF_COLUMN / 2;
-		nCoZ = NUM_OF_ROW / 2 - static_cast<int>(floorf(currentPosition.z / LENGTH_OF_TILE)) - 1;
+		nCoX = static_cast<int>(floorf(currentPosition.x / kTileSize)) + kMazeColumnCount / 2;
+		nCoZ = kMazeRowCount / 2 - static_cast<int>(floorf(currentPosition.z / kTileSize)) - 1;
 		// 해결: 외곽 벽에 부딪히는 경우 추가, 몇몇 곳에서 블록 속으로 들어가버리는 버그 수정하기
 		// x축 음의 방향으로 이동일 경우
 		if (vecDirection.x < 0)
@@ -135,24 +133,24 @@ BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[NUM_OF_COLUMN + 1]
 				// 제일 외곽 벽일 경우 따로 검사
 				if (nCoX == 0)
 				{
-					if (tmpPosition.x - PLAYER_RADIUS <= -NUM_OF_COLUMN / 2 * LENGTH_OF_TILE)
+					if (tmpPosition.x - kPlayerRadius <= -kMazeColumnCount / 2 * kTileSize)
 					{
-						tmpPosition.x = -NUM_OF_COLUMN / 2 * LENGTH_OF_TILE + PLAYER_RADIUS;
+						tmpPosition.x = -kMazeColumnCount / 2 * kTileSize + kPlayerRadius;
 					}
 				}
 				else if (IsWall(map, nCoZ - 1 + i, nCoX - 1))
 				{
-					WallPoint[0].x = (nCoX - 1 - NUM_OF_COLUMN / 2) * LENGTH_OF_TILE;
-					WallPoint[0].y = (NUM_OF_ROW / 2 - (nCoZ - 1 + i) - 1) * LENGTH_OF_TILE;
-					WallPoint[1].x = (nCoX - NUM_OF_COLUMN / 2) * LENGTH_OF_TILE;
-					WallPoint[1].y = (NUM_OF_ROW / 2 - (nCoZ - 1 + i)) * LENGTH_OF_TILE;
+					WallPoint[0].x = (nCoX - 1 - kMazeColumnCount / 2) * kTileSize;
+					WallPoint[0].y = (kMazeRowCount / 2 - (nCoZ - 1 + i) - 1) * kTileSize;
+					WallPoint[1].x = (nCoX - kMazeColumnCount / 2) * kTileSize;
+					WallPoint[1].y = (kMazeRowCount / 2 - (nCoZ - 1 + i)) * kTileSize;
 
 					//충돌 시
-					if (WallPoint[0].x <= tmpPosition.x + PLAYER_RADIUS && WallPoint[1].x >= tmpPosition.x - PLAYER_RADIUS
-						&& WallPoint[0].y <= tmpPosition.z + PLAYER_RADIUS && WallPoint[1].y >= tmpPosition.z - PLAYER_RADIUS)
+					if (WallPoint[0].x <= tmpPosition.x + kPlayerRadius && WallPoint[1].x >= tmpPosition.x - kPlayerRadius
+						&& WallPoint[0].y <= tmpPosition.z + kPlayerRadius && WallPoint[1].y >= tmpPosition.z - kPlayerRadius)
 					{
 						if (IsWall(map, nCoZ, nCoX - 1))
-							tmpPosition.x = WallPoint[1].x + PLAYER_RADIUS + 0.1f;
+							tmpPosition.x = WallPoint[1].x + kPlayerRadius + 0.1f;
 						break;
 					}
 				}
@@ -165,26 +163,26 @@ BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[NUM_OF_COLUMN + 1]
 			{
 				// 현재 위치 기준 오른쪽 3개 블록에 대해 검사
 				// 제일 외곽 벽일 경우 따로 검사
-				if (nCoX == NUM_OF_COLUMN - 1)
+				if (nCoX == kMazeColumnCount - 1)
 				{
-					if (tmpPosition.x + PLAYER_RADIUS >= NUM_OF_COLUMN / 2 * LENGTH_OF_TILE)
+					if (tmpPosition.x + kPlayerRadius >= kMazeColumnCount / 2 * kTileSize)
 					{
-						tmpPosition.x = NUM_OF_COLUMN / 2 * LENGTH_OF_TILE - PLAYER_RADIUS;
+						tmpPosition.x = kMazeColumnCount / 2 * kTileSize - kPlayerRadius;
 					}
 				}
 				else if (IsWall(map, nCoZ - 1 + i, nCoX + 1))
 				{
-					WallPoint[0].x = (nCoX + 1 - NUM_OF_COLUMN / 2) * LENGTH_OF_TILE;
-					WallPoint[0].y = (NUM_OF_ROW / 2 - (nCoZ - 1 + i) - 1) * LENGTH_OF_TILE;
-					WallPoint[1].x = (nCoX + 2 - NUM_OF_COLUMN / 2) * LENGTH_OF_TILE;
-					WallPoint[1].y = (NUM_OF_ROW / 2 - (nCoZ - 1 + i)) * LENGTH_OF_TILE;
+					WallPoint[0].x = (nCoX + 1 - kMazeColumnCount / 2) * kTileSize;
+					WallPoint[0].y = (kMazeRowCount / 2 - (nCoZ - 1 + i) - 1) * kTileSize;
+					WallPoint[1].x = (nCoX + 2 - kMazeColumnCount / 2) * kTileSize;
+					WallPoint[1].y = (kMazeRowCount / 2 - (nCoZ - 1 + i)) * kTileSize;
 
 					//충돌 시
-					if (WallPoint[0].x <= tmpPosition.x + PLAYER_RADIUS && WallPoint[1].x >= tmpPosition.x - PLAYER_RADIUS
-						&& WallPoint[0].y <= tmpPosition.z + PLAYER_RADIUS && WallPoint[1].y >= tmpPosition.z - PLAYER_RADIUS)
+					if (WallPoint[0].x <= tmpPosition.x + kPlayerRadius && WallPoint[1].x >= tmpPosition.x - kPlayerRadius
+						&& WallPoint[0].y <= tmpPosition.z + kPlayerRadius && WallPoint[1].y >= tmpPosition.z - kPlayerRadius)
 					{
 						if (IsWall(map, nCoZ, nCoX + 1))
-							tmpPosition.x = WallPoint[0].x - PLAYER_RADIUS - 0.1f;
+							tmpPosition.x = WallPoint[0].x - kPlayerRadius - 0.1f;
 						break;
 					}
 				}
@@ -198,25 +196,25 @@ BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[NUM_OF_COLUMN + 1]
 			{
 				// 현재 위치 기준 아래쪽 3개 블록에 대해 검사
 				// 제일 외곽 벽일 경우 따로 검사
-				if (nCoZ == NUM_OF_ROW - 1)
+				if (nCoZ == kMazeRowCount - 1)
 				{
-					if (tmpPosition.z - PLAYER_RADIUS <= -NUM_OF_ROW / 2 * LENGTH_OF_TILE)
+					if (tmpPosition.z - kPlayerRadius <= -kMazeRowCount / 2 * kTileSize)
 					{
-						tmpPosition.z = -NUM_OF_ROW / 2 * LENGTH_OF_TILE + PLAYER_RADIUS;
+						tmpPosition.z = -kMazeRowCount / 2 * kTileSize + kPlayerRadius;
 					}
 				}
 				else if (IsWall(map, nCoZ + 1, nCoX - 1 + i))
 				{
-					WallPoint[0].x = (nCoX - 1 + i - NUM_OF_COLUMN / 2) * LENGTH_OF_TILE;
-					WallPoint[0].y = (NUM_OF_ROW / 2 - (nCoZ + 1) - 1) * LENGTH_OF_TILE;
-					WallPoint[1].x = (nCoX + i - NUM_OF_COLUMN / 2) * LENGTH_OF_TILE;
-					WallPoint[1].y = (NUM_OF_ROW / 2 - (nCoZ + 1)) * LENGTH_OF_TILE;
+					WallPoint[0].x = (nCoX - 1 + i - kMazeColumnCount / 2) * kTileSize;
+					WallPoint[0].y = (kMazeRowCount / 2 - (nCoZ + 1) - 1) * kTileSize;
+					WallPoint[1].x = (nCoX + i - kMazeColumnCount / 2) * kTileSize;
+					WallPoint[1].y = (kMazeRowCount / 2 - (nCoZ + 1)) * kTileSize;
 
 					//충돌 시
-					if (WallPoint[0].x <= tmpPosition.x + PLAYER_RADIUS && WallPoint[1].x >= tmpPosition.x - PLAYER_RADIUS
-						&& WallPoint[0].y <= tmpPosition.z + PLAYER_RADIUS && WallPoint[1].y >= tmpPosition.z - PLAYER_RADIUS)
+					if (WallPoint[0].x <= tmpPosition.x + kPlayerRadius && WallPoint[1].x >= tmpPosition.x - kPlayerRadius
+						&& WallPoint[0].y <= tmpPosition.z + kPlayerRadius && WallPoint[1].y >= tmpPosition.z - kPlayerRadius)
 					{
-						tmpPosition.z = WallPoint[1].y + PLAYER_RADIUS + 0.1f;
+						tmpPosition.z = WallPoint[1].y + kPlayerRadius + 0.1f;
 						break;
 					}
 				}
@@ -231,23 +229,23 @@ BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[NUM_OF_COLUMN + 1]
 				// 제일 외곽 벽일 경우 따로 검사
 				if (nCoZ == 0)
 				{
-					if (tmpPosition.z + PLAYER_RADIUS >= NUM_OF_ROW / 2 * LENGTH_OF_TILE)
+					if (tmpPosition.z + kPlayerRadius >= kMazeRowCount / 2 * kTileSize)
 					{
-						tmpPosition.z = NUM_OF_ROW / 2 * LENGTH_OF_TILE - PLAYER_RADIUS;
+						tmpPosition.z = kMazeRowCount / 2 * kTileSize - kPlayerRadius;
 					}
 				}
 				else if (IsWall(map, nCoZ - 1, nCoX - 1 + i))
 				{
-					WallPoint[0].x = (nCoX - 1 + i - NUM_OF_COLUMN / 2) * LENGTH_OF_TILE;
-					WallPoint[0].y = (NUM_OF_ROW / 2 - (nCoZ - 1) - 1) * LENGTH_OF_TILE;
-					WallPoint[1].x = (nCoX + i - NUM_OF_COLUMN / 2) * LENGTH_OF_TILE;
-					WallPoint[1].y = (NUM_OF_ROW / 2 - (nCoZ - 1)) * LENGTH_OF_TILE;
+					WallPoint[0].x = (nCoX - 1 + i - kMazeColumnCount / 2) * kTileSize;
+					WallPoint[0].y = (kMazeRowCount / 2 - (nCoZ - 1) - 1) * kTileSize;
+					WallPoint[1].x = (nCoX + i - kMazeColumnCount / 2) * kTileSize;
+					WallPoint[1].y = (kMazeRowCount / 2 - (nCoZ - 1)) * kTileSize;
 
 					//충돌 시
-					if (WallPoint[0].x <= tmpPosition.x + PLAYER_RADIUS && WallPoint[1].x >= tmpPosition.x - PLAYER_RADIUS
-						&& WallPoint[0].y <= tmpPosition.z + PLAYER_RADIUS && WallPoint[1].y >= tmpPosition.z - PLAYER_RADIUS)
+					if (WallPoint[0].x <= tmpPosition.x + kPlayerRadius && WallPoint[1].x >= tmpPosition.x - kPlayerRadius
+						&& WallPoint[0].y <= tmpPosition.z + kPlayerRadius && WallPoint[1].y >= tmpPosition.z - kPlayerRadius)
 					{
-						tmpPosition.z = WallPoint[0].y - PLAYER_RADIUS - 0.1f;
+						tmpPosition.z = WallPoint[0].y - kPlayerRadius - 0.1f;
 						break;
 					}
 				}
@@ -264,7 +262,7 @@ BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[NUM_OF_COLUMN + 1]
 
 	if (!NoClip)
 	{
-		tmpPosition.y = LENGTH_OF_TILE / 2;
+		tmpPosition.y = kTileSize / 2;
 	}
 
 	// world matrix도 translate해주기
@@ -288,7 +286,7 @@ VOID CPlayer::Rotate(BOOL bIsCCW)
 	// 이 함수는 좌우 회전만 하므로, CalculateAngle 불필요
 	D3DXMATRIX mtRotation, mtTranslation;
 	D3DXVECTOR3 currentPosition = GetPosition();
-	FLOAT fCoefficient = LOOKAT_DISTANCE;
+	FLOAT fCoefficient = kLookAtDistance;
 	D3DXVECTOR3 v3Axis = D3DXVECTOR3(m_PlayerWorld._21, m_PlayerWorld._22, m_PlayerWorld._23);
 
 	D3DXMatrixTranslation(&mtTranslation, -currentPosition.x, -currentPosition.y, -currentPosition.z);
@@ -296,11 +294,11 @@ VOID CPlayer::Rotate(BOOL bIsCCW)
 
 	if (bIsCCW == TRUE)
 	{
-		D3DXMatrixRotationY(&mtRotation, -ROTATION_AMOUNT);
+		D3DXMatrixRotationY(&mtRotation, -kRotationAmount);
 	}
 	else
 	{
-		D3DXMatrixRotationY(&mtRotation, ROTATION_AMOUNT);
+		D3DXMatrixRotationY(&mtRotation, kRotationAmount);
 	}
 	D3DXMatrixMultiply(&m_PlayerWorld, &m_PlayerWorld, &mtRotation);
 
@@ -327,7 +325,7 @@ VOID CPlayer::Rotate(BOOL bIsCCW, BOOL bIsUpDown, FLOAT angle)
 	D3DXVECTOR3 v3RotationAxis;
 	D3DXVECTOR3 currentPosition = GetPosition();
 	D3DXQUATERNION vQuart;
-	FLOAT fCoefficient = LOOKAT_DISTANCE;
+	FLOAT fCoefficient = kLookAtDistance;
 
 	D3DXMatrixTranslation(&mtTranslation, -currentPosition.x, -currentPosition.y, -currentPosition.z);
 	D3DXMatrixMultiply(&m_PlayerWorld, &m_PlayerWorld, &mtTranslation);
@@ -356,7 +354,7 @@ VOID CPlayer::Rotate(BOOL bIsCCW, BOOL bIsUpDown, FLOAT angle)
 		if (bIsCCW == TRUE)
 		{
 			// 밑으로 너무 숙이면 회전 안시킴
-			if (fAngle + ROTATION_AMOUNT > D3DXToRadian(175.0f))
+			if (fAngle + kRotationAmount > D3DXToRadian(175.0f))
 			{
 				D3DXMatrixTranslation(&mtTranslation, currentPosition.x, currentPosition.y, currentPosition.z);
 				D3DXMatrixMultiply(&m_PlayerWorld, &m_PlayerWorld, &mtTranslation);
@@ -368,7 +366,7 @@ VOID CPlayer::Rotate(BOOL bIsCCW, BOOL bIsUpDown, FLOAT angle)
 		else
 		{
 			// 위로 너무 올라가면 회전 안시킴
-			if (fAngle - ROTATION_AMOUNT < D3DXToRadian(5.0f))
+			if (fAngle - kRotationAmount < D3DXToRadian(5.0f))
 			{
 				D3DXMatrixTranslation(&mtTranslation, currentPosition.x, currentPosition.y, currentPosition.z);
 				D3DXMatrixMultiply(&m_PlayerWorld, &m_PlayerWorld, &mtTranslation);

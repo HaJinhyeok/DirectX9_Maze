@@ -372,6 +372,116 @@
 
 - Roadmap의 `P2-02`를 완료로 변경했다.
 - 다음 작업은 `P2-03 상수 정의 정리`다.
+
+## 2026-07-21 - 상수 정의 방식 분석
+
+### 현재 상태
+
+- `main.h`, `Input.h`, `XFileUtil.h`에 값과 문자열 상수가 전처리 매크로로 정의되어 있다.
+- 단순 값, 색상, 경로, FVF 조합과 입력 상태가 같은 방식으로 표현되어 용도 구분이 어렵다.
+- 프로젝트 설정에 명시적인 C++ 언어 표준 옵션이 없어 현재 MSVC 기본 표준을 기준으로 안전하게 변경해야 한다.
+
+### 분류
+
+- 창 크기, 수치, 문자열 경로와 색상은 `constexpr` 전환 대상이다.
+- `D3DFVF_CUSTOMVERTEX`, `D3DFVF_UI_VERTEX`는 DirectX FVF 매크로 조합으로 유지한다.
+- `SQRT2`는 `sqrtf()` 매크로 호출 대신 명시적인 컴파일 시간 상수로 전환한다.
+- `KEY_UP_REP`, `KEY_DOWN`, `KEY_DOWN_REP`, `KEY_UP`은 닫힌 상태 집합이므로 단순 상수 치환보다 `enum class` 전환 대상으로 분리한다.
+- 사용처가 없는 `X_MOVE`, `Z_MOVE`, `ROTATION_AMOUNT_TIGER`는 삭제 후보로 확인했다.
+- `D3DXVECTOR3`와 맵 배열의 기존 `const static` 객체는 전역 상태 축소 단계 전까지 유지한다.
+
+### 적용 순서
+
+1. 미사용 매크로를 제거한다.
+2. `main.h`의 일반 값과 문자열을 `constexpr`로 전환한다.
+3. `XFileUtil.h`의 호랑이 수치 상수를 `constexpr`로 전환한다.
+4. 입력 상태를 `enum class`로 전환한다.
+5. 이전 매크로 이름 검색과 `Debug|x86` 빌드로 검증한다.
+
+### 상태
+
+- Roadmap의 `P2-03`을 진행 중으로 변경했다.
+
+### 미사용 매크로 제거 결과
+
+- `X_MOVE`, `Z_MOVE`, `ROTATION_AMOUNT_TIGER` 정의를 삭제했다.
+- 현재 C++ 소스와 헤더에 세 이름이 남아 있지 않음을 확인했다.
+- `Debug|x86` 전체 재빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+
+### 창 및 프로그램 상수 전환 결과
+
+- `WINDOW_WIDTH`, `WINDOW_HEIGHT`, `PROGRAM_NAME`을 각각 `kWindowWidth`, `kWindowHeight`, `kProgramName` `constexpr` 상수로 전환했다.
+- `main.cpp`의 모든 사용처가 새 이름을 사용하며 이전 매크로 이름이 남아 있지 않음을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+
+### 텍스처 경로 상수 전환 결과
+
+- 여섯 `TEXTURE_*` 매크로를 용도가 드러나는 `k*TexturePath` `constexpr` 문자열 상수로 전환했다.
+- `main.cpp`의 텍스처 생성 호출이 새 이름을 사용하며 이전 텍스처 매크로 이름이 남아 있지 않음을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+
+### 일반 수치 상수 전환 중간 검증
+
+- `main.h`에서 다섯 매크로 정의를 `kEpsilon`, `kPlayerMoveDistance`, `kLookAtDistance`, `kPlayerRadius`, `kBulletRadius`로 전환했다.
+- 소스 파일의 기존 이름 사용처가 아직 변경되지 않아 `Debug|x86` 빌드가 오류 36개로 실패했다.
+- 정의와 사용처를 함께 변경한 뒤 다시 빌드해야 한다.
+
+### 일반 수치 및 회전 상수 사용처 전환 결과
+
+- 다섯 일반 수치 상수의 소스 사용처를 새 이름으로 변경했다.
+- `SQRT2`, `ROTATION_AMOUNT`, 수평·수직 마우스 감도 매크로를 `kSqrt2`, `kRotationAmount`, `kMouseHorizontalRotationSensitivity`, `kMouseVerticalRotationSensitivity`로 전환했다.
+- 누락된 사용처를 보완한 뒤 `Debug|x86` 전체 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+- 마우스 감도 상수의 `auto` 타입과 주석에 남은 `PLAYER_RADIUS` 표기는 후속 정리 대상으로 확인했다.
+
+### 일반 수치 상수 후속 정리 결과
+
+- 마우스 수평·수직 회전 감도 상수의 타입을 `auto`에서 `float`로 명시했다.
+- 주석에 남은 `PLAYER_RADIUS` 표기를 `kPlayerRadius`로 변경했다.
+- `Debug|x86` 전체 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+
+### 호랑이 및 공간 상수 전환 중간 검증
+
+- `TRANSLATION_DISTANCE_TIGER`, `SCALE_AMOUNT_TIGER`, `NUM_OF_COLUMN`, `NUM_OF_ROW`, `LENGTH_OF_TILE`, `LENGTH_OF_SKYBOX_SURFACE`의 정의를 매크로에서 명시적 타입의 `constexpr`로 전환했다.
+- 기존 `UPPER_SNAKE_CASE` 이름과 사용처는 유지되어 있어 `kPascalCase` 네이밍 전환이 추가로 필요하다.
+- 현재 상태의 `Debug|x86` 전체 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+
+### 호랑이 및 공간 상수 이름 전환 결과
+
+- 호랑이 이동·크기와 미로 행·열·타일·스카이박스 상수 여섯 개를 `kPascalCase` 이름으로 변경했다.
+- 코드의 모든 사용처가 새 이름을 사용하는 것을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+- `CPlayer.cpp`와 `main.h`의 주석에는 `LENGTH_OF_TILE`이 남아 있으며, `main.h`의 맵 선언 줄 끝 공백도 후속 정리 대상으로 확인했다.
+
+### 호랑이 및 공간 상수 후속 정리 결과
+
+- `CPlayer.cpp`와 `main.h`의 주석에 남은 `LENGTH_OF_TILE`을 `kTileSize`로 변경했다.
+- `main.h`의 맵 선언 줄 끝 공백을 제거했다.
+- 이전 이름 검색과 `git diff --check`로 잔여 항목이 없음을 확인했다.
+
+### 색상 상수 전환 결과
+
+- `TRANSPARENCY_COLOR`, `BUTTON_DEFAULT`, `BUTTON_PRESSED`를 `kTextureColorKey`, `kButtonDefaultColor`, `kButtonPressedColor` `constexpr D3DCOLOR` 상수로 전환했다.
+- `main.cpp`, `CExit.h`, `CExit.cpp`의 모든 사용처가 새 이름을 사용하는 것을 확인했다.
+- DirectX SDK의 `D3DCOLOR_ARGB`, `D3DCOLOR_XRGB` 생성 매크로는 유지했다.
+- `Debug|x86` 전체 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+
+### 입력 상태 열거형 전환 및 P2-03 완료
+
+- `Input.h`의 네 입력 상태 매크로를 `enum class KeyState`의 `Idle`, `Pressed`, `Held`, `Released` 값으로 전환했다.
+- 입력 상태 배열의 타입을 `int`에서 `KeyState`로 변경하고 `Input.cpp`의 모든 대입과 비교를 열거형 값으로 통일했다.
+- 이전 `KEY_*` 상태 매크로가 남아 있지 않음을 확인했다.
+- 프로젝트에 남은 `D3DFVF_CUSTOMVERTEX`, `D3DFVF_UI_VERTEX`는 DirectX 정점 포맷 조합이므로 의도적으로 유지한다.
+- `Debug|x86` 전체 빌드에 성공했으며 경고 0개, 오류 0개다.
+- Roadmap의 `P2-03`을 완료했으며 `P2-04`는 다음 작업으로 남겼다.
+
 ## 2026-07-21 - 학습 기록 체계 추가
 
 ### 문서화

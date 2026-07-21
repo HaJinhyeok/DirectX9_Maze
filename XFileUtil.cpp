@@ -9,7 +9,7 @@ CXFileUtil::CXFileUtil(D3DXVECTOR3 position)
 	g_dwNumMaterials = 0L; // 메쉬 재질의 개수
 
 	// scale 먼저 하고 translation
-	D3DXMatrixScaling(&m_TigerWorld, SCALE_AMOUNT_TIGER, SCALE_AMOUNT_TIGER, SCALE_AMOUNT_TIGER * 2.0f / 3.0f);
+	D3DXMatrixScaling(&m_TigerWorld, kTigerScale, kTigerScale, kTigerScale * 2.0f / 3.0f);
 	D3DXMATRIX tmpMat;
 	D3DXMatrixTranslation(&tmpMat, position.x, position.y, position.z);
 	D3DXMatrixMultiply(&m_TigerWorld, &m_TigerWorld, &tmpMat);
@@ -120,7 +120,7 @@ int CXFileUtil::XFileDisplay(LPDIRECT3DDEVICE9 pD3DDevice)
 	return 0;
 }
 
-VOID CXFileUtil::Move(const char(*map)[NUM_OF_COLUMN + 1])
+VOID CXFileUtil::Move(const char(*map)[kMazeColumnCount + 1])
 {
 	DWORD currentTime = timeGetTime();
 	if (currentTime - m_CurrentTime >= 10)
@@ -133,13 +133,13 @@ VOID CXFileUtil::Move(const char(*map)[NUM_OF_COLUMN + 1])
 		D3DXVECTOR3 currentLookAt = D3DXVECTOR3(-m_TigerWorld._31, -m_TigerWorld._32, -m_TigerWorld._33);
 		D3DXVec3Normalize(&currentLookAt, &currentLookAt);
 		D3DXVECTOR3 currentPosition = D3DXVECTOR3(m_TigerWorld._41, m_TigerWorld._42, m_TigerWorld._43);
-		FLOAT tmpX = currentPosition.x / LENGTH_OF_TILE, tmpZ = currentPosition.z / LENGTH_OF_TILE;
+		FLOAT tmpX = currentPosition.x / kTileSize, tmpZ = currentPosition.z / kTileSize;
 		tmpX -= floorf(tmpX);
 		tmpZ -= floorf(tmpZ);
 		// 우선, 현재 호랑이가 블록 정가운데 위치해있는지 확인
-		if (tmpX <= 0.5f + EPSILON && tmpX >= 0.5f - EPSILON)
+		if (tmpX <= 0.5f + kEpsilon && tmpX >= 0.5f - kEpsilon)
 		{
-			if (tmpZ <= 0.50f + EPSILON && tmpZ >= 0.5f - EPSILON)
+			if (tmpZ <= 0.50f + kEpsilon && tmpZ >= 0.5f - kEpsilon)
 			{
 				//OutputDebugString("center of block\n");
 				if (m_IsRotating == TRUE)
@@ -153,8 +153,8 @@ VOID CXFileUtil::Move(const char(*map)[NUM_OF_COLUMN + 1])
 				else
 				{
 					// 현재 좌표
-					int nCoX = static_cast<int>(floorf(currentPosition.x / LENGTH_OF_TILE)) + NUM_OF_COLUMN / 2;
-					int nCoZ = NUM_OF_ROW / 2 - static_cast<int>(floorf(currentPosition.z / LENGTH_OF_TILE)) - 1;
+					int nCoX = static_cast<int>(floorf(currentPosition.x / kTileSize)) + kMazeColumnCount / 2;
+					int nCoZ = kMazeRowCount / 2 - static_cast<int>(floorf(currentPosition.z / kTileSize)) - 1;
 					// random_device로 시드값 생성해 메르센 트위스트 알고리즘으로 난수 생성
 					mt19937 m_Engine(m_Random());
 
@@ -174,7 +174,7 @@ VOID CXFileUtil::Move(const char(*map)[NUM_OF_COLUMN + 1])
 							m_IsWallOpen[0] = TRUE;
 						}
 						// 1 - 하
-						if (nCoZ == NUM_OF_ROW - 1)
+						if (nCoZ == kMazeRowCount - 1)
 						{
 							m_IsWallOpen[1] = FALSE;
 						}
@@ -201,7 +201,7 @@ VOID CXFileUtil::Move(const char(*map)[NUM_OF_COLUMN + 1])
 							m_IsWallOpen[2] = TRUE;
 						}
 						// 3 - 우
-						if (nCoX == NUM_OF_COLUMN - 1)
+						if (nCoX == kMazeColumnCount - 1)
 						{
 							m_IsWallOpen[3] = FALSE;
 						}
@@ -218,7 +218,7 @@ VOID CXFileUtil::Move(const char(*map)[NUM_OF_COLUMN + 1])
 					// 진행 방향이 막혀있을 경우
 					// 진행 방향이 열려있고, 왼쪽과 오른쪽이 막혀있을 경우 == 일단은 그냥 직진
 					// 진행 방향이 열려있고, 왼쪽 또는 오른쪽도 열려있을 경우 == 일단은 회전, 몇 갈래인지 카운트해서 랜덤하게 회전시켜 진행
-					if (currentLookAt.x > 0 && fabsf(currentLookAt.z) <= EPSILON)
+					if (currentLookAt.x > 0 && fabsf(currentLookAt.z) <= kEpsilon)
 					{
 						// +x direction
 						if (m_IsWallOpen[3] == FALSE)
@@ -308,7 +308,7 @@ VOID CXFileUtil::Move(const char(*map)[NUM_OF_COLUMN + 1])
 							}
 						}
 					}
-					else if (currentLookAt.x < 0 && fabsf(currentLookAt.z) <= EPSILON)
+					else if (currentLookAt.x < 0 && fabsf(currentLookAt.z) <= kEpsilon)
 					{
 						// -x direction
 						if (m_IsWallOpen[2] == FALSE)
@@ -397,7 +397,7 @@ VOID CXFileUtil::Move(const char(*map)[NUM_OF_COLUMN + 1])
 							}
 						}
 					}
-					else if (currentLookAt.z > 0 && fabsf(currentLookAt.x) <= EPSILON)
+					else if (currentLookAt.z > 0 && fabsf(currentLookAt.x) <= kEpsilon)
 					{
 						// +z direction
 						if (m_IsWallOpen[0] == FALSE)
@@ -487,7 +487,7 @@ VOID CXFileUtil::Move(const char(*map)[NUM_OF_COLUMN + 1])
 							}
 						}
 					}
-					else if (currentLookAt.z < 0 && fabsf(currentLookAt.x) <= EPSILON)
+					else if (currentLookAt.z < 0 && fabsf(currentLookAt.x) <= kEpsilon)
 					{
 						// -z direction
 						if (m_IsWallOpen[1] == FALSE)
@@ -599,7 +599,7 @@ VOID CXFileUtil::Move(const char(*map)[NUM_OF_COLUMN + 1])
 		else if (m_IsRotating == FALSE)
 		{
 			D3DXMATRIX tmpTranslation;
-			FLOAT fCoefficient = TRANSLATION_DISTANCE_TIGER;
+			FLOAT fCoefficient = kTigerMoveDistance;
 			fCoefficient /= sqrtf(currentLookAt.x * currentLookAt.x + currentLookAt.y * currentLookAt.y + currentLookAt.z * currentLookAt.z);
 			D3DXMatrixTranslation(&tmpTranslation, currentLookAt.x * fCoefficient, currentLookAt.y * fCoefficient, currentLookAt.z * fCoefficient);
 			D3DXMatrixMultiply(&m_TigerWorld, &m_TigerWorld, &tmpTranslation);
