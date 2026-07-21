@@ -39,15 +39,15 @@ D3DLIGHT9 skyLight;
 
 DWORD dwRotationTime = timeGetTime();
 
-CPlayer player;
-vector<CNotice> notice;
-CExit Exit;
-CSetting setting;
-CFrame FPS;
+CPlayer g_player;
+vector<CNotice> g_notices;
+CExit g_mazeExit;
+CSetting g_settingsOverlay;
+CFrame g_fpsCounter;
 // 프레임 값에 상관없이 플레이어 및 호랑이 움직임이 일정하도록 조절하기 위한 스톱워치
 Stopwatch PlayerWatch, TigerWatch;
-CXFileUtil X_Tiger(D3DXVECTOR3(55.0f, 5.0f, 65.0f));
-CSkyBox SkyBox;
+CXFileUtil g_tiger(D3DXVECTOR3(55.0f, 5.0f, 65.0f));
+CSkyBox g_skyBox;
 
 CFrustum* g_pFrustum = new CFrustum;
 RECT rt, rtExitButton;
@@ -89,14 +89,14 @@ VOID InitGeometry()
 	int i, j;
 
 	InitInput();
-	FPS.Initialize();
+	g_fpsCounter.Initialize();
 	// skybox texture load
-	SkyBox.LoadTexture();
-	SkyBox.CreateVertexBuffer();
+	g_skyBox.LoadTexture();
+	g_skyBox.CreateVertexBuffer();
 	// tiger initialization
-	X_Tiger.XFileLoad(g_pd3dDevice, chFileName);
-	X_Tiger.SetPosition(D3DXVECTOR3(55.0f, 5.0f, 65.0f));
-	X_Tiger.SetLookAt(player.GetPosition());
+	g_tiger.XFileLoad(g_pd3dDevice, chFileName);
+	g_tiger.SetPosition(D3DXVECTOR3(55.0f, 5.0f, 65.0f));
+	g_tiger.SetLookAt(g_player.GetPosition());
 
 	SetRect(&rtExitButton, 300, 450, 400, 500);
 
@@ -132,7 +132,7 @@ VOID InitGeometry()
 	D3DXCreateCubeTextureFromFile(g_pd3dDevice, TEXTURE_SKYBOX, &g_pSkyboxTexture);
 
 	//// 미궁 내 벽을 구성할 vertex들의 buffer 생성
-	GenerateMazeWall(1, MazeWallVertices, &notice, &Exit);
+	GenerateMazeWall(1, MazeWallVertices, &g_notices, &g_mazeExit);
 	g_pd3dDevice->CreateVertexBuffer(sizeof(CUSTOMVERTEX) * 72 * 20, 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &g_pMazeVB, NULL);
 	VOID** MazeVertices;
 	g_pMazeVB->Lock(0, sizeof(CUSTOMVERTEX) * 72 * 20, (void**)&MazeVertices, 0);
@@ -140,12 +140,12 @@ VOID InitGeometry()
 	g_pMazeVB->Unlock();
 
 	//// Notice를 구성하는 vertex buffer 생성
-	for (i = 0; i < notice[0].GetNumOfNotice(); i++)
+	for (i = 0; i < g_notices[0].GetNumOfNotice(); i++)
 	{
-		notice[i].MakeNoticeVB(g_pd3dDevice);
+		g_notices[i].MakeNoticeVB(g_pd3dDevice);
 	}
 	//// Exit vertex buffer 생성
-	Exit.MakeNoticeVB(g_pd3dDevice);
+	g_mazeExit.MakeNoticeVB(g_pd3dDevice);
 
 	// tile vertex 좌표 입력
 	{
@@ -368,10 +368,10 @@ VOID CleanUp()
 	SafeRelease(g_pWallTexture);
 	SafeRelease(g_pTileTexture);
 
-	Exit.ReleaseNoticeVB();
-	for (int i = 0; i < notice[0].GetNumOfNotice(); i++)
+	g_mazeExit.ReleaseNoticeVB();
+	for (int i = 0; i < g_notices[0].GetNumOfNotice(); i++)
 	{
-		notice[i].ReleaseNoticeVB();
+		g_notices[i].ReleaseNoticeVB();
 	}
 	SafeRelease(g_pMazeVB);
 	SafeRelease(g_pWallVB2);
@@ -401,9 +401,9 @@ VOID UpdateGameStateFromInput()
 	if (!bIsPaused && bIsPlaying)
 	{
 		// 총알 움직임 계산
-		player.MoveBullet();
+		g_player.MoveBullet();
 		// 호랑이 움직임 계산
-		X_Tiger.Move(chMap1);
+		g_tiger.Move(chMap1);
 	}
 
 	// wasd 또는 방향키 : 플레이어 앞뒤좌우 움직임
@@ -414,33 +414,33 @@ VOID UpdateGameStateFromInput()
 
 	if (GetAsyncKeyState('A') || GetAsyncKeyState(VK_LEFT))
 	{
-		bIsMoved = player.Move(MOVE_DIRECTION::left, chMap1, bIsNoClipOn);
+		bIsMoved = g_player.Move(MOVE_DIRECTION::left, chMap1, bIsNoClipOn);
 	}
 	if (GetAsyncKeyState('D') || GetAsyncKeyState(VK_RIGHT))
 	{
-		bIsMoved = player.Move(MOVE_DIRECTION::right, chMap1, bIsNoClipOn);
+		bIsMoved = g_player.Move(MOVE_DIRECTION::right, chMap1, bIsNoClipOn);
 	}
 	if (GetAsyncKeyState('W') || GetAsyncKeyState(VK_UP))
 	{
-		bIsMoved = player.Move(MOVE_DIRECTION::front, chMap1, bIsNoClipOn);
+		bIsMoved = g_player.Move(MOVE_DIRECTION::front, chMap1, bIsNoClipOn);
 	}
 	if (GetAsyncKeyState('S') || GetAsyncKeyState(VK_DOWN))
 	{
-		bIsMoved = player.Move(MOVE_DIRECTION::back, chMap1, bIsNoClipOn);
+		bIsMoved = g_player.Move(MOVE_DIRECTION::back, chMap1, bIsNoClipOn);
 	}
 	// Notice & Exit rotation
 	if (bIsMoved)
 	{
-		for (i = 0; i < notice[0].GetNumOfNotice(); i++)
+		for (i = 0; i < g_notices[0].GetNumOfNotice(); i++)
 		{
-			notice[i].RotateNotice(player.GetPosition());
+			g_notices[i].RotateNotice(g_player.GetPosition());
 		}
-		Exit.RotateNotice(player.GetPosition());
+		g_mazeExit.RotateNotice(g_player.GetPosition());
 	}
 
-	for (i = 0; i < notice[0].GetNumOfNotice(); i++)
+	for (i = 0; i < g_notices[0].GetNumOfNotice(); i++)
 	{
-		if (notice[i].IsPossibleInteraction(player.GetPosition()) == TRUE)
+		if (g_notices[i].IsPossibleInteraction(g_player.GetPosition()) == TRUE)
 		{
 			bIsInteractive = TRUE;
 			bIsSkyView = TRUE;
@@ -452,16 +452,16 @@ VOID UpdateGameStateFromInput()
 			//bIsSkyView = FALSE;
 		}
 	}
-	bIsPlaying = Exit.IsPossibleInteraction(player.GetPosition()) ? FALSE : TRUE;
+	bIsPlaying = g_mazeExit.IsPossibleInteraction(g_player.GetPosition()) ? FALSE : TRUE;
 
 	// Q/E : 플레이어 CCW/CW 회전
 	if (GetAsyncKeyState('Q'))
 	{
-		player.Rotate(TRUE);
+		g_player.Rotate(TRUE);
 	}
 	if (GetAsyncKeyState('E'))
 	{
-		player.Rotate(FALSE);
+		g_player.Rotate(FALSE);
 	}
 	//// 추가 기능
 	{
@@ -495,13 +495,13 @@ VOID UpdateGameStateFromInput()
 		// player flashlight on/off
 		if (GetKeyDown('3') == TRUE)
 		{
-			if (player.IsFlashlightOn() == TRUE)
+			if (g_player.IsFlashlightOn() == TRUE)
 			{
-				player.SetFlashlight(FALSE);
+				g_player.SetFlashlight(FALSE);
 			}
 			else
 			{
-				player.SetFlashlight(TRUE);
+				g_player.SetFlashlight(TRUE);
 			}
 		}
 		// NoClip(FreeFly) on/off
@@ -511,14 +511,14 @@ VOID UpdateGameStateFromInput()
 			{
 				bIsNoClipOn = FALSE;
 				// 자유시점 종료 시, 저장해뒀던 player 정보 복구
-				player.SetPlayerWorld(mtSavedWorld);
-				player.SetLookAt(v3SavedLookAt);
+				g_player.SetPlayerWorld(mtSavedWorld);
+				g_player.SetLookAt(v3SavedLookAt);
 			}
 			else
 			{
 				bIsNoClipOn = TRUE;
-				mtSavedWorld = player.GetPlayerWorld();
-				v3SavedLookAt = player.GetLookAt();
+				mtSavedWorld = g_player.GetPlayerWorld();
+				v3SavedLookAt = g_player.GetLookAt();
 			}
 		}
 	}
@@ -539,11 +539,11 @@ VOID Render()
 	if (SUCCEEDED(g_pd3dDevice->BeginScene()))
 	{
 		int i, j;
-		D3DLIGHT9* p_light = player.GetPlayerLight();
+		D3DLIGHT9* p_light = g_player.GetPlayerLight();
 		// bIsSkyView == TRUE 이면 player의 spot light,
 		// FALSE 이면 하늘 시점에서 point light로 바꿔서 맵 전체가 어느 정도 보이게 하는 것도 좋을듯
 		g_pd3dDevice->SetLight(0, p_light);
-		if (player.IsFlashlightOn() == TRUE)
+		if (g_player.IsFlashlightOn() == TRUE)
 		{
 			g_pd3dDevice->LightEnable(0, TRUE);
 		}
@@ -556,7 +556,7 @@ VOID Render()
 		skyLight.Type = D3DLIGHT_SPOT;
 		skyLight.Diffuse = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 		skyLight.Direction = D3DXVECTOR3(0.0f, -1.0f, 0.0f);
-		skyLight.Position = player.GetPosition() + D3DXVECTOR3(0.0f, 10.0f, 0.0f); // 플레이어 머리 위에서 비추는 빛
+		skyLight.Position = g_player.GetPosition() + D3DXVECTOR3(0.0f, 10.0f, 0.0f); // 플레이어 머리 위에서 비추는 빛
 		skyLight.Range = 300.0f;
 		skyLight.Attenuation0 = 1.0f;
 		skyLight.Falloff = 1.0f;
@@ -570,9 +570,9 @@ VOID Render()
 		g_pd3dDevice->SetTransform(D3DTS_WORLD, &mtWorld);
 
 		D3DXMATRIX mtView;
-		D3DXVECTOR3 v3CurrentPosition = player.GetPosition();
-		D3DXVECTOR3 v3CurrentLookAt = player.GetLookAt();
-		D3DXMATRIX tmpPlayerWorld = player.GetPlayerWorld();
+		D3DXVECTOR3 v3CurrentPosition = g_player.GetPosition();
+		D3DXVECTOR3 v3CurrentLookAt = g_player.GetLookAt();
+		D3DXMATRIX tmpPlayerWorld = g_player.GetPlayerWorld();
 		// frustum culling 시 타일 중심 좌표 표시용
 		D3DXVECTOR3 v3TileCenter;
 
@@ -614,7 +614,7 @@ VOID Render()
 		g_pd3dDevice->SetFVF(D3DFVF_CUSTOMVERTEX);
 
 		//// skybox rendering
-		SkyBox.Render();
+		g_skyBox.Render();
 
 		g_pd3dDevice->SetTexture(0, g_pGrassTexture);
 		g_pd3dDevice->SetStreamSource(0, g_pTileVB, 0, sizeof(CUSTOMVERTEX));
@@ -674,22 +674,22 @@ VOID Render()
 		//// notice rendering
 		g_pd3dDevice->SetTexture(0, g_pNoticeTexture);
 		D3DXMATRIX mtNoticeWorld;
-		for (i = 0; i < notice[0].GetNumOfNotice(); i++)
+		for (i = 0; i < g_notices[0].GetNumOfNotice(); i++)
 		{
-			mtNoticeWorld = notice[i].GetNoticeWorld();
+			mtNoticeWorld = g_notices[i].GetNoticeWorld();
 			g_pd3dDevice->SetTransform(D3DTS_WORLD, &mtNoticeWorld);
-			notice[i].DrawNotice(g_pd3dDevice);
+			g_notices[i].DrawNotice(g_pd3dDevice);
 		}
 
 		//// Exit rendering
 		g_pd3dDevice->SetTexture(0, g_pExitTexture);
-		mtNoticeWorld = Exit.GetNoticeWorld();
+		mtNoticeWorld = g_mazeExit.GetNoticeWorld();
 		g_pd3dDevice->SetTransform(D3DTS_WORLD, &mtNoticeWorld);
-		Exit.DrawNotice(g_pd3dDevice);
+		g_mazeExit.DrawNotice(g_pd3dDevice);
 
 		//// Bullet rendering
 		g_pd3dDevice->SetTexture(0, g_pTileTexture);
-		player.DrawBullet(g_pd3dDevice, g_pBulletSphere);
+		g_player.DrawBullet(g_pd3dDevice, g_pBulletSphere);
 
 		// Player 위치 표시용 구체
 		if (bIsSkyView == TRUE)
@@ -701,10 +701,10 @@ VOID Render()
 			g_pPlayerSphere->DrawSubset(0);
 		}
 		// Tiger rendering
-		D3DXMATRIX X_World = X_Tiger.GetTigerWorld();
+		D3DXMATRIX X_World = g_tiger.GetTigerWorld();
 
 		g_pd3dDevice->SetTransform(D3DTS_WORLD, &X_World);
-		X_Tiger.XFileDisplay(g_pd3dDevice);
+		g_tiger.XFileDisplay(g_pd3dDevice);
 
 		//// UI rendering ////
 		g_pd3dDevice->SetTexture(0, NULL);
@@ -717,7 +717,7 @@ VOID Render()
 			SetRect(&rt, 250, 200, 0, 0);
 			g_pClearFont->DrawTextA(NULL, testSTR, -1, &rt, DT_NOCLIP, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
 
-			Exit.DrawExitButton(g_pd3dDevice);
+			g_mazeExit.DrawExitButton(g_pd3dDevice);
 			wsprintf(testSTR, "e x i t");
 			SetRect(&rt, 320, 460, 0, 0);
 			g_pExitFont->DrawTextA(NULL, testSTR, -1, &rt, DT_NOCLIP, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
@@ -740,12 +740,12 @@ VOID Render()
 		// 환경설정 및 일시정지 UI
 		if (bIsPaused)
 		{
-			setting.DrawSetting(g_pd3dDevice);
+			g_settingsOverlay.DrawSetting(g_pd3dDevice);
 			wsprintf(testSTR, "P A U S E");
 			SetRect(&rt, 280, 200, 0, 0);
 			g_pSettingFont->DrawTextA(NULL, testSTR, -1, &rt, DT_NOCLIP, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
 
-			Exit.DrawExitButton(g_pd3dDevice);
+			g_mazeExit.DrawExitButton(g_pd3dDevice);
 			wsprintf(testSTR, "e x i t");
 			SetRect(&rt, 320, 460, 0, 0);
 			g_pExitFont->DrawTextA(NULL, testSTR, -1, &rt, DT_NOCLIP, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
@@ -766,7 +766,7 @@ VOID Render()
 
 		// FPS 표시
 		SetRect(&rt, WINDOW_WIDTH - 110, 0, 0, 0);
-		wsprintf(testSTR, "FPS: %3d", FPS.GetFps());
+		wsprintf(testSTR, "FPS: %3d", g_fpsCounter.GetFps());
 		g_pFrameFont->DrawTextA(NULL, testSTR, -1, &rt, DT_NOCLIP, D3DCOLOR_XRGB(0, 255, 0));
 
 		g_pd3dDevice->EndScene();
@@ -795,7 +795,7 @@ LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 			if (PtInRect(&rtExitButton, *g_pMouse))
 			{
-				Exit.ButtonPressed();
+				g_mazeExit.ButtonPressed();
 			}
 		}
 		break;
@@ -809,20 +809,20 @@ LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			{
 				if (g_pCurrentMouse->x > g_pMidPoint->x)
 				{
-					player.Rotate(FALSE, FALSE, (g_pCurrentMouse->x - g_pMidPoint->x) * ROTATION_LEFT_RIGHT);
+					g_player.Rotate(FALSE, FALSE, (g_pCurrentMouse->x - g_pMidPoint->x) * ROTATION_LEFT_RIGHT);
 				}
 				else if (g_pCurrentMouse->x < g_pMidPoint->x)
 				{
-					player.Rotate(TRUE, FALSE, (g_pMidPoint->x - g_pCurrentMouse->x) * ROTATION_LEFT_RIGHT);
+					g_player.Rotate(TRUE, FALSE, (g_pMidPoint->x - g_pCurrentMouse->x) * ROTATION_LEFT_RIGHT);
 				}
 				// y좌표는 아래로 갈수록 커지므로, 이게 아래 회전
 				if (g_pCurrentMouse->y > g_pMidPoint->y)
 				{
-					player.Rotate(TRUE, TRUE, (g_pCurrentMouse->y - g_pMidPoint->y) * ROTATION_UP_DOWN);
+					g_player.Rotate(TRUE, TRUE, (g_pCurrentMouse->y - g_pMidPoint->y) * ROTATION_UP_DOWN);
 				}
 				else if (g_pCurrentMouse->y < g_pMidPoint->y)
 				{
-					player.Rotate(FALSE, TRUE, (g_pMidPoint->y - g_pCurrentMouse->y) * ROTATION_UP_DOWN);
+					g_player.Rotate(FALSE, TRUE, (g_pMidPoint->y - g_pCurrentMouse->y) * ROTATION_UP_DOWN);
 				}
 			}
 
@@ -830,10 +830,10 @@ LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		if (!bIsPlaying || bIsPaused)
 		{
 			if (PtInRect(&rtExitButton, *g_pMouse) && bIsClicked)
-				Exit.ButtonPressed();
+				g_mazeExit.ButtonPressed();
 		}
 		else
-			Exit.ButtonUnpressed();
+			g_mazeExit.ButtonUnpressed();
 		// 게임 중엔 화면 정중앙으로 다시 세팅
 		if (bIsPlaying && !bIsPaused)
 			SetCursorPos(g_pMidPoint->x, g_pMidPoint->y);
@@ -843,11 +843,11 @@ LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		g_pMouse->x = LOWORD(lParam);
 		g_pMouse->y = HIWORD(lParam);
 		bIsClicked = FALSE;
-		Exit.ButtonUnpressed();
+		g_mazeExit.ButtonUnpressed();
 
 		if (bIsPlaying && !bIsPaused)
 		{
-			player.Attack(g_pMouse);
+			g_player.Attack(g_pMouse);
 		}
 
 		if (!bIsPlaying || bIsPaused)
@@ -919,7 +919,7 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 					}
 					UpdateGameStateFromInput();
 					Render();
-					FPS.Frame();
+					g_fpsCounter.Frame();
 				}
 			}
 		}

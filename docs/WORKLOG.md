@@ -351,3 +351,24 @@
 
 - Roadmap의 `P2-05`를 완료로 변경했다.
 - `P2-02 전역 객체 이름 통일`은 계속 진행 중이며 다음 구현 단계다.
+
+## 2026-07-21 - 전역 객체 이름 통일
+
+### 변경
+
+- `player`를 `g_player`, `notice`를 `g_notices`로 변경했다.
+- `Exit`를 `g_mazeExit`, `setting`을 `g_settingsOverlay`로 변경했다.
+- `FPS`를 `g_fpsCounter`, `X_Tiger`를 `g_tiger`, `SkyBox`를 `g_skyBox`로 변경했다.
+- 전역 범위는 `g_`, 변수 이름은 `camelCase`를 사용하도록 통일했다.
+
+### 검증
+
+- `main.cpp`의 선언과 모든 참조가 새 이름을 사용하는 것을 확인했다.
+- 이전 이름은 주석, 화면 문자열 또는 `maze_function`의 지역 매개변수에만 남아 있으며 전역 객체 참조 누락은 없다.
+- `Debug|x86` 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+
+### 상태
+
+- Roadmap의 `P2-02`를 완료로 변경했다.
+- 다음 작업은 `P2-03 상수 정의 정리`다.
