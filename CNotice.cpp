@@ -3,7 +3,7 @@
 
 WORD CNotice::m_NoticeCount = 0;
 
-VOID CNotice::MakeNotice(D3DXVECTOR3 position)
+VOID CNotice::Initialize(D3DXVECTOR3 position)
 {
 	D3DXMatrixIdentity(&m_World);
 	m_Position = position;
@@ -24,7 +24,7 @@ VOID CNotice::MakeNotice(D3DXVECTOR3 position)
 	m_LookAt = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
 	m_NoticeCount++;
 }
-VOID CNotice::MakeNoticeVB(LPDIRECT3DDEVICE9 device)
+VOID CNotice::CreateVertexBuffer(LPDIRECT3DDEVICE9 device)
 {
 	device->CreateVertexBuffer(sizeof(CUSTOMVERTEX) * 4, 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &m_pNoticeVB, NULL);
 	VOID** NoticeVertices;
@@ -32,7 +32,7 @@ VOID CNotice::MakeNoticeVB(LPDIRECT3DDEVICE9 device)
 	memcpy(NoticeVertices, m_Vertex, sizeof(CUSTOMVERTEX) * 4);
 	m_pNoticeVB->Unlock();
 }
-VOID CNotice::RotateNotice(D3DXVECTOR3 player_position)
+VOID CNotice::UpdateFacing(D3DXVECTOR3 player_position)
 {
 	D3DXVECTOR3 v3Vertices[4], v3Cross, v3Dst = player_position - m_Position;
 	D3DXMATRIX mtRotation, mtTranslation;
@@ -68,16 +68,16 @@ VOID CNotice::RotateNotice(D3DXVECTOR3 player_position)
 	D3DXMatrixTranslation(&mtTranslation, m_Position.x, m_Position.y, m_Position.z);
 	D3DXMatrixMultiply(&m_World, &m_World, &mtTranslation);
 }
-VOID CNotice::DrawNotice(LPDIRECT3DDEVICE9 device)
+VOID CNotice::Render(LPDIRECT3DDEVICE9 device)
 {
 	device->SetStreamSource(0, m_pNoticeVB, 0, sizeof(CUSTOMVERTEX));
 	device->DrawPrimitive(D3DPT_TRIANGLEFAN, 0, 2);
 }
-VOID CNotice::ReleaseNoticeVB()
+VOID CNotice::ReleaseVertexBuffer()
 {
 	SafeRelease(m_pNoticeVB);
 }
-BOOL CNotice::IsPossibleInteraction(D3DXVECTOR3 playerPosition)
+BOOL CNotice::CanInteract(D3DXVECTOR3 playerPosition)
 {
 	if (bIsNoClipOn)
 		return FALSE;

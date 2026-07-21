@@ -41,10 +41,10 @@ CXFileUtil::~CXFileUtil()
 }
 
 //---------------------------------------------------------------------------------
-// 이름 : XFileLoad()
+// 이름 : Load()
 // 기능 : x 파일을 로드 한다.
 //---------------------------------------------------------------------------------
-int CXFileUtil::XFileLoad(LPDIRECT3DDEVICE9 pD3DDevice, char* xFileName)
+int CXFileUtil::Load(LPDIRECT3DDEVICE9 pD3DDevice, char* xFileName)
 {
 	LPD3DXBUFFER pD3DXMtrlBuffer;
 	// x 파일을 로딩한다.
@@ -101,10 +101,10 @@ int CXFileUtil::XFileLoad(LPDIRECT3DDEVICE9 pD3DDevice, char* xFileName)
 }
 
 //---------------------------------------------------------------------------------
-// 이름 : XFileDisplay()
+// 이름 : Render()
 // 기능 : x 파일을 출력 해준다.
 //---------------------------------------------------------------------------------
-int CXFileUtil::XFileDisplay(LPDIRECT3DDEVICE9 pD3DDevice)
+int CXFileUtil::Render(LPDIRECT3DDEVICE9 pD3DDevice)
 {
 	// 메쉬 출력
 	for (DWORD i = 0; i < g_dwNumMaterials; i++)

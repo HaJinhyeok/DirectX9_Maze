@@ -8,7 +8,7 @@ private:
 
 public:
 	CFrustum();
-	VOID MakeFrustum(D3DXMATRIX* pMatViewProj);
-	BOOL IsInFrustum(D3DXVECTOR3* position, FLOAT distance);
+	VOID Update(D3DXMATRIX* pMatViewProj);
+	BOOL IntersectsSphere(D3DXVECTOR3* position, FLOAT distance);
 };
 

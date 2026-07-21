@@ -14,7 +14,7 @@ private:
 public:
 	CSkyBox();
 	~CSkyBox();
-	VOID LoadTexture();
+	VOID LoadTextures();
 	VOID CreateVertexBuffer();
 	VOID Render();
 	

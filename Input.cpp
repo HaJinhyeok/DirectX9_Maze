@@ -1,6 +1,6 @@
 ﻿#include "Input.h"
 
-VOID InitInput()
+VOID InitializeInput()
 {
 	for (int i = 1; i < 255; i++)
 		nKeyState[i] = KeyState::Idle;
@@ -53,21 +53,21 @@ VOID UpdateInput()
 		}
 	}
 }
-BOOL GetKeyDown(int keycode)
+BOOL IsKeyPressed(int keycode)
 {
 	if (nKeyState[keycode] == KeyState::Pressed)
 		return TRUE;
 	else
 		return FALSE;
 }
-BOOL GetKeyUp(int keycode)
+BOOL IsKeyReleased(int keycode)
 {
 	if (nKeyState[keycode] == KeyState::Released)
 		return TRUE;
 	else
 		return FALSE;
 }
-BOOL GetKey(int keycode)
+BOOL IsKeyDown(int keycode)
 {
 	if (nKeyState[keycode] == KeyState::Pressed || nKeyState[keycode] == KeyState::Held)
 		return TRUE;

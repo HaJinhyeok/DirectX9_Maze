@@ -1,17 +1,17 @@
 ﻿#include "CExit.h"
 
-VOID CExit::MakeExit(D3DXVECTOR3 position)
+VOID CExit::Initialize(D3DXVECTOR3 position)
 {
-	MakeNotice(position);
+	CNotice::Initialize(position);
 	// Exit는 notice count하지 않는다.
 	CNotice::m_NoticeCount--;
 	CNotice::m_bIsNotice = FALSE;
 }
-VOID CExit::DrawExitButton(LPDIRECT3DDEVICE9 device)
+VOID CExit::RenderButton(LPDIRECT3DDEVICE9 device)
 {
 	device->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, m_ExitButtonVertices, sizeof(UI_VERTEX));
 }
-VOID CExit::ButtonPressed()
+VOID CExit::PressButton()
 {
 	bIsPressed = TRUE;
 	for (int i = 0; i < 4; i++)
@@ -19,7 +19,7 @@ VOID CExit::ButtonPressed()
 		m_ExitButtonVertices[i].VerColor = kButtonPressedColor;
 	}
 }
-VOID CExit::ButtonUnpressed()
+VOID CExit::ReleaseButton()
 {
 	bIsPressed = FALSE;
 	for (int i = 0; i < 4; i++)

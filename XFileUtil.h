@@ -33,8 +33,8 @@ private:
 	random_device m_Random; // 시드값을 얻기 위한 random_device
 
 public:
-	int XFileDisplay(LPDIRECT3DDEVICE9 pD3DDevice);
-	int XFileLoad(LPDIRECT3DDEVICE9 pD3DDevice, char* xFileName);
+	int Render(LPDIRECT3DDEVICE9 pD3DDevice);
+	int Load(LPDIRECT3DDEVICE9 pD3DDevice, char* xFileName);
 	VOID Move(const char(*map)[kMazeColumnCount + 1]);
 	VOID Rotate(BOOL clockwise);
 

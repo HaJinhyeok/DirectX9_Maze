@@ -13,6 +13,6 @@ private:
 	};
 
 public:
-	VOID DrawSetting(LPDIRECT3DDEVICE9 device);
+	VOID Render(LPDIRECT3DDEVICE9 device);
 };
 

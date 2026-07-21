@@ -1,17 +1,17 @@
 #include "Stopwatch.h"
 
-void Stopwatch::StartTime()
+void Stopwatch::Start()
 {
 	m_startTimePoint = timeGetTime();
 	m_bIsWorking = TRUE;
 }
-DWORD Stopwatch::TimeCheck()
+DWORD Stopwatch::GetElapsedTime()
 {
 	DWORD checkPoint = timeGetTime();
 	DWORD duration = checkPoint - m_startTimePoint;
 	return duration;
 }
-DWORD Stopwatch::EndTime()
+DWORD Stopwatch::Stop()
 {
 	DWORD endTimePoint = timeGetTime();
 	DWORD duration = endTimePoint - m_startTimePoint;
@@ -19,7 +19,7 @@ DWORD Stopwatch::EndTime()
 	m_bIsWorking = FALSE;
 	return duration;
 }
-BOOL Stopwatch::IsWorking()
+BOOL Stopwatch::IsRunning()
 {
 	return m_bIsWorking;
 }

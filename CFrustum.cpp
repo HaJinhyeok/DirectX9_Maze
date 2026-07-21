@@ -5,7 +5,7 @@ CFrustum::CFrustum()
 	ZeroMemory(m_vertex, sizeof(D3DXVECTOR3) * 8);
 	ZeroMemory(m_plane, sizeof(D3DXPLANE) * 6);
 }
-VOID CFrustum::MakeFrustum(D3DXMATRIX* pMatViewProj)
+VOID CFrustum::Update(D3DXMATRIX* pMatViewProj)
 {
 	int i;
 	D3DXMATRIX matInv;
@@ -32,7 +32,7 @@ VOID CFrustum::MakeFrustum(D3DXMATRIX* pMatViewProj)
 	D3DXPlaneFromPoints(&m_plane[4], &m_vertex[0], &m_vertex[1], &m_vertex[5]); // 근
 	D3DXPlaneFromPoints(&m_plane[5], &m_vertex[2], &m_vertex[7], &m_vertex[6]); // 원
 }
-BOOL CFrustum::IsInFrustum(D3DXVECTOR3* position, FLOAT distance)
+BOOL CFrustum::IntersectsSphere(D3DXVECTOR3* position, FLOAT distance)
 {
 	FLOAT fDistance;
 	int i;

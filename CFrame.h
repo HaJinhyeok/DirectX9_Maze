@@ -11,12 +11,12 @@ private:
 
 public:
 	void Initialize();
-	void Frame();
+	void Update();
 	int GetFps();
 
-	void WatchStart();
-	DWORD WatchTimeCheck();
-	DWORD WatchEnd();
+	void StartTimer();
+	DWORD GetTimerElapsedTime();
+	DWORD StopTimer();
 
-	BOOL IsWatchWorking();
+	BOOL IsTimerRunning();
 };

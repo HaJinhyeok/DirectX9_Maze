@@ -11,8 +11,8 @@ enum class KeyState
 
 static KeyState nKeyState[255];
 
-VOID InitInput();
+VOID InitializeInput();
 VOID UpdateInput();
-BOOL GetKeyDown(int keycode);
-BOOL GetKeyUp(int keycode);
-BOOL GetKey(int keycode);
+BOOL IsKeyPressed(int keycode);
+BOOL IsKeyReleased(int keycode);
+BOOL IsKeyDown(int keycode);

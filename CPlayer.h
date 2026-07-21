@@ -36,7 +36,7 @@ public:
 	{
 		m_LookAt = look;
 	}
-	VOID SetPlayerWorld(D3DXMATRIX WorldMatrix)
+	VOID SetWorldMatrix(D3DXMATRIX WorldMatrix)
 	{
 		m_PlayerWorld = WorldMatrix;
 	}
@@ -52,7 +52,7 @@ public:
 	{
 		return m_LookAt;
 	}
-	D3DXMATRIX GetPlayerWorld()
+	D3DXMATRIX GetWorldMatrix()
 	{
 		return m_PlayerWorld;
 	}
@@ -60,7 +60,7 @@ public:
 	{
 		return m_IsLightOn;
 	}
-	D3DLIGHT9* GetPlayerLight()
+	D3DLIGHT9* GetLight()
 	{
 		return &m_FlashLight;
 	}
@@ -68,8 +68,8 @@ public:
 	BOOL Move(MOVE_DIRECTION direction, const char (*map)[kMazeColumnCount+1], BOOL NoClip);
 	VOID Rotate(BOOL bIsCCW);
 	VOID Rotate(BOOL bIsCCW, BOOL bIsUpDown, FLOAT angle);
-	VOID Attack(LPPOINT CursorPosition);
-	VOID MoveBullet();
-	VOID DrawBullet(LPDIRECT3DDEVICE9 device, LPD3DXMESH sphere);
+	VOID FireBullet(LPPOINT CursorPosition);
+	VOID UpdateBullets();
+	VOID RenderBullets(LPDIRECT3DDEVICE9 device, LPD3DXMESH sphere);
 };
 

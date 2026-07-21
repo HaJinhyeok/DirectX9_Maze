@@ -388,7 +388,7 @@ VOID CPlayer::Rotate(BOOL bIsCCW, BOOL bIsUpDown, FLOAT angle)
 	m_FlashLight.Direction = D3DXVECTOR3(m_PlayerWorld._31, m_PlayerWorld._32, m_PlayerWorld._33);
 }
 
-VOID CPlayer::Attack(LPPOINT CursorPosition)
+VOID CPlayer::FireBullet(LPPOINT CursorPosition)
 {
 	// 마우스 클릭 시, 클릭한 방향으로 벡터를 설정하고 일직선으로 날아가는 투사체 발사
 	// world 상에서 플레이어 위치를 (0,0,0)으로 생각하고, 마우스가 클릭되는 평면을
@@ -399,7 +399,7 @@ VOID CPlayer::Attack(LPPOINT CursorPosition)
 	tmpBullet.Time = timeGetTime();
 	m_Bullet.push_back(tmpBullet);
 }
-VOID CPlayer::MoveBullet()
+VOID CPlayer::UpdateBullets()
 {
 	// 매 프레임마다 호출해서 총알의 이동 및 충돌 후 제거 연산 수행 (x)
 	// 프레임마다 호출하면 프레임 낮은 똥컴에서는 총알 속도가 느려지는 말도 안 되는 상황 발생한다.
@@ -422,7 +422,7 @@ VOID CPlayer::MoveBullet()
 			iter->v3Position.z += fCoefficient * iter->v3Direction.z;
 			// 벽 또는 장애물과 충돌 검사
 			// 일단은 플레이어로부터 100만큼 떨어지면 제거되게
-			if (Length(iter->v3Position - this->GetPosition()) >= 100.0f)
+			if (CalculateLength(iter->v3Position - this->GetPosition()) >= 100.0f)
 			{
 				iter = m_Bullet.erase(iter);
 			}
@@ -433,7 +433,7 @@ VOID CPlayer::MoveBullet()
 		}
 	}
 }
-VOID CPlayer::DrawBullet(LPDIRECT3DDEVICE9 device, LPD3DXMESH sphere)
+VOID CPlayer::RenderBullets(LPDIRECT3DDEVICE9 device, LPD3DXMESH sphere)
 {
 	D3DXMATRIX world;
 	for (size_t i = 0; i < m_Bullet.size(); i++)

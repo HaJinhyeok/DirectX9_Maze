@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include"main.h"
+#include "main.h"
 
 class CNotice
 {
@@ -15,22 +15,22 @@ public:
 	BOOL m_bIsNotice = TRUE;
 	static WORD m_NoticeCount;
 
-	VOID MakeNotice(D3DXVECTOR3 position);
-	VOID MakeNoticeVB(LPDIRECT3DDEVICE9 device);
-	VOID RotateNotice(D3DXVECTOR3 player_position);
-	VOID DrawNotice(LPDIRECT3DDEVICE9 device);
-	VOID ReleaseNoticeVB();
+	VOID Initialize(D3DXVECTOR3 position);
+	VOID CreateVertexBuffer(LPDIRECT3DDEVICE9 device);
+	VOID UpdateFacing(D3DXVECTOR3 player_position);
+	VOID Render(LPDIRECT3DDEVICE9 device);
+	VOID ReleaseVertexBuffer();
 
-	BOOL IsPossibleInteraction(D3DXVECTOR3 playerPosition);
+	BOOL CanInteract(D3DXVECTOR3 playerPosition);
 	BOOL IsNotice()
 	{
 		return m_bIsNotice;
 	}
-	WORD GetNumOfNotice()
+	WORD GetNoticeCount()
 	{
 		return m_NoticeCount;
 	}
-	D3DXMATRIX GetNoticeWorld()
+	D3DXMATRIX GetWorldMatrix()
 	{
 		return m_World;
 	}

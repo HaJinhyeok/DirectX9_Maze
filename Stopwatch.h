@@ -4,11 +4,11 @@
 class Stopwatch
 {
 public:
-	void StartTime();
-	DWORD TimeCheck();
-	DWORD EndTime();
+	void Start();
+	DWORD GetElapsedTime();
+	DWORD Stop();
 
-	BOOL IsWorking();
+	BOOL IsRunning();
 
 private:
 	DWORD m_startTimePoint;

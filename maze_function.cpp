@@ -9,7 +9,7 @@ D3DXVECTOR3 CalculateMidPoint(D3DXVECTOR3 pos1, D3DXVECTOR3 pos2)
 // 일단 맵은 하나만...
 // 맵 내부 구조를 ' '과 '*'로 이루어진 문자열로 표현하고, 이 문자열을 받으면 내부 vertex를 생성할 수 있게 만들면 베스트일듯...
 // 벽멱을 전부 vertex 정보로 저장할지, 아니면 한 칸 한 칸의 블록형태로 만들지 미지수
-VOID GenerateMazeWall(int nMapNumber, CUSTOMVERTEX(*Maze)[20], vector<CNotice>* notice, CExit* Exit)
+VOID GenerateMazeWalls(int nMapNumber, CUSTOMVERTEX(*Maze)[20], vector<CNotice>* notice, CExit* Exit)
 {
     int i,j;
     int nBlockNum = 0, nNoticeNum = 0;
@@ -22,18 +22,18 @@ VOID GenerateMazeWall(int nMapNumber, CUSTOMVERTEX(*Maze)[20], vector<CNotice>* 
             {
                 if (chMap1[i][j] == '*')
                 {
-                    MakeWallBlock(Maze[nBlockNum++], D3DXVECTOR3((-kMazeColumnCount / 2 + j + 0.5f) * kTileSize, 5.0f, (kMazeRowCount / 2 - i - 0.5f) * kTileSize));
+                    GenerateWallBlock(Maze[nBlockNum++], D3DXVECTOR3((-kMazeColumnCount / 2 + j + 0.5f) * kTileSize, 5.0f, (kMazeRowCount / 2 - i - 0.5f) * kTileSize));
                 }
                 else if (chMap1[i][j] == '@')
                 {
                     CNotice tmpNotice;
-                    tmpNotice.MakeNotice(D3DXVECTOR3((-kMazeColumnCount / 2 + j + 0.5f) * kTileSize, 5.0f, (kMazeRowCount / 2 - i - 0.5f) * kTileSize));
+                    tmpNotice.Initialize(D3DXVECTOR3((-kMazeColumnCount / 2 + j + 0.5f) * kTileSize, 5.0f, (kMazeRowCount / 2 - i - 0.5f) * kTileSize));
                     notice->push_back(tmpNotice);
                 }
                 // 탈출구는 모든 맵마다 단 하나만 존재
                 else if (chMap1[i][j] == 'X')
                 {
-                    Exit->MakeExit(D3DXVECTOR3((-kMazeColumnCount / 2 + j + 0.5f) * kTileSize, 5.0f, (kMazeRowCount / 2 - i - 0.5f) * kTileSize));
+                    Exit->Initialize(D3DXVECTOR3((-kMazeColumnCount / 2 + j + 0.5f) * kTileSize, 5.0f, (kMazeRowCount / 2 - i - 0.5f) * kTileSize));
                 }
             }
         }
@@ -43,7 +43,7 @@ VOID GenerateMazeWall(int nMapNumber, CUSTOMVERTEX(*Maze)[20], vector<CNotice>* 
         return;
 }
 
-VOID MakeWallBlock(CUSTOMVERTEX* Block, D3DXVECTOR3 position)
+VOID GenerateWallBlock(CUSTOMVERTEX* Block, D3DXVECTOR3 position)
 {
     int i;
     // 밑면을 제외한 5개 면의 vertex만 생성해주자

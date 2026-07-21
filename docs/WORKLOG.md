@@ -482,6 +482,185 @@
 - `Debug|x86` 전체 빌드에 성공했으며 경고 0개, 오류 0개다.
 - Roadmap의 `P2-03`을 완료했으며 `P2-04`는 다음 작업으로 남겼다.
 
+## 2026-07-21 - 함수명 규칙 통일 시작
+
+### 첫 대상
+
+- `main.h`의 `Length()`는 값을 계산하는 전역 보조 함수이므로 `CalculateAngle()`과 같은 동사 규칙을 적용해 `CalculateLength()`로 변경한다.
+- 정의 한 곳, `CalculateAngle()` 내부 호출 두 곳과 `CPlayer.cpp` 호출 한 곳을 함께 변경한다.
+- Roadmap의 `P2-04`를 진행 중으로 변경했다.
+
+### 벡터 길이 함수 이름 변경 결과
+
+- `Length()`를 계산 동사가 드러나는 `CalculateLength()`로 변경했다.
+- 정의와 세 호출이 새 이름을 사용하며 이전 이름이 남아 있지 않음을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+
+### 다음 대상
+
+- `CFrustum::MakeFrustum()`은 매 프레임 현재 뷰·투영 행렬을 기준으로 프러스텀 정점과 평면을 다시 계산한다.
+- 일회성 생성처럼 읽히는 `Make` 대신 프로젝트 갱신 동사인 `Update()`로 변경한다.
+
+### 프러스텀 갱신 함수 이름 변경 결과
+
+- `CFrustum::MakeFrustum()`을 `Update()`로 변경했다.
+- 선언, 정의와 `main.cpp` 호출이 새 이름을 사용하며 이전 이름이 남아 있지 않음을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+
+### 다음 대상
+
+- `CNotice::MakeNotice()`는 위치, 월드 행렬, 정점과 안내물 상태를 초기화하므로 `Initialize()`로 변경한다.
+- `CExit::MakeExit()`도 기반 안내물 초기화와 출구 상태 설정을 수행하므로 `Initialize()`로 변경한다.
+
+### 안내물 및 출구 초기화 함수 이름 변경 중간 검증
+
+- 두 함수의 선언, 정의와 외부 호출은 `Initialize()`로 변경됐다.
+- `CExit::Initialize()` 내부의 기반 클래스 호출이 한정되지 않은 `Initialize(position)`으로 변경되어 자기 자신을 재귀 호출하는 문제를 발견했다.
+- `CNotice::Initialize(position)`으로 범위를 명시한 뒤 다시 검증해야 한다.
+
+### 안내물 및 출구 초기화 함수 이름 변경 결과
+
+- `CNotice::MakeNotice()`와 `CExit::MakeExit()`을 각각 `Initialize()`로 변경했다.
+- `CExit::Initialize()`에서 `CNotice::Initialize(position)`을 명시적으로 호출해 기반 구현을 재사용하도록 했다.
+- 이전 함수 이름이 남아 있지 않음을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+
+### 다음 대상
+
+- `CNotice::DrawNotice()`는 안내물 객체의 주 렌더링 함수이므로 `Render()`로 변경한다.
+- `CExit`이 상속한 안내물 렌더링 호출도 같은 이름으로 변경한다.
+
+### 안내물 렌더링 함수 이름 변경 결과
+
+- `CNotice::DrawNotice()`를 `Render()`로 변경했다.
+- 선언, 정의와 `main.cpp`의 일반 안내물·출구 호출이 새 이름을 사용하는 것을 확인했다.
+- 첫 빌드는 MSBuild `FileTracker`의 일시적인 접근 거부로 소스 컴파일 전에 실패했다.
+- 같은 명령을 단독으로 재실행해 `Debug|x86` 전체 빌드에 성공했다.
+- 최종 빌드 결과는 경고 0개, 오류 0개다.
+
+### 다음 대상
+
+- `CSetting::DrawSetting()`은 설정 화면 객체의 주 렌더링 함수이므로 `Render()`로 변경한다.
+
+### 설정 화면 렌더링 함수 이름 변경 결과
+
+- `CSetting::DrawSetting()`을 `Render()`로 변경했다.
+- 선언, 정의와 `main.cpp` 호출이 새 이름을 사용하는 것을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+
+### 다음 대상
+
+- `CExit::DrawExitButton()`은 기반 안내물 렌더링과 구분되는 출구 UI 버튼 렌더링 함수이므로 `RenderButton()`으로 변경한다.
+
+### 출구 버튼 렌더링 함수 이름 변경 결과
+
+- `CExit::DrawExitButton()`을 `RenderButton()`으로 변경했다.
+- 선언, 정의와 `main.cpp`의 두 호출이 새 이름을 사용하는 것을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+
+### 다음 대상
+
+- `CPlayer::DrawBullet()`은 플레이어가 소유한 탄환 목록을 렌더링하므로 `RenderBullet()`로 변경한다.
+
+### 탄환 렌더링 함수 이름 변경 결과
+
+- `CPlayer::DrawBullet()`을 `RenderBullet()`로 변경했다.
+- 선언, 정의와 `main.cpp` 호출이 새 이름을 사용하는 것을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+
+### 다음 일괄 변경 대상
+
+- `CNotice::MakeNoticeVB()`를 `CreateVertexBuffer()`로 변경한다.
+- `CNotice::ReleaseNoticeVB()`를 `ReleaseVertexBuffer()`로 변경한다.
+- `CXFileUtil::XFileLoad()`를 `Load()`로 변경한다.
+- `CXFileUtil::XFileDisplay()`를 `Render()`로 변경한다.
+- `CFrame::Frame()`을 `Update()`로 변경한다.
+
+### 리소스 및 갱신 함수 일괄 변경 결과
+
+- `CNotice`의 버텍스 버퍼 생성·해제 함수를 `CreateVertexBuffer()`, `ReleaseVertexBuffer()`로 변경했다.
+- `CXFileUtil`의 X 파일 로드·출력 함수를 `Load()`, `Render()`로 변경했다.
+- `CFrame::Frame()`을 `Update()`로 변경했다.
+- 선언, 정의와 호출이 새 이름을 사용하는 것을 확인했다.
+- 검색과 빌드를 한 명령에 묶은 첫 검증은 MSBuild `FileTracker` 접근 거부로 실패했으나, 빌드 명령을 단독 실행해 `Debug|x86` 전체 빌드에 성공했다.
+- 최종 빌드 결과는 경고 0개, 오류 0개다.
+- `XFileUtil.cpp`의 함수 설명 주석 두 곳에는 이전 이름이 남아 있어 후속 정리가 필요하다.
+
+### 다음 일괄 변경 대상
+
+- 안내물 방향 갱신, 상호작용 가능 여부와 조회 함수의 이름을 역할 중심으로 변경한다.
+- 출구 버튼 상태 변경 함수와 플레이어 탄환·월드·조명 함수의 이름을 프로젝트 동사 규칙에 맞게 변경한다.
+
+### 상태 갱신 및 조회 함수 일괄 변경 결과
+
+- `CNotice`의 방향 갱신, 상호작용 가능 여부와 조회 함수 이름을 역할 중심으로 변경했다.
+- `CExit`의 버튼 상태 변경 함수를 `PressButton()`, `ReleaseButton()`으로 변경했다.
+- `CPlayer`의 탄환 갱신, 월드 행렬 설정·조회와 조명 조회 함수 이름을 통일했다.
+- `XFileUtil.cpp`의 함수 설명 주석도 새 `Load()`, `Render()` 이름으로 갱신했다.
+- 이전 이름이 남아 있지 않음을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+
+### 다음 일괄 변경 대상
+
+- 프러스텀의 구체 포함·교차 판정 함수 이름을 실제 판정 대상이 드러나게 변경한다.
+- 스카이박스 텍스처 로드와 미로 벽 생성 함수 이름의 단수·복수 및 동사를 정리한다.
+
+### 공간 판정 및 생성 함수 일괄 변경 결과
+
+- `CFrustum::IsInFrustum()`을 구체 교차 의미가 드러나는 `IntersectsSphere()`로 변경했다.
+- `CSkyBox::LoadTexture()`를 실제 로드 개수에 맞게 `LoadTextures()`로 변경했다.
+- 미로 벽 집합과 개별 블록 생성 함수를 `GenerateMazeWalls()`, `GenerateWallBlock()`으로 변경했다.
+- 이전 이름이 남아 있지 않음을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+
+### 다음 일괄 변경 대상
+
+- 입력 초기화와 키 상태 조회 함수 이름을 실제 이벤트·상태 의미에 맞게 변경한다.
+- `Stopwatch`와 이를 감싸는 `CFrame` 타이머 함수의 시작·경과 시간·정지·실행 상태 이름을 통일한다.
+
+### 입력 및 타이머 함수 일괄 변경 결과
+
+- 입력 초기화와 키 눌림·해제·현재 상태 조회 함수 이름을 `InitializeInput()`, `IsKeyPressed()`, `IsKeyReleased()`, `IsKeyDown()`으로 변경했다.
+- `Stopwatch`의 시작·경과 시간·정지·상태 조회 함수 이름을 `Start()`, `GetElapsedTime()`, `Stop()`, `IsRunning()`으로 통일했다.
+- `CFrame`의 타이머 위임 함수 이름을 `StartTimer()`, `GetTimerElapsedTime()`, `StopTimer()`, `IsTimerRunning()`으로 변경했다.
+- 이전 이름이 남아 있지 않음을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+
+### 다음 일괄 변경 대상
+
+- Direct3D 초기화, 게임 리소스 초기화와 해제 전역 함수의 이름을 프로젝트 생명주기 동사에 맞게 변경한다.
+
+### 전역 생명주기 함수 일괄 변경 결과
+
+- `InitD3D()`, `InitGeometry()`, `CleanUp()`을 `InitializeD3d()`, `InitializeGeometry()`, `ReleaseResources()`로 변경했다.
+- 정의와 모든 호출이 새 이름을 사용하며 이전 이름이 남아 있지 않음을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했다.
+- 빌드 결과는 경고 0개, 오류 0개다.
+
+### 마지막 이름 변경 대상
+
+- `CPlayer::Attack()`은 탄환 하나를 생성하므로 `FireBullet()`으로 변경한다.
+- `CPlayer::RenderBullet()`은 탄환 목록 전체를 렌더링하므로 `RenderBullets()`로 변경한다.
+
+### 플레이어 탄환 함수 및 P2-04 완료
+
+- `CPlayer::Attack()`을 `FireBullet()`으로 변경했다.
+- 탄환 목록 전체를 렌더링하는 `CPlayer::RenderBullet()`을 `RenderBullets()`로 변경했다.
+- 선언, 정의와 호출이 새 이름을 사용하며 이전 이름이 남아 있지 않음을 확인했다.
+- 프로젝트 함수 목록을 최종 점검해 초기화, 갱신, 렌더링, 해제와 상태 조회 동사가 컨벤션에 맞는 것을 확인했다.
+- Win32와 DirectX가 요구하는 외부 API 및 콜백 이름은 원형을 유지했다.
+- `Debug|x86` 전체 빌드에 성공했으며 경고 0개, 오류 0개다.
+- Roadmap의 `P2-04`를 완료했으며 다음 작업은 `P2-06 타입명과 파일명 통일`이다.
+
 ## 2026-07-21 - 학습 기록 체계 추가
 
 ### 문서화

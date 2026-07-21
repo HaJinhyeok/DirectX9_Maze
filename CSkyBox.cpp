@@ -82,7 +82,7 @@ CSkyBox::~CSkyBox()
 	// vertex buffer release
 	SafeRelease(m_BoxVertexBuffer);
 }
-VOID CSkyBox::LoadTexture()
+VOID CSkyBox::LoadTextures()
 {
 	// 앞 - 뒤 - 좌 - 우 - 상 - 하
 	D3DXCreateTextureFromFile(g_pd3dDevice, "Daylight Box_Pieces/Daylight Box_Front.bmp", &m_BoxTextures[0]);

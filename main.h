@@ -48,7 +48,7 @@ constexpr float kTileSize = 10.0f;
 constexpr float kSkyBoxSize = 500.0f;
 
 // Calculate the norm of 3-D vector
-inline FLOAT Length(D3DXVECTOR3 myVec)
+inline FLOAT CalculateLength(D3DXVECTOR3 myVec)
 {
     return sqrtf(myVec.x * myVec.x + myVec.y * myVec.y + myVec.z * myVec.z);
 }
@@ -56,7 +56,7 @@ inline FLOAT Length(D3DXVECTOR3 myVec)
 // Calculate the angle between two 3-D vectors
 inline FLOAT CalculateAngle(D3DXVECTOR3 vec1, D3DXVECTOR3 vec2)
 {
-    FLOAT angle, len1 = Length(vec1), len2 = Length(vec2), cos;
+    FLOAT angle, len1 = CalculateLength(vec1), len2 = CalculateLength(vec2), cos;
     // Calculate angle using dot product
     cos = D3DXVec3Dot(&vec1, &vec2) / (len1 * len2);
     // -1 <= cos <= 1

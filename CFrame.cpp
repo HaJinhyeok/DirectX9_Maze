@@ -5,7 +5,7 @@ void CFrame::Initialize()
 	mCount = 0;
 	mStartTime = timeGetTime();
 }
-void CFrame::Frame()
+void CFrame::Update()
 {
 	mCount++;
 	// Sleep(1000 / nLimit);
@@ -24,20 +24,20 @@ int CFrame::GetFps()
 {
 	return mFps;
 }
-void CFrame::WatchStart()
+void CFrame::StartTimer()
 {
-	mStopWatch.StartTime();
+	mStopWatch.Start();
 }
-DWORD CFrame::WatchTimeCheck()
+DWORD CFrame::GetTimerElapsedTime()
 {
-	return mStopWatch.TimeCheck();
+	return mStopWatch.GetElapsedTime();
 }
-DWORD CFrame::WatchEnd()
+DWORD CFrame::StopTimer()
 {
-	return mStopWatch.EndTime();
+	return mStopWatch.Stop();
 }
 
-BOOL CFrame::IsWatchWorking()
+BOOL CFrame::IsTimerRunning()
 {
-	return mStopWatch.IsWorking();
+	return mStopWatch.IsRunning();
 }
