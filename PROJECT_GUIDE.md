@@ -60,4 +60,5 @@
 - `docs/CODING_CONVENTIONS.md`: 프로젝트별 C++ 네이밍과 단계적 적용 기준
 - `docs/ROADMAP.md`: 작업 순서, 상태와 완료 조건
 - `docs/WORKLOG.md`: 변경, 검증과 설계 결정 기록
+- `docs/LEARNING_NOTES.md`: 작업 중 질문한 개념, 용어와 선택 이유
 - `docs/TECHNICAL_REVIEW.md`: 로컬에서 사용하는 기술 검토 기준선

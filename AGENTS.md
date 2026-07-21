@@ -9,10 +9,12 @@
 3. `docs/CODING_CONVENTIONS.md`
 4. `docs/ROADMAP.md`
 5. `docs/WORKLOG.md`의 최신 기록
-6. 로컬에 존재하는 경우 `docs/TECHNICAL_REVIEW.md`
+6. `docs/LEARNING_NOTES.md`의 관련 항목
+7. 로컬에 존재하는 경우 `docs/TECHNICAL_REVIEW.md`
 
 전역 포트폴리오 검토 기준과 C++ 컨벤션은 `C:\Users\hjhmoon61\.codex` 아래의 문서를 따른다.
 프로젝트 네이밍은 `docs/CODING_CONVENTIONS.md`를 우선한다.
+프로그래밍 개념, 용어, 이유와 트레이드오프에 대한 질문은 전역 학습 워크플로에 따라 `docs/LEARNING_NOTES.md`에 요약한다.
 
 ## 작업 절차
 
