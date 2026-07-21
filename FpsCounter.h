@@ -4,10 +4,10 @@
 class FpsCounter
 {
 private:
-	int mFps, mCount;
-	unsigned long mStartTime;
+	int m_fps, m_count;
+	unsigned long m_startTime;
 
-	Stopwatch mStopWatch;
+	Stopwatch m_stopwatch;
 
 public:
 	void Initialize();

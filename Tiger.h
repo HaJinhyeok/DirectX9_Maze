@@ -11,60 +11,60 @@ class Tiger
 {
 private:
 	// x 파일 로드용 변수
-	LPD3DXMESH g_pMesh; // 메쉬 객체
-	D3DMATERIAL9* g_pMeshMaterials; // 메쉬에 대한 재질
-	LPDIRECT3DTEXTURE9* g_pMeshTextures; // 메쉬에 대한 텍스쳐
-	DWORD g_dwNumMaterials; // 재질의 수
+	LPD3DXMESH m_mesh; // 메쉬 객체
+	D3DMATERIAL9* m_meshMaterials; // 메쉬에 대한 재질
+	LPDIRECT3DTEXTURE9* m_meshTextures; // 메쉬에 대한 텍스쳐
+	DWORD m_materialCount; // 재질의 수
 
 	// x 파일 객체의 위치와 바라보는 방향
-	D3DXVECTOR3 m_Position;
-	D3DXVECTOR3 m_LookAt;
-	D3DXMATRIX m_TigerWorld;
+	D3DXVECTOR3 m_position;
+	D3DXVECTOR3 m_lookAt;
+	D3DXMATRIX m_worldMatrix;
 	// x 파일 객체(호랑이)는 일단 맵에 한 마리만 존재하도록 설정
 	// 그 한 마리 호랑이가 살아있는지 아닌지 판별
 	// 총알로 호랑이 맞춰서 잡으면, 그 시점으로부터 일정 시간 후 호랑이 다시 랜덤 위치에서 리젠되도록 설정
-	BOOL m_IsLive;
-	BOOL m_IsRotating; // 현재 호랑이가 방향전환 중인지 확인
-	BOOL m_IsClockwise;
-	BOOL m_IsWallOpen[4]; // 현재 호랑이 위치 기준 앞, 뒤, 좌, 우로 진행 가능한지 확인
-	DWORD m_CurrentTime;
-	DWORD m_RotationAmount, m_RotationCount;
+	BOOL m_isAlive;
+	BOOL m_isRotating; // 현재 호랑이가 방향전환 중인지 확인
+	BOOL m_isClockwise;
+	BOOL m_isWallOpen[4]; // 현재 호랑이 위치 기준 앞, 뒤, 좌, 우로 진행 가능한지 확인
+	DWORD m_currentTime;
+	DWORD m_rotationAmount, m_rotationCount;
 
-	random_device m_Random; // 시드값을 얻기 위한 random_device
+	random_device m_randomDevice; // 시드값을 얻기 위한 random_device
 
 public:
-	int Render(LPDIRECT3DDEVICE9 pD3DDevice);
-	int Load(LPDIRECT3DDEVICE9 pD3DDevice, char* xFileName);
+	int Render(LPDIRECT3DDEVICE9 device);
+	int Load(LPDIRECT3DDEVICE9 device, char* xFilePath);
 	VOID Move(const char(*map)[kMazeColumnCount + 1]);
 	VOID Rotate(BOOL clockwise);
 
 	VOID SetPosition(D3DXVECTOR3 position)
 	{
-		m_Position = position;
+		m_position = position;
 	}
-	VOID SetLookAt(D3DXVECTOR3 look)
+	VOID SetLookAt(D3DXVECTOR3 lookAt)
 	{
-		m_LookAt = look;
+		m_lookAt = lookAt;
 	}
-	VOID SetLive(BOOL isLive)
+	VOID SetAlive(BOOL isAlive)
 	{
-		m_IsLive = isLive;
+		m_isAlive = isAlive;
 	}
 	D3DXVECTOR3 GetPosition()
 	{
-		return m_Position;
+		return m_position;
 	}
 	D3DXVECTOR3 GetLookAt()
 	{
-		return m_LookAt;
+		return m_lookAt;
 	}
-	BOOL GetLive()
+	BOOL IsAlive()
 	{
-		return m_IsLive;
+		return m_isAlive;
 	}
-	D3DXMATRIX& GetTigerWorld()
+	D3DXMATRIX& GetWorldMatrix()
 	{
-		return m_TigerWorld;
+		return m_worldMatrix;
 	}
 
 	Tiger(D3DXVECTOR3 position);

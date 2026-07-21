@@ -12,6 +12,6 @@ public:
 
 private:
 	DWORD m_startTimePoint;
-	BOOL m_bIsWorking = FALSE;
+	BOOL m_isRunning = FALSE;
 };
 

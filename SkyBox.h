@@ -6,10 +6,10 @@ class SkyBox
 {
 private:
 	// skybox에 입힐 texture와 위치를 담을 vertex buffer
-	LPDIRECT3DTEXTURE9 m_BoxTextures[6];
-	LPDIRECT3DVERTEXBUFFER9 m_BoxVertexBuffer;
+	LPDIRECT3DTEXTURE9 m_boxTextures[6];
+	LPDIRECT3DVERTEXBUFFER9 m_boxVertexBuffer;
 
-	CustomVertex m_BoxVertices[24];
+	CustomVertex m_boxVertices[24];
 
 public:
 	SkyBox();

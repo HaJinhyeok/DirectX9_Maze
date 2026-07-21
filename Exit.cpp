@@ -4,30 +4,30 @@ VOID Exit::Initialize(D3DXVECTOR3 position)
 {
 	Notice::Initialize(position);
 	// Exit는 notice count하지 않는다.
-	Notice::m_NoticeCount--;
-	Notice::m_bIsNotice = FALSE;
+	Notice::s_noticeCount--;
+	Notice::m_isNotice = FALSE;
 }
 VOID Exit::RenderButton(LPDIRECT3DDEVICE9 device)
 {
-	device->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, m_ExitButtonVertices, sizeof(UiVertex));
+	device->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, m_exitButtonVertices, sizeof(UiVertex));
 }
 VOID Exit::PressButton()
 {
-	bIsPressed = TRUE;
+	m_isPressed = TRUE;
 	for (int i = 0; i < 4; i++)
 	{
-		m_ExitButtonVertices[i].VerColor = kButtonPressedColor;
+		m_exitButtonVertices[i].color = kButtonPressedColor;
 	}
 }
 VOID Exit::ReleaseButton()
 {
-	bIsPressed = FALSE;
+	m_isPressed = FALSE;
 	for (int i = 0; i < 4; i++)
 	{
-		m_ExitButtonVertices[i].VerColor = kButtonDefaultColor;
+		m_exitButtonVertices[i].color = kButtonDefaultColor;
 	}
 }
 BOOL Exit::IsButtonPressed()
 {
-	return bIsPressed;
+	return m_isPressed;
 }

@@ -17,7 +17,8 @@
 | 클래스, 구조체, 열거형 | 접두사 없는 `PascalCase` | `Player`, `CustomVertex`, `MoveDirection` |
 | 함수 | 동사로 시작하는 `PascalCase` | `MoveBullet`, `GenerateMazeWall` |
 | 지역 변수, 매개변수 | `camelCase` | `playerPosition`, `cursorPosition` |
-| private 멤버 변수 | `m_` + `camelCase` | `m_playerWorld`, `m_isLightOn` |
+| private 비정적 멤버 변수 | `m_` + `camelCase` | `m_playerWorld`, `m_isLightOn` |
+| 정적 멤버 변수 | `s_` + `camelCase` | `s_noticeCount` |
 | bool | `is`, `has`, `can`, `should` 등 의미 접두사 | `isPaused`, `hasMoved` |
 | 임시 전역 변수 | `g_` + `camelCase` | `g_player`, `g_skyBox` |
 | 컴파일 시간 상수 | `kPascalCase`와 `constexpr` | `kWindowWidth` |
@@ -70,4 +71,3 @@ g_skyBox
 - 대량 일괄 치환보다 IDE의 심볼 이름 변경과 빌드 검증을 사용한다.
 - 한 Roadmap 항목에서 이름 변경과 구조 리팩터링을 함께 수행하지 않는다.
 - 각 단계 후 `Debug|x86` 빌드와 이전 이름 검색을 수행한다.
-

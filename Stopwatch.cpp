@@ -3,7 +3,7 @@
 void Stopwatch::Start()
 {
 	m_startTimePoint = timeGetTime();
-	m_bIsWorking = TRUE;
+	m_isRunning = TRUE;
 }
 DWORD Stopwatch::GetElapsedTime()
 {
@@ -16,10 +16,10 @@ DWORD Stopwatch::Stop()
 	DWORD endTimePoint = timeGetTime();
 	DWORD duration = endTimePoint - m_startTimePoint;
 	m_startTimePoint = endTimePoint;
-	m_bIsWorking = FALSE;
+	m_isRunning = FALSE;
 	return duration;
 }
 BOOL Stopwatch::IsRunning()
 {
-	return m_bIsWorking;
+	return m_isRunning;
 }

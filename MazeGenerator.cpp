@@ -1,20 +1,20 @@
 ﻿#include "MazeGenerator.h"
 
-D3DXVECTOR3 CalculateMidPoint(D3DXVECTOR3 pos1, D3DXVECTOR3 pos2)
+D3DXVECTOR3 CalculateMidPoint(D3DXVECTOR3 firstPoint, D3DXVECTOR3 secondPoint)
 {
-    return D3DXVECTOR3((pos1 + pos2).x / 2, (pos1 + pos2).y / 2, (pos1 + pos2).z / 2);
+    return D3DXVECTOR3((firstPoint + secondPoint).x / 2, (firstPoint + secondPoint).y / 2, (firstPoint + secondPoint).z / 2);
 }
 
 // 몇 번째 맵을 만들건지 주어지면, (맵 외곽을 제외한) 맵 내부를 구성하는 벽들의 vertex 좌표를 생성
 // 일단 맵은 하나만...
 // 맵 내부 구조를 ' '과 '*'로 이루어진 문자열로 표현하고, 이 문자열을 받으면 내부 vertex를 생성할 수 있게 만들면 베스트일듯...
 // 벽멱을 전부 vertex 정보로 저장할지, 아니면 한 칸 한 칸의 블록형태로 만들지 미지수
-VOID GenerateMazeWalls(int nMapNumber, CustomVertex(*Maze)[20], vector<Notice>* notice, Exit* Exit)
+VOID GenerateMazeWalls(int mapNumber, CustomVertex(*mazeVertices)[20], vector<Notice>* notices, Exit* exit)
 {
     int i,j;
-    int nBlockNum = 0, nNoticeNum = 0;
+    int blockIndex = 0;
     // 현재 맵은 하나 뿐임
-    if (nMapNumber == 1)
+    if (mapNumber == 1)
     {
         for (i = 0; i < kMazeRowCount; i++)
         {
@@ -22,18 +22,18 @@ VOID GenerateMazeWalls(int nMapNumber, CustomVertex(*Maze)[20], vector<Notice>* 
             {
                 if (chMap1[i][j] == '*')
                 {
-                    GenerateWallBlock(Maze[nBlockNum++], D3DXVECTOR3((-kMazeColumnCount / 2 + j + 0.5f) * kTileSize, 5.0f, (kMazeRowCount / 2 - i - 0.5f) * kTileSize));
+                    GenerateWallBlock(mazeVertices[blockIndex++], D3DXVECTOR3((-kMazeColumnCount / 2 + j + 0.5f) * kTileSize, 5.0f, (kMazeRowCount / 2 - i - 0.5f) * kTileSize));
                 }
                 else if (chMap1[i][j] == '@')
                 {
-                    Notice tmpNotice;
-                    tmpNotice.Initialize(D3DXVECTOR3((-kMazeColumnCount / 2 + j + 0.5f) * kTileSize, 5.0f, (kMazeRowCount / 2 - i - 0.5f) * kTileSize));
-                    notice->push_back(tmpNotice);
+                    Notice notice;
+                    notice.Initialize(D3DXVECTOR3((-kMazeColumnCount / 2 + j + 0.5f) * kTileSize, 5.0f, (kMazeRowCount / 2 - i - 0.5f) * kTileSize));
+                    notices->push_back(notice);
                 }
                 // 탈출구는 모든 맵마다 단 하나만 존재
                 else if (chMap1[i][j] == 'X')
                 {
-                    Exit->Initialize(D3DXVECTOR3((-kMazeColumnCount / 2 + j + 0.5f) * kTileSize, 5.0f, (kMazeRowCount / 2 - i - 0.5f) * kTileSize));
+                    exit->Initialize(D3DXVECTOR3((-kMazeColumnCount / 2 + j + 0.5f) * kTileSize, 5.0f, (kMazeRowCount / 2 - i - 0.5f) * kTileSize));
                 }
             }
         }
@@ -43,7 +43,7 @@ VOID GenerateMazeWalls(int nMapNumber, CustomVertex(*Maze)[20], vector<Notice>* 
         return;
 }
 
-VOID GenerateWallBlock(CustomVertex* Block, D3DXVECTOR3 position)
+VOID GenerateWallBlock(CustomVertex* blockVertices, D3DXVECTOR3 position)
 {
     int i;
     // 밑면을 제외한 5개 면의 vertex만 생성해주자
@@ -51,45 +51,45 @@ VOID GenerateWallBlock(CustomVertex* Block, D3DXVECTOR3 position)
     for (i = 0; i < 20; i++)
     {
         if (i % 4 == 0)
-            Block[i].v2VerTex = D3DXVECTOR2(0.0f, 0.0f);
+            blockVertices[i].textureCoordinate = D3DXVECTOR2(0.0f, 0.0f);
         else if (i % 4 == 1)
-            Block[i].v2VerTex = D3DXVECTOR2(1.0f, 0.0f);
+            blockVertices[i].textureCoordinate = D3DXVECTOR2(1.0f, 0.0f);
         else if (i % 4 == 2)
-            Block[i].v2VerTex = D3DXVECTOR2(1.0f, 1.0f);
+            blockVertices[i].textureCoordinate = D3DXVECTOR2(1.0f, 1.0f);
         else
-            Block[i].v2VerTex = D3DXVECTOR2(0.0f, 1.0f);
+            blockVertices[i].textureCoordinate = D3DXVECTOR2(0.0f, 1.0f);
 
         if (i / 4 == 0)
-            Block[i].v3VerNormal = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
+            blockVertices[i].normal = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
         else if (i / 4 == 1)
-            Block[i].v3VerNormal = D3DXVECTOR3(1.0f, 0.0f, 0.0f);
+            blockVertices[i].normal = D3DXVECTOR3(1.0f, 0.0f, 0.0f);
         else if (i / 4 == 2)
-            Block[i].v3VerNormal = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
+            blockVertices[i].normal = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
         else
-            Block[i].v3VerNormal = D3DXVECTOR3(-1.0f, 0.0f, 0.0f);
+            blockVertices[i].normal = D3DXVECTOR3(-1.0f, 0.0f, 0.0f);
     }
-    Block[0].v3VerPos = D3DXVECTOR3(position.x - kTileSize / 2, position.y + kTileSize / 2, position.z - kTileSize / 2);
-    Block[1].v3VerPos = D3DXVECTOR3(position.x + kTileSize / 2, position.y + kTileSize / 2, position.z - kTileSize / 2);
-    Block[2].v3VerPos = D3DXVECTOR3(position.x + kTileSize / 2, position.y - kTileSize / 2, position.z - kTileSize / 2);
-    Block[3].v3VerPos = D3DXVECTOR3(position.x - kTileSize / 2, position.y - kTileSize / 2, position.z - kTileSize / 2);
+    blockVertices[0].position = D3DXVECTOR3(position.x - kTileSize / 2, position.y + kTileSize / 2, position.z - kTileSize / 2);
+    blockVertices[1].position = D3DXVECTOR3(position.x + kTileSize / 2, position.y + kTileSize / 2, position.z - kTileSize / 2);
+    blockVertices[2].position = D3DXVECTOR3(position.x + kTileSize / 2, position.y - kTileSize / 2, position.z - kTileSize / 2);
+    blockVertices[3].position = D3DXVECTOR3(position.x - kTileSize / 2, position.y - kTileSize / 2, position.z - kTileSize / 2);
     
-    Block[4].v3VerPos = D3DXVECTOR3(position.x + kTileSize / 2, position.y + kTileSize / 2, position.z - kTileSize / 2);
-    Block[5].v3VerPos = D3DXVECTOR3(position.x + kTileSize / 2, position.y + kTileSize / 2, position.z + kTileSize / 2);
-    Block[6].v3VerPos = D3DXVECTOR3(position.x + kTileSize / 2, position.y - kTileSize / 2, position.z + kTileSize / 2);
-    Block[7].v3VerPos = D3DXVECTOR3(position.x + kTileSize / 2, position.y - kTileSize / 2, position.z - kTileSize / 2);
+    blockVertices[4].position = D3DXVECTOR3(position.x + kTileSize / 2, position.y + kTileSize / 2, position.z - kTileSize / 2);
+    blockVertices[5].position = D3DXVECTOR3(position.x + kTileSize / 2, position.y + kTileSize / 2, position.z + kTileSize / 2);
+    blockVertices[6].position = D3DXVECTOR3(position.x + kTileSize / 2, position.y - kTileSize / 2, position.z + kTileSize / 2);
+    blockVertices[7].position = D3DXVECTOR3(position.x + kTileSize / 2, position.y - kTileSize / 2, position.z - kTileSize / 2);
     
-    Block[8].v3VerPos = D3DXVECTOR3(position.x + kTileSize / 2, position.y + kTileSize / 2, position.z + kTileSize / 2);
-    Block[9].v3VerPos = D3DXVECTOR3(position.x - kTileSize / 2, position.y + kTileSize / 2, position.z + kTileSize / 2);
-    Block[10].v3VerPos = D3DXVECTOR3(position.x - kTileSize / 2, position.y - kTileSize / 2, position.z + kTileSize / 2);
-    Block[11].v3VerPos = D3DXVECTOR3(position.x + kTileSize / 2, position.y - kTileSize / 2, position.z + kTileSize / 2);
+    blockVertices[8].position = D3DXVECTOR3(position.x + kTileSize / 2, position.y + kTileSize / 2, position.z + kTileSize / 2);
+    blockVertices[9].position = D3DXVECTOR3(position.x - kTileSize / 2, position.y + kTileSize / 2, position.z + kTileSize / 2);
+    blockVertices[10].position = D3DXVECTOR3(position.x - kTileSize / 2, position.y - kTileSize / 2, position.z + kTileSize / 2);
+    blockVertices[11].position = D3DXVECTOR3(position.x + kTileSize / 2, position.y - kTileSize / 2, position.z + kTileSize / 2);
     
-    Block[12].v3VerPos = D3DXVECTOR3(position.x - kTileSize / 2, position.y + kTileSize / 2, position.z + kTileSize / 2);
-    Block[13].v3VerPos = D3DXVECTOR3(position.x - kTileSize / 2, position.y + kTileSize / 2, position.z - kTileSize / 2);
-    Block[14].v3VerPos = D3DXVECTOR3(position.x - kTileSize / 2, position.y - kTileSize / 2, position.z - kTileSize / 2);
-    Block[15].v3VerPos = D3DXVECTOR3(position.x - kTileSize / 2, position.y - kTileSize / 2, position.z + kTileSize / 2);
+    blockVertices[12].position = D3DXVECTOR3(position.x - kTileSize / 2, position.y + kTileSize / 2, position.z + kTileSize / 2);
+    blockVertices[13].position = D3DXVECTOR3(position.x - kTileSize / 2, position.y + kTileSize / 2, position.z - kTileSize / 2);
+    blockVertices[14].position = D3DXVECTOR3(position.x - kTileSize / 2, position.y - kTileSize / 2, position.z - kTileSize / 2);
+    blockVertices[15].position = D3DXVECTOR3(position.x - kTileSize / 2, position.y - kTileSize / 2, position.z + kTileSize / 2);
     
-    Block[16].v3VerPos = D3DXVECTOR3(position.x - kTileSize / 2, position.y + kTileSize / 2, position.z + kTileSize / 2);
-    Block[17].v3VerPos = D3DXVECTOR3(position.x + kTileSize / 2, position.y + kTileSize / 2, position.z + kTileSize / 2);
-    Block[18].v3VerPos = D3DXVECTOR3(position.x + kTileSize / 2, position.y + kTileSize / 2, position.z - kTileSize / 2);
-    Block[19].v3VerPos = D3DXVECTOR3(position.x - kTileSize / 2, position.y + kTileSize / 2, position.z - kTileSize / 2);
+    blockVertices[16].position = D3DXVECTOR3(position.x - kTileSize / 2, position.y + kTileSize / 2, position.z + kTileSize / 2);
+    blockVertices[17].position = D3DXVECTOR3(position.x + kTileSize / 2, position.y + kTileSize / 2, position.z + kTileSize / 2);
+    blockVertices[18].position = D3DXVECTOR3(position.x + kTileSize / 2, position.y + kTileSize / 2, position.z - kTileSize / 2);
+    blockVertices[19].position = D3DXVECTOR3(position.x - kTileSize / 2, position.y + kTileSize / 2, position.z - kTileSize / 2);
 }

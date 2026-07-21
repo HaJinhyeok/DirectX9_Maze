@@ -16,173 +16,168 @@ namespace
 
 Player::Player()
 {
-	D3DXMATRIX tmpMatrix;
 	// 일반화된 m by n matrix로 미로 정보를 받게 되면 수정해야함
 	// 현재는 고정된 위치 시작
-	m_LookAt = v3StartPosition;
-	m_LookAt.z += kLookAtDistance;
+	m_lookAt = v3StartPosition;
+	m_lookAt.z += kLookAtDistance;
 	// player world matrix initialization
-	D3DXMatrixIdentity(&m_PlayerWorld);
-	D3DXMatrixTranslation(&m_PlayerWorld, v3StartPosition.x, v3StartPosition.y, v3StartPosition.z);
+	D3DXMatrixIdentity(&m_worldMatrix);
+	D3DXMatrixTranslation(&m_worldMatrix, v3StartPosition.x, v3StartPosition.y, v3StartPosition.z);
 
 	//// light setting
-	m_IsLightOn = TRUE;
-	ZeroMemory(&m_FlashLight, sizeof(D3DLIGHT9));
-	m_FlashLight.Type = D3DLIGHT_SPOT;
-	m_FlashLight.Diffuse = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
-	m_FlashLight.Ambient.r = 1.0f;
-	m_FlashLight.Ambient.g = 1.0f;
-	m_FlashLight.Ambient.b = 1.0f;
-	m_FlashLight.Specular.r = 1.0f;
-	m_FlashLight.Specular.g = 1.0f;
-	m_FlashLight.Specular.b = 1.0f;
-	m_FlashLight.Position = v3StartPosition;
-	m_FlashLight.Direction = D3DXVECTOR3(m_PlayerWorld._31, m_PlayerWorld._32, m_PlayerWorld._33);
-	D3DXVec3Normalize((D3DXVECTOR3*)&m_FlashLight.Direction, (D3DXVECTOR3*)&m_FlashLight.Direction);
-	m_FlashLight.Range = 1500.0f;
-	m_FlashLight.Attenuation0 = 1.0f;
-	m_FlashLight.Attenuation1 = 0.01f;
-	m_FlashLight.Attenuation2 = 0.0001f;
-	m_FlashLight.Falloff = 2.0f;
-	m_FlashLight.Phi = D3DXToRadian(60.0f);
-	m_FlashLight.Theta = D3DXToRadian(30.0f);
-	//m_FlashLight.Phi = D3DXToRadian(100.0f);
-	//m_FlashLight.Theta = D3DXToRadian(100.0f);
-	//m_FlashLight.Phi = 1.0f;
-	//m_FlashLight.Theta = 0.7f;
+	m_isFlashlightOn = TRUE;
+	ZeroMemory(&m_flashlight, sizeof(D3DLIGHT9));
+	m_flashlight.Type = D3DLIGHT_SPOT;
+	m_flashlight.Diffuse = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	m_flashlight.Ambient.r = 1.0f;
+	m_flashlight.Ambient.g = 1.0f;
+	m_flashlight.Ambient.b = 1.0f;
+	m_flashlight.Specular.r = 1.0f;
+	m_flashlight.Specular.g = 1.0f;
+	m_flashlight.Specular.b = 1.0f;
+	m_flashlight.Position = v3StartPosition;
+	m_flashlight.Direction = D3DXVECTOR3(m_worldMatrix._31, m_worldMatrix._32, m_worldMatrix._33);
+	D3DXVec3Normalize((D3DXVECTOR3*)&m_flashlight.Direction, (D3DXVECTOR3*)&m_flashlight.Direction);
+	m_flashlight.Range = 1500.0f;
+	m_flashlight.Attenuation0 = 1.0f;
+	m_flashlight.Attenuation1 = 0.01f;
+	m_flashlight.Attenuation2 = 0.0001f;
+	m_flashlight.Falloff = 2.0f;
+	m_flashlight.Phi = D3DXToRadian(60.0f);
+	m_flashlight.Theta = D3DXToRadian(30.0f);
 
-	m_CurrentMoveTime = timeGetTime();
-	m_CurrentRotateTime = timeGetTime();
+	m_currentMoveTime = timeGetTime();
+	m_currentRotateTime = timeGetTime();
 }
 
 // PLAYER MOVE
 // 바꾸어야 할 것: 플레이어 위치, 플레이어 LookAt
 // 필요한 것: 플레이어가 움직일 방향 벡터, 거리, 플에이어 현 위치, 플레이어 현 LookAt, 맵 정보
-BOOL Player::Move(MoveDirection direction, const char(*map)[kMazeColumnCount + 1], BOOL NoClip)
+BOOL Player::Move(MoveDirection direction, const char(*map)[kMazeColumnCount + 1], BOOL isNoClipEnabled)
 {
 	DWORD currentTime = timeGetTime();
-	if (currentTime - m_CurrentMoveTime < 10) return FALSE;
-	m_CurrentMoveTime = currentTime;
+	if (currentTime - m_currentMoveTime < 10) return FALSE;
+	m_currentMoveTime = currentTime;
 
-	D3DXVECTOR3 vecDirection, tmpPosition; // 벽을 생각하지 않고 이동된 위치. 주변 8개 벽과 이것을 대조해 최종 위치 결정
+	D3DXVECTOR3 movementDirection, targetPosition; // 벽을 생각하지 않고 이동된 위치. 주변 8개 벽과 이것을 대조해 최종 위치 결정
 	D3DXVECTOR3 currentPosition = GetPosition();
-	FLOAT fCoefficient = kPlayerMoveDistance;
-	int i, nCoX, nCoZ;
+	FLOAT movementScale = kPlayerMoveDistance;
+	int i, column, row;
 
 	// y축 움직임은 없으므로 y축 정보는 걍 빼고 계산
 	// => 자유시점의 경우도 생각해서 y축도 이동
-	if (direction == MoveDirection::left)
+	if (direction == MoveDirection::Left)
 	{
-		vecDirection.x = -m_PlayerWorld._11;
-		vecDirection.y = -m_PlayerWorld._12;
-		vecDirection.z = -m_PlayerWorld._13;
-		fCoefficient /= sqrtf(vecDirection.x * vecDirection.x + vecDirection.y * vecDirection.y + vecDirection.z * vecDirection.z);
+		movementDirection.x = -m_worldMatrix._11;
+		movementDirection.y = -m_worldMatrix._12;
+		movementDirection.z = -m_worldMatrix._13;
+		movementScale /= sqrtf(movementDirection.x * movementDirection.x + movementDirection.y * movementDirection.y + movementDirection.z * movementDirection.z);
 
-		tmpPosition.x = currentPosition.x + vecDirection.x * fCoefficient;
-		tmpPosition.y = currentPosition.y + vecDirection.y * fCoefficient;
-		tmpPosition.z = currentPosition.z + vecDirection.z * fCoefficient;
+		targetPosition.x = currentPosition.x + movementDirection.x * movementScale;
+		targetPosition.y = currentPosition.y + movementDirection.y * movementScale;
+		targetPosition.z = currentPosition.z + movementDirection.z * movementScale;
 	}
-	else if (direction == MoveDirection::right)
+	else if (direction == MoveDirection::Right)
 	{
-		vecDirection.x = m_PlayerWorld._11;
-		vecDirection.y = m_PlayerWorld._12;
-		vecDirection.z = m_PlayerWorld._13;
-		fCoefficient /= sqrtf(vecDirection.x * vecDirection.x + vecDirection.y * vecDirection.y + vecDirection.z * vecDirection.z);
+		movementDirection.x = m_worldMatrix._11;
+		movementDirection.y = m_worldMatrix._12;
+		movementDirection.z = m_worldMatrix._13;
+		movementScale /= sqrtf(movementDirection.x * movementDirection.x + movementDirection.y * movementDirection.y + movementDirection.z * movementDirection.z);
 
-		tmpPosition.x = currentPosition.x + vecDirection.x * fCoefficient;
-		tmpPosition.y = currentPosition.y + vecDirection.y * fCoefficient;
-		tmpPosition.z = currentPosition.z + vecDirection.z * fCoefficient;
+		targetPosition.x = currentPosition.x + movementDirection.x * movementScale;
+		targetPosition.y = currentPosition.y + movementDirection.y * movementScale;
+		targetPosition.z = currentPosition.z + movementDirection.z * movementScale;
 	}
-	else if (direction == MoveDirection::front)
+	else if (direction == MoveDirection::Forward)
 	{
-		vecDirection.x = m_PlayerWorld._31;
-		vecDirection.y = m_PlayerWorld._32;
-		vecDirection.z = m_PlayerWorld._33;
-		fCoefficient /= sqrtf(vecDirection.x * vecDirection.x + vecDirection.y * vecDirection.y + vecDirection.z * vecDirection.z);
+		movementDirection.x = m_worldMatrix._31;
+		movementDirection.y = m_worldMatrix._32;
+		movementDirection.z = m_worldMatrix._33;
+		movementScale /= sqrtf(movementDirection.x * movementDirection.x + movementDirection.y * movementDirection.y + movementDirection.z * movementDirection.z);
 
-		tmpPosition.x = currentPosition.x + vecDirection.x * fCoefficient;
-		tmpPosition.y = currentPosition.y + vecDirection.y * fCoefficient;
-		tmpPosition.z = currentPosition.z + vecDirection.z * fCoefficient;
+		targetPosition.x = currentPosition.x + movementDirection.x * movementScale;
+		targetPosition.y = currentPosition.y + movementDirection.y * movementScale;
+		targetPosition.z = currentPosition.z + movementDirection.z * movementScale;
 	}
-	else if (direction == MoveDirection::back)
+	else if (direction == MoveDirection::Backward)
 	{
-		vecDirection.x = -m_PlayerWorld._31;
-		vecDirection.y = -m_PlayerWorld._32;
-		vecDirection.z = -m_PlayerWorld._33;
-		fCoefficient /= sqrtf(vecDirection.x * vecDirection.x + vecDirection.y * vecDirection.y + vecDirection.z * vecDirection.z);
+		movementDirection.x = -m_worldMatrix._31;
+		movementDirection.y = -m_worldMatrix._32;
+		movementDirection.z = -m_worldMatrix._33;
+		movementScale /= sqrtf(movementDirection.x * movementDirection.x + movementDirection.y * movementDirection.y + movementDirection.z * movementDirection.z);
 
-		tmpPosition.x = currentPosition.x + vecDirection.x * fCoefficient;
-		tmpPosition.y = currentPosition.y + vecDirection.y * fCoefficient;
-		tmpPosition.z = currentPosition.z + vecDirection.z * fCoefficient;
+		targetPosition.x = currentPosition.x + movementDirection.x * movementScale;
+		targetPosition.y = currentPosition.y + movementDirection.y * movementScale;
+		targetPosition.z = currentPosition.z + movementDirection.z * movementScale;
 
 	}
-	if (!NoClip)
+	if (!isNoClipEnabled)
 	{
 		// 충돌을 검사할 블록의 왼쪽아래(minX, minZ)와 오른쪽위(maxX,maxZ) 두 점
-		D3DXVECTOR2 WallPoint[2];
+		D3DXVECTOR2 wallBounds[2];
 		// 현재 좌표
-		nCoX = static_cast<int>(floorf(currentPosition.x / kTileSize)) + kMazeColumnCount / 2;
-		nCoZ = kMazeRowCount / 2 - static_cast<int>(floorf(currentPosition.z / kTileSize)) - 1;
+		column = static_cast<int>(floorf(currentPosition.x / kTileSize)) + kMazeColumnCount / 2;
+		row = kMazeRowCount / 2 - static_cast<int>(floorf(currentPosition.z / kTileSize)) - 1;
 		// 해결: 외곽 벽에 부딪히는 경우 추가, 몇몇 곳에서 블록 속으로 들어가버리는 버그 수정하기
 		// x축 음의 방향으로 이동일 경우
-		if (vecDirection.x < 0)
+		if (movementDirection.x < 0)
 		{
 			for (i = 0; i < 3; i++)
 			{
 				// 현재 위치 기준 왼쪽 3개 블록에 대해 검사
 				// 제일 외곽 벽일 경우 따로 검사
-				if (nCoX == 0)
+				if (column == 0)
 				{
-					if (tmpPosition.x - kPlayerRadius <= -kMazeColumnCount / 2 * kTileSize)
+					if (targetPosition.x - kPlayerRadius <= -kMazeColumnCount / 2 * kTileSize)
 					{
-						tmpPosition.x = -kMazeColumnCount / 2 * kTileSize + kPlayerRadius;
+						targetPosition.x = -kMazeColumnCount / 2 * kTileSize + kPlayerRadius;
 					}
 				}
-				else if (IsWall(map, nCoZ - 1 + i, nCoX - 1))
+				else if (IsWall(map, row - 1 + i, column - 1))
 				{
-					WallPoint[0].x = (nCoX - 1 - kMazeColumnCount / 2) * kTileSize;
-					WallPoint[0].y = (kMazeRowCount / 2 - (nCoZ - 1 + i) - 1) * kTileSize;
-					WallPoint[1].x = (nCoX - kMazeColumnCount / 2) * kTileSize;
-					WallPoint[1].y = (kMazeRowCount / 2 - (nCoZ - 1 + i)) * kTileSize;
+					wallBounds[0].x = (column - 1 - kMazeColumnCount / 2) * kTileSize;
+					wallBounds[0].y = (kMazeRowCount / 2 - (row - 1 + i) - 1) * kTileSize;
+					wallBounds[1].x = (column - kMazeColumnCount / 2) * kTileSize;
+					wallBounds[1].y = (kMazeRowCount / 2 - (row - 1 + i)) * kTileSize;
 
 					//충돌 시
-					if (WallPoint[0].x <= tmpPosition.x + kPlayerRadius && WallPoint[1].x >= tmpPosition.x - kPlayerRadius
-						&& WallPoint[0].y <= tmpPosition.z + kPlayerRadius && WallPoint[1].y >= tmpPosition.z - kPlayerRadius)
+					if (wallBounds[0].x <= targetPosition.x + kPlayerRadius && wallBounds[1].x >= targetPosition.x - kPlayerRadius
+						&& wallBounds[0].y <= targetPosition.z + kPlayerRadius && wallBounds[1].y >= targetPosition.z - kPlayerRadius)
 					{
-						if (IsWall(map, nCoZ, nCoX - 1))
-							tmpPosition.x = WallPoint[1].x + kPlayerRadius + 0.1f;
+						if (IsWall(map, row, column - 1))
+							targetPosition.x = wallBounds[1].x + kPlayerRadius + 0.1f;
 						break;
 					}
 				}
 			}
 		}
 		// x축 양의 방향으로 이동일 경우
-		else if (vecDirection.x > 0)
+		else if (movementDirection.x > 0)
 		{
 			for (i = 0; i < 3; i++)
 			{
 				// 현재 위치 기준 오른쪽 3개 블록에 대해 검사
 				// 제일 외곽 벽일 경우 따로 검사
-				if (nCoX == kMazeColumnCount - 1)
+				if (column == kMazeColumnCount - 1)
 				{
-					if (tmpPosition.x + kPlayerRadius >= kMazeColumnCount / 2 * kTileSize)
+					if (targetPosition.x + kPlayerRadius >= kMazeColumnCount / 2 * kTileSize)
 					{
-						tmpPosition.x = kMazeColumnCount / 2 * kTileSize - kPlayerRadius;
+						targetPosition.x = kMazeColumnCount / 2 * kTileSize - kPlayerRadius;
 					}
 				}
-				else if (IsWall(map, nCoZ - 1 + i, nCoX + 1))
+				else if (IsWall(map, row - 1 + i, column + 1))
 				{
-					WallPoint[0].x = (nCoX + 1 - kMazeColumnCount / 2) * kTileSize;
-					WallPoint[0].y = (kMazeRowCount / 2 - (nCoZ - 1 + i) - 1) * kTileSize;
-					WallPoint[1].x = (nCoX + 2 - kMazeColumnCount / 2) * kTileSize;
-					WallPoint[1].y = (kMazeRowCount / 2 - (nCoZ - 1 + i)) * kTileSize;
+					wallBounds[0].x = (column + 1 - kMazeColumnCount / 2) * kTileSize;
+					wallBounds[0].y = (kMazeRowCount / 2 - (row - 1 + i) - 1) * kTileSize;
+					wallBounds[1].x = (column + 2 - kMazeColumnCount / 2) * kTileSize;
+					wallBounds[1].y = (kMazeRowCount / 2 - (row - 1 + i)) * kTileSize;
 
 					//충돌 시
-					if (WallPoint[0].x <= tmpPosition.x + kPlayerRadius && WallPoint[1].x >= tmpPosition.x - kPlayerRadius
-						&& WallPoint[0].y <= tmpPosition.z + kPlayerRadius && WallPoint[1].y >= tmpPosition.z - kPlayerRadius)
+					if (wallBounds[0].x <= targetPosition.x + kPlayerRadius && wallBounds[1].x >= targetPosition.x - kPlayerRadius
+						&& wallBounds[0].y <= targetPosition.z + kPlayerRadius && wallBounds[1].y >= targetPosition.z - kPlayerRadius)
 					{
-						if (IsWall(map, nCoZ, nCoX + 1))
-							tmpPosition.x = WallPoint[0].x - kPlayerRadius - 0.1f;
+						if (IsWall(map, row, column + 1))
+							targetPosition.x = wallBounds[0].x - kPlayerRadius - 0.1f;
 						break;
 					}
 				}
@@ -190,62 +185,62 @@ BOOL Player::Move(MoveDirection direction, const char(*map)[kMazeColumnCount + 1
 		}
 
 		// z축 음의 방향으로 이동일 경우
-		if (vecDirection.z < 0)
+		if (movementDirection.z < 0)
 		{
 			for (i = 0; i < 3; i++)
 			{
 				// 현재 위치 기준 아래쪽 3개 블록에 대해 검사
 				// 제일 외곽 벽일 경우 따로 검사
-				if (nCoZ == kMazeRowCount - 1)
+				if (row == kMazeRowCount - 1)
 				{
-					if (tmpPosition.z - kPlayerRadius <= -kMazeRowCount / 2 * kTileSize)
+					if (targetPosition.z - kPlayerRadius <= -kMazeRowCount / 2 * kTileSize)
 					{
-						tmpPosition.z = -kMazeRowCount / 2 * kTileSize + kPlayerRadius;
+						targetPosition.z = -kMazeRowCount / 2 * kTileSize + kPlayerRadius;
 					}
 				}
-				else if (IsWall(map, nCoZ + 1, nCoX - 1 + i))
+				else if (IsWall(map, row + 1, column - 1 + i))
 				{
-					WallPoint[0].x = (nCoX - 1 + i - kMazeColumnCount / 2) * kTileSize;
-					WallPoint[0].y = (kMazeRowCount / 2 - (nCoZ + 1) - 1) * kTileSize;
-					WallPoint[1].x = (nCoX + i - kMazeColumnCount / 2) * kTileSize;
-					WallPoint[1].y = (kMazeRowCount / 2 - (nCoZ + 1)) * kTileSize;
+					wallBounds[0].x = (column - 1 + i - kMazeColumnCount / 2) * kTileSize;
+					wallBounds[0].y = (kMazeRowCount / 2 - (row + 1) - 1) * kTileSize;
+					wallBounds[1].x = (column + i - kMazeColumnCount / 2) * kTileSize;
+					wallBounds[1].y = (kMazeRowCount / 2 - (row + 1)) * kTileSize;
 
 					//충돌 시
-					if (WallPoint[0].x <= tmpPosition.x + kPlayerRadius && WallPoint[1].x >= tmpPosition.x - kPlayerRadius
-						&& WallPoint[0].y <= tmpPosition.z + kPlayerRadius && WallPoint[1].y >= tmpPosition.z - kPlayerRadius)
+					if (wallBounds[0].x <= targetPosition.x + kPlayerRadius && wallBounds[1].x >= targetPosition.x - kPlayerRadius
+						&& wallBounds[0].y <= targetPosition.z + kPlayerRadius && wallBounds[1].y >= targetPosition.z - kPlayerRadius)
 					{
-						tmpPosition.z = WallPoint[1].y + kPlayerRadius + 0.1f;
+						targetPosition.z = wallBounds[1].y + kPlayerRadius + 0.1f;
 						break;
 					}
 				}
 			}
 		}
 		// z축 양의 방향으로 이동일 경우
-		else if (vecDirection.z > 0)
+		else if (movementDirection.z > 0)
 		{
 			for (i = 0; i < 3; i++)
 			{
 				// 현재 위치 기준 위쪽 3개 블록에 대해 검사
 				// 제일 외곽 벽일 경우 따로 검사
-				if (nCoZ == 0)
+				if (row == 0)
 				{
-					if (tmpPosition.z + kPlayerRadius >= kMazeRowCount / 2 * kTileSize)
+					if (targetPosition.z + kPlayerRadius >= kMazeRowCount / 2 * kTileSize)
 					{
-						tmpPosition.z = kMazeRowCount / 2 * kTileSize - kPlayerRadius;
+						targetPosition.z = kMazeRowCount / 2 * kTileSize - kPlayerRadius;
 					}
 				}
-				else if (IsWall(map, nCoZ - 1, nCoX - 1 + i))
+				else if (IsWall(map, row - 1, column - 1 + i))
 				{
-					WallPoint[0].x = (nCoX - 1 + i - kMazeColumnCount / 2) * kTileSize;
-					WallPoint[0].y = (kMazeRowCount / 2 - (nCoZ - 1) - 1) * kTileSize;
-					WallPoint[1].x = (nCoX + i - kMazeColumnCount / 2) * kTileSize;
-					WallPoint[1].y = (kMazeRowCount / 2 - (nCoZ - 1)) * kTileSize;
+					wallBounds[0].x = (column - 1 + i - kMazeColumnCount / 2) * kTileSize;
+					wallBounds[0].y = (kMazeRowCount / 2 - (row - 1) - 1) * kTileSize;
+					wallBounds[1].x = (column + i - kMazeColumnCount / 2) * kTileSize;
+					wallBounds[1].y = (kMazeRowCount / 2 - (row - 1)) * kTileSize;
 
 					//충돌 시
-					if (WallPoint[0].x <= tmpPosition.x + kPlayerRadius && WallPoint[1].x >= tmpPosition.x - kPlayerRadius
-						&& WallPoint[0].y <= tmpPosition.z + kPlayerRadius && WallPoint[1].y >= tmpPosition.z - kPlayerRadius)
+					if (wallBounds[0].x <= targetPosition.x + kPlayerRadius && wallBounds[1].x >= targetPosition.x - kPlayerRadius
+						&& wallBounds[0].y <= targetPosition.z + kPlayerRadius && wallBounds[1].y >= targetPosition.z - kPlayerRadius)
 					{
-						tmpPosition.z = WallPoint[0].y - kPlayerRadius - 0.1f;
+						targetPosition.z = wallBounds[0].y - kPlayerRadius - 0.1f;
 						break;
 					}
 				}
@@ -253,152 +248,148 @@ BOOL Player::Move(MoveDirection direction, const char(*map)[kMazeColumnCount + 1
 		}
 	}
 	// LookAt은 Position이 이동한 만큼만 더하거나 빼주면 됨
-	m_LookAt.x += tmpPosition.x - currentPosition.x;
-	m_LookAt.z += tmpPosition.z - currentPosition.z;
-	if (NoClip)
+	m_lookAt.x += targetPosition.x - currentPosition.x;
+	m_lookAt.z += targetPosition.z - currentPosition.z;
+	if (isNoClipEnabled)
 	{
-		m_LookAt.y += tmpPosition.y - currentPosition.y;
+		m_lookAt.y += targetPosition.y - currentPosition.y;
 	}
 
-	if (!NoClip)
+	if (!isNoClipEnabled)
 	{
-		tmpPosition.y = kTileSize / 2;
+		targetPosition.y = kTileSize / 2;
 	}
 
 	// world matrix도 translate해주기
-	D3DXMATRIX tmpTranslation;
-	D3DXMatrixTranslation(&tmpTranslation, tmpPosition.x - currentPosition.x, tmpPosition.y - currentPosition.y, tmpPosition.z - currentPosition.z);
-	D3DXMatrixMultiply(&m_PlayerWorld, &m_PlayerWorld, &tmpTranslation);
+	D3DXMATRIX translationMatrix;
+	D3DXMatrixTranslation(&translationMatrix, targetPosition.x - currentPosition.x, targetPosition.y - currentPosition.y, targetPosition.z - currentPosition.z);
+	D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
 
-	//SetPosition(tmpPosition);
+	//SetPosition(targetPosition);
 
-	m_FlashLight.Position = GetPosition();
+	m_flashlight.Position = GetPosition();
 	return TRUE;
 }
 
-VOID Player::Rotate(BOOL bIsCCW)
+VOID Player::Rotate(BOOL isCounterClockwise)
 {
 	DWORD currentTime = timeGetTime();
-	if (currentTime - m_CurrentRotateTime < 10) return;
-	m_CurrentRotateTime = currentTime;
+	if (currentTime - m_currentRotateTime < 10) return;
+	m_currentRotateTime = currentTime;
 
-	// bIsCCW로 q인지 e인지 구분하고, angle만큼 회전을 하며, LookAt과 Position 사이 간격은 distance
+	// isCounterClockwise로 q인지 e인지 구분하고, angle만큼 회전을 하며, LookAt과 Position 사이 간격은 distance
 	// 이 함수는 좌우 회전만 하므로, CalculateAngle 불필요
-	D3DXMATRIX mtRotation, mtTranslation;
+	D3DXMATRIX rotationMatrix, translationMatrix;
 	D3DXVECTOR3 currentPosition = GetPosition();
-	FLOAT fCoefficient = kLookAtDistance;
-	D3DXVECTOR3 v3Axis = D3DXVECTOR3(m_PlayerWorld._21, m_PlayerWorld._22, m_PlayerWorld._23);
+	FLOAT lookDirectionScale = kLookAtDistance;
 
-	D3DXMatrixTranslation(&mtTranslation, -currentPosition.x, -currentPosition.y, -currentPosition.z);
-	D3DXMatrixMultiply(&m_PlayerWorld, &m_PlayerWorld, &mtTranslation);
+	D3DXMatrixTranslation(&translationMatrix, -currentPosition.x, -currentPosition.y, -currentPosition.z);
+	D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
 
-	if (bIsCCW == TRUE)
+	if (isCounterClockwise == TRUE)
 	{
-		D3DXMatrixRotationY(&mtRotation, -kRotationAmount);
+		D3DXMatrixRotationY(&rotationMatrix, -kRotationAmount);
 	}
 	else
 	{
-		D3DXMatrixRotationY(&mtRotation, kRotationAmount);
+		D3DXMatrixRotationY(&rotationMatrix, kRotationAmount);
 	}
-	D3DXMatrixMultiply(&m_PlayerWorld, &m_PlayerWorld, &mtRotation);
+	D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &rotationMatrix);
 
-	D3DXMatrixTranslation(&mtTranslation, currentPosition.x, currentPosition.y, currentPosition.z);
-	D3DXMatrixMultiply(&m_PlayerWorld, &m_PlayerWorld, &mtTranslation);
+	D3DXMatrixTranslation(&translationMatrix, currentPosition.x, currentPosition.y, currentPosition.z);
+	D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
 
-	fCoefficient /= sqrtf(m_PlayerWorld._31 * m_PlayerWorld._31 + m_PlayerWorld._32 * m_PlayerWorld._32 + m_PlayerWorld._33 * m_PlayerWorld._33);
-	m_LookAt.x = currentPosition.x + m_PlayerWorld._31 * fCoefficient;
-	m_LookAt.y = currentPosition.y + m_PlayerWorld._32 * fCoefficient;
-	m_LookAt.z = currentPosition.z + m_PlayerWorld._33 * fCoefficient;
+	lookDirectionScale /= sqrtf(m_worldMatrix._31 * m_worldMatrix._31 + m_worldMatrix._32 * m_worldMatrix._32 + m_worldMatrix._33 * m_worldMatrix._33);
+	m_lookAt.x = currentPosition.x + m_worldMatrix._31 * lookDirectionScale;
+	m_lookAt.y = currentPosition.y + m_worldMatrix._32 * lookDirectionScale;
+	m_lookAt.z = currentPosition.z + m_worldMatrix._33 * lookDirectionScale;
 
-	m_FlashLight.Direction = D3DXVECTOR3(m_PlayerWorld._31, m_PlayerWorld._32, m_PlayerWorld._33);
+	m_flashlight.Direction = D3DXVECTOR3(m_worldMatrix._31, m_worldMatrix._32, m_worldMatrix._33);
 }
-VOID Player::Rotate(BOOL bIsCCW, BOOL bIsUpDown, FLOAT angle)
+
+VOID Player::Rotate(BOOL isCounterClockwise, BOOL isVertical, FLOAT angle)
 {
 	DWORD currentTime = timeGetTime();
-	//if (currentTime - m_CurrentRotateTime < 10) return;
-	// 현재 로직 상 x축 회전 후 y축 회전시키므로, y축 회전 하고 시간 체크해야 온전히 회전됨
-	/*if (bIsUpDown)
-		m_CurrentRotateTime = currentTime;*/
 
-		// 위아래일때 ccw면 위, !ccw면 아래
-	D3DXMATRIX mtRotation, mtTranslation;
-	D3DXVECTOR3 v3RotationAxis;
+	// 위아래일때 ccw면 위, !ccw면 아래
+	D3DXMATRIX rotationMatrix, translationMatrix;
+	D3DXVECTOR3 rotationAxis;
 	D3DXVECTOR3 currentPosition = GetPosition();
-	D3DXQUATERNION vQuart;
-	FLOAT fCoefficient = kLookAtDistance;
+	FLOAT lookDirectionScale = kLookAtDistance;
 
-	D3DXMatrixTranslation(&mtTranslation, -currentPosition.x, -currentPosition.y, -currentPosition.z);
-	D3DXMatrixMultiply(&m_PlayerWorld, &m_PlayerWorld, &mtTranslation);
+	D3DXMatrixTranslation(&translationMatrix, -currentPosition.x, -currentPosition.y, -currentPosition.z);
+	D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
 
 	// 좌우 회전
-	if (bIsUpDown == FALSE)
+	if (isVertical == FALSE)
 	{
-		v3RotationAxis = D3DXVECTOR3(m_PlayerWorld._21, m_PlayerWorld._22, m_PlayerWorld._23);
-		if (bIsCCW == TRUE)
+		rotationAxis = D3DXVECTOR3(m_worldMatrix._21, m_worldMatrix._22, m_worldMatrix._23);
+		if (isCounterClockwise == TRUE)
 		{
-			D3DXMatrixRotationY(&mtRotation, -angle);
+			D3DXMatrixRotationY(&rotationMatrix, -angle);
 		}
 		else
 		{
-			D3DXMatrixRotationY(&mtRotation, angle);
+			D3DXMatrixRotationY(&rotationMatrix, angle);
 		}
 	}
 	// 상하 회전
 	else
 	{
 		// up vector와 player가 바라보는 방향 vector 사이의 각도 구하기
-		FLOAT fAngle = CalculateAngle(v3Up, D3DXVECTOR3(m_PlayerWorld._31, m_PlayerWorld._32, m_PlayerWorld._33));
+		FLOAT lookAngle = CalculateAngle(v3Up, D3DXVECTOR3(m_worldMatrix._31, m_worldMatrix._32, m_worldMatrix._33));
 
-		v3RotationAxis = D3DXVECTOR3(m_PlayerWorld._11, 0, m_PlayerWorld._13);
+		rotationAxis = D3DXVECTOR3(m_worldMatrix._11, 0, m_worldMatrix._13);
 		// 아래
-		if (bIsCCW == TRUE)
+		if (isCounterClockwise == TRUE)
 		{
 			// 밑으로 너무 숙이면 회전 안시킴
-			if (fAngle + kRotationAmount > D3DXToRadian(175.0f))
+			if (lookAngle + kRotationAmount > D3DXToRadian(175.0f))
 			{
-				D3DXMatrixTranslation(&mtTranslation, currentPosition.x, currentPosition.y, currentPosition.z);
-				D3DXMatrixMultiply(&m_PlayerWorld, &m_PlayerWorld, &mtTranslation);
+				D3DXMatrixTranslation(&translationMatrix, currentPosition.x, currentPosition.y, currentPosition.z);
+				D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
 				return;
 			}
-			D3DXMatrixRotationAxis(&mtRotation, &v3RotationAxis, angle);
+			D3DXMatrixRotationAxis(&rotationMatrix, &rotationAxis, angle);
 		}
 		// 위
 		else
 		{
 			// 위로 너무 올라가면 회전 안시킴
-			if (fAngle - kRotationAmount < D3DXToRadian(5.0f))
+			if (lookAngle - kRotationAmount < D3DXToRadian(5.0f))
 			{
-				D3DXMatrixTranslation(&mtTranslation, currentPosition.x, currentPosition.y, currentPosition.z);
-				D3DXMatrixMultiply(&m_PlayerWorld, &m_PlayerWorld, &mtTranslation);
+				D3DXMatrixTranslation(&translationMatrix, currentPosition.x, currentPosition.y, currentPosition.z);
+				D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
 				return;
 			}
-			D3DXMatrixRotationAxis(&mtRotation, &v3RotationAxis, -angle);
+			D3DXMatrixRotationAxis(&rotationMatrix, &rotationAxis, -angle);
 		}
 	}
-	D3DXMatrixMultiply(&m_PlayerWorld, &m_PlayerWorld, &mtRotation);
+	D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &rotationMatrix);
 
-	D3DXMatrixTranslation(&mtTranslation, currentPosition.x, currentPosition.y, currentPosition.z);
-	D3DXMatrixMultiply(&m_PlayerWorld, &m_PlayerWorld, &mtTranslation);
+	D3DXMatrixTranslation(&translationMatrix, currentPosition.x, currentPosition.y, currentPosition.z);
+	D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
 
-	fCoefficient /= sqrtf(m_PlayerWorld._31 * m_PlayerWorld._31 + m_PlayerWorld._32 * m_PlayerWorld._32 + m_PlayerWorld._33 * m_PlayerWorld._33);
-	m_LookAt.x = currentPosition.x + m_PlayerWorld._31 * fCoefficient;
-	m_LookAt.y = currentPosition.y + m_PlayerWorld._32 * fCoefficient;
-	m_LookAt.z = currentPosition.z + m_PlayerWorld._33 * fCoefficient;
+	lookDirectionScale /= sqrtf(m_worldMatrix._31 * m_worldMatrix._31 + m_worldMatrix._32 * m_worldMatrix._32 + m_worldMatrix._33 * m_worldMatrix._33);
+	m_lookAt.x = currentPosition.x + m_worldMatrix._31 * lookDirectionScale;
+	m_lookAt.y = currentPosition.y + m_worldMatrix._32 * lookDirectionScale;
+	m_lookAt.z = currentPosition.z + m_worldMatrix._33 * lookDirectionScale;
 
-	m_FlashLight.Direction = D3DXVECTOR3(m_PlayerWorld._31, m_PlayerWorld._32, m_PlayerWorld._33);
+	m_flashlight.Direction = D3DXVECTOR3(m_worldMatrix._31, m_worldMatrix._32, m_worldMatrix._33);
 }
 
-VOID Player::FireBullet(LPPOINT CursorPosition)
+VOID Player::FireBullet(LPPOINT cursorPosition)
 {
 	// 마우스 클릭 시, 클릭한 방향으로 벡터를 설정하고 일직선으로 날아가는 투사체 발사
 	// world 상에서 플레이어 위치를 (0,0,0)으로 생각하고, 마우스가 클릭되는 평면을
 	// 총알 크기, 속도, 연사(마우스 꾹 누르고 있을 때), 벽이나 오브젝트에 닿으면 사라지도록
-	Bullet tmpBullet;
-	tmpBullet.v3Position = this->GetPosition();
-	tmpBullet.v3Direction = this->GetLookAt() - this->GetPosition();
-	tmpBullet.Time = timeGetTime();
-	m_Bullet.push_back(tmpBullet);
+	Bullet bullet;
+	bullet.position = this->GetPosition();
+	bullet.direction = this->GetLookAt() - this->GetPosition();
+	bullet.lastUpdateTime = timeGetTime();
+	m_bullets.push_back(bullet);
 }
+
 VOID Player::UpdateBullets()
 {
 	// 매 프레임마다 호출해서 총알의 이동 및 충돌 후 제거 연산 수행 (x)
@@ -406,25 +397,25 @@ VOID Player::UpdateBullets()
 	// 프레임이 아닌, 실제 시간을 기준으로 이동시켜야함
 	// 발사된 총알이 없을 시 건너뜀
 	DWORD currentTime = timeGetTime();
-	if (m_Bullet.size() == 0)
+	if (m_bullets.size() == 0)
 		return;
 	else
 	{
-		FLOAT fCoefficient;
-		for (auto iter = m_Bullet.begin(); iter != m_Bullet.end();)
+		FLOAT travelDistance;
+		for (auto iter = m_bullets.begin(); iter != m_bullets.end();)
 		{
-			fCoefficient = this->m_BulletVelocity * (currentTime - iter->Time);
-			iter->Time = currentTime;
+			travelDistance = this->m_bulletVelocity * (currentTime - iter->lastUpdateTime);
+			iter->lastUpdateTime = currentTime;
 			// 우선 이동
-			fCoefficient /= sqrtf(iter->v3Direction.x * iter->v3Direction.x + iter->v3Direction.y * iter->v3Direction.y + iter->v3Direction.z * iter->v3Direction.z);
-			iter->v3Position.x += fCoefficient * iter->v3Direction.x;
-			iter->v3Position.y += fCoefficient * iter->v3Direction.y;
-			iter->v3Position.z += fCoefficient * iter->v3Direction.z;
+			travelDistance /= sqrtf(iter->direction.x * iter->direction.x + iter->direction.y * iter->direction.y + iter->direction.z * iter->direction.z);
+			iter->position.x += travelDistance * iter->direction.x;
+			iter->position.y += travelDistance * iter->direction.y;
+			iter->position.z += travelDistance * iter->direction.z;
 			// 벽 또는 장애물과 충돌 검사
 			// 일단은 플레이어로부터 100만큼 떨어지면 제거되게
-			if (CalculateLength(iter->v3Position - this->GetPosition()) >= 100.0f)
+			if (CalculateLength(iter->position - this->GetPosition()) >= 100.0f)
 			{
-				iter = m_Bullet.erase(iter);
+				iter = m_bullets.erase(iter);
 			}
 			else
 			{
@@ -433,14 +424,15 @@ VOID Player::UpdateBullets()
 		}
 	}
 }
+
 VOID Player::RenderBullets(LPDIRECT3DDEVICE9 device, LPD3DXMESH sphere)
 {
-	D3DXMATRIX world;
-	for (size_t i = 0; i < m_Bullet.size(); i++)
+	D3DXMATRIX worldMatrix;
+	for (size_t i = 0; i < m_bullets.size(); i++)
 	{
-		D3DXMatrixIdentity(&world);
-		D3DXMatrixTranslation(&world, m_Bullet[i].v3Position.x, m_Bullet[i].v3Position.y, m_Bullet[i].v3Position.z);
-		device->SetTransform(D3DTS_WORLD, &world);
+		D3DXMatrixIdentity(&worldMatrix);
+		D3DXMatrixTranslation(&worldMatrix, m_bullets[i].position.x, m_bullets[i].position.y, m_bullets[i].position.z);
+		device->SetTransform(D3DTS_WORLD, &worldMatrix);
 		sphere->DrawSubset(0);
 	}
 }

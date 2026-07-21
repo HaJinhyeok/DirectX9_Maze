@@ -53,23 +53,26 @@ VOID UpdateInput()
 		}
 	}
 }
-BOOL IsKeyPressed(int keycode)
+
+BOOL IsKeyPressed(int keyCode)
 {
-	if (nKeyState[keycode] == KeyState::Pressed)
+	if (nKeyState[keyCode] == KeyState::Pressed)
 		return TRUE;
 	else
 		return FALSE;
 }
-BOOL IsKeyReleased(int keycode)
+
+BOOL IsKeyReleased(int keyCode)
 {
-	if (nKeyState[keycode] == KeyState::Released)
+	if (nKeyState[keyCode] == KeyState::Released)
 		return TRUE;
 	else
 		return FALSE;
 }
-BOOL IsKeyDown(int keycode)
+
+BOOL IsKeyDown(int keyCode)
 {
-	if (nKeyState[keycode] == KeyState::Pressed || nKeyState[keycode] == KeyState::Held)
+	if (nKeyState[keyCode] == KeyState::Pressed || nKeyState[keyCode] == KeyState::Held)
 		return TRUE;
 	else
 		return FALSE;

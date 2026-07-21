@@ -48,51 +48,51 @@ constexpr float kTileSize = 10.0f;
 constexpr float kSkyBoxSize = 500.0f;
 
 // Calculate the norm of 3-D vector
-inline FLOAT CalculateLength(D3DXVECTOR3 myVec)
+inline FLOAT CalculateLength(D3DXVECTOR3 vectorValue)
 {
-    return sqrtf(myVec.x * myVec.x + myVec.y * myVec.y + myVec.z * myVec.z);
+    return sqrtf(vectorValue.x * vectorValue.x + vectorValue.y * vectorValue.y + vectorValue.z * vectorValue.z);
 }
 
 // Calculate the angle between two 3-D vectors
-inline FLOAT CalculateAngle(D3DXVECTOR3 vec1, D3DXVECTOR3 vec2)
+inline FLOAT CalculateAngle(D3DXVECTOR3 firstVector, D3DXVECTOR3 secondVector)
 {
-    FLOAT angle, len1 = CalculateLength(vec1), len2 = CalculateLength(vec2), cos;
+    FLOAT angle, firstLength = CalculateLength(firstVector), secondLength = CalculateLength(secondVector), cosine;
     // Calculate angle using dot product
-    cos = D3DXVec3Dot(&vec1, &vec2) / (len1 * len2);
-    // -1 <= cos <= 1
-    cos = min(1.0f, max(-1.0f, cos));
-    angle = acosf(cos);
+    cosine = D3DXVec3Dot(&firstVector, &secondVector) / (firstLength * secondLength);
+    // -1 <= cosine <= 1
+    cosine = min(1.0f, max(-1.0f, cosine));
+    angle = acosf(cosine);
     return angle;
 }
 
 struct CustomVertex
 {
-    D3DXVECTOR3 v3VerPos;       // 정점의 x, y, z 좌표
-    D3DXVECTOR3 v3VerNormal;    // 정점의 수직 벡터
-    D3DXVECTOR2 v2VerTex;       // 정점의 텍스처 좌표
+    D3DXVECTOR3 position;               // 정점의 x, y, z 좌표
+    D3DXVECTOR3 normal;                 // 정점의 수직 벡터
+    D3DXVECTOR2 textureCoordinate;      // 정점의 텍스처 좌표
 };
 
 struct UiVertex
 {
-    D3DXVECTOR3 v3VerPos;
-    FLOAT w;
-    D3DCOLOR VerColor;
-    D3DXVECTOR2 v2VerTex;
+    D3DXVECTOR3 position;
+    FLOAT rhw;
+    D3DCOLOR color;
+    D3DXVECTOR2 textureCoordinate;
 };
 
 struct Bullet
 {
-    D3DXVECTOR3 v3Position;
-    D3DXVECTOR3 v3Direction;
-    DWORD Time;
+    D3DXVECTOR3 position;
+    D3DXVECTOR3 direction;
+    DWORD lastUpdateTime;
 };
 
 enum class MoveDirection : WORD
 {
-    left = 1,
-    right,
-    front,
-    back
+    Left = 1,
+    Right,
+    Forward,
+    Backward
 };
 
 static UiVertex UIVertices[4] =

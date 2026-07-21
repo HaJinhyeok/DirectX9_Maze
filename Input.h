@@ -13,6 +13,6 @@ static KeyState nKeyState[255];
 
 VOID InitializeInput();
 VOID UpdateInput();
-BOOL IsKeyPressed(int keycode);
-BOOL IsKeyReleased(int keycode);
-BOOL IsKeyDown(int keycode);
+BOOL IsKeyPressed(int keyCode);
+BOOL IsKeyReleased(int keyCode);
+BOOL IsKeyDown(int keyCode);

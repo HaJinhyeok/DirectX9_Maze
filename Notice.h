@@ -5,34 +5,34 @@ class Notice
 {
 	// notice의 position, player와 충돌 상태인지 확인하는 변수
 private:
-	D3DXVECTOR3 m_Position;
-	D3DXVECTOR3 m_LookAt;
-	D3DXMATRIX m_World;
-	CustomVertex m_Vertex[4];
-	LPDIRECT3DVERTEXBUFFER9 m_pNoticeVB = NULL;
+	D3DXVECTOR3 m_position;
+	D3DXVECTOR3 m_lookAt;
+	D3DXMATRIX m_worldMatrix;
+	CustomVertex m_vertices[4];
+	LPDIRECT3DVERTEXBUFFER9 m_noticeVertexBuffer = NULL;
 
 public:
-	BOOL m_bIsNotice = TRUE;
-	static WORD m_NoticeCount;
+	BOOL m_isNotice = TRUE;
+	static WORD s_noticeCount;
 
 	VOID Initialize(D3DXVECTOR3 position);
 	VOID CreateVertexBuffer(LPDIRECT3DDEVICE9 device);
-	VOID UpdateFacing(D3DXVECTOR3 player_position);
+	VOID UpdateFacing(D3DXVECTOR3 playerPosition);
 	VOID Render(LPDIRECT3DDEVICE9 device);
 	VOID ReleaseVertexBuffer();
 
 	BOOL CanInteract(D3DXVECTOR3 playerPosition);
 	BOOL IsNotice()
 	{
-		return m_bIsNotice;
+		return m_isNotice;
 	}
 	WORD GetNoticeCount()
 	{
-		return m_NoticeCount;
+		return s_noticeCount;
 	}
 	D3DXMATRIX GetWorldMatrix()
 	{
-		return m_World;
+		return m_worldMatrix;
 	}
 };
 

@@ -55,21 +55,21 @@ RECT rt, rtExitButton;
 char testSTR[500];
 wchar_t test2[500];
 
-HRESULT InitializeD3d(HWND hWnd)
+HRESULT InitializeD3d(HWND windowHandle)
 {
 	if (NULL == (g_pD3D = Direct3DCreate9(D3D_SDK_VERSION)))
 		return E_FAIL;
 
-	D3DPRESENT_PARAMETERS d3dpp;
-	ZeroMemory(&d3dpp, sizeof(d3dpp));
-	d3dpp.Windowed = TRUE;
-	d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
-	d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
-	d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE; // FPS 설정을 위한 설정?
-	d3dpp.EnableAutoDepthStencil = TRUE;
-	d3dpp.AutoDepthStencilFormat = D3DFMT_D16;
+	D3DPRESENT_PARAMETERS presentationParameters;
+	ZeroMemory(&presentationParameters, sizeof(presentationParameters));
+	presentationParameters.Windowed = TRUE;
+	presentationParameters.SwapEffect = D3DSWAPEFFECT_DISCARD;
+	presentationParameters.BackBufferFormat = D3DFMT_UNKNOWN;
+	presentationParameters.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE; // FPS 설정을 위한 설정?
+	presentationParameters.EnableAutoDepthStencil = TRUE;
+	presentationParameters.AutoDepthStencilFormat = D3DFMT_D16;
 
-	if (FAILED(g_pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &g_pd3dDevice)))
+	if (FAILED(g_pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, windowHandle, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &presentationParameters, &g_pd3dDevice)))
 		return E_FAIL;
 
 	g_pd3dDevice->SetRenderState(D3DRS_LIGHTING, TRUE);
@@ -134,9 +134,9 @@ VOID InitializeGeometry()
 	//// 미궁 내 벽을 구성할 vertex들의 buffer 생성
 	GenerateMazeWalls(1, MazeWallVertices, &g_notices, &g_mazeExit);
 	g_pd3dDevice->CreateVertexBuffer(sizeof(CustomVertex) * 72 * 20, 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &g_pMazeVB, NULL);
-	VOID** MazeVertices;
-	g_pMazeVB->Lock(0, sizeof(CustomVertex) * 72 * 20, (void**)&MazeVertices, 0);
-	memcpy(MazeVertices, MazeWallVertices, sizeof(CustomVertex) * 72 * 20);
+	VOID** mazeVertexData;
+	g_pMazeVB->Lock(0, sizeof(CustomVertex) * 72 * 20, (void**)&mazeVertexData, 0);
+	memcpy(mazeVertexData, MazeWallVertices, sizeof(CustomVertex) * 72 * 20);
 	g_pMazeVB->Unlock();
 
 	//// Notice를 구성하는 vertex buffer 생성
@@ -151,24 +151,24 @@ VOID InitializeGeometry()
 	{
 		for (i = 0; i < kMazeRowCount * kMazeColumnCount; i++)
 		{
-			FLOAT fCoX = (FLOAT)((i % kMazeColumnCount - kMazeColumnCount / 2.0f) * kTileSize);
-			FLOAT fCoZ = (FLOAT)((kMazeRowCount / 2.0f - i / kMazeColumnCount) * kTileSize);
+			FLOAT tileX = (FLOAT)((i % kMazeColumnCount - kMazeColumnCount / 2.0f) * kTileSize);
+			FLOAT tileZ = (FLOAT)((kMazeRowCount / 2.0f - i / kMazeColumnCount) * kTileSize);
 			// D3DFVF_NORMAL
 			for (j = 0; j < 4; j++)
 			{
-				TileVertices[i * 4 + j].v3VerNormal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
+				TileVertices[i * 4 + j].normal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
 
 			}
 			// D3DFVF_XYZ
-			TileVertices[i * 4].v3VerPos = D3DXVECTOR3(fCoX, 0.0f, fCoZ);
-			TileVertices[i * 4 + 1].v3VerPos = D3DXVECTOR3(fCoX + kTileSize, 0.0f, fCoZ);
-			TileVertices[i * 4 + 2].v3VerPos = D3DXVECTOR3(fCoX + kTileSize, 0.0f, fCoZ - kTileSize);
-			TileVertices[i * 4 + 3].v3VerPos = D3DXVECTOR3(fCoX, 0.0f, fCoZ - kTileSize);
+			TileVertices[i * 4].position = D3DXVECTOR3(tileX, 0.0f, tileZ);
+			TileVertices[i * 4 + 1].position = D3DXVECTOR3(tileX + kTileSize, 0.0f, tileZ);
+			TileVertices[i * 4 + 2].position = D3DXVECTOR3(tileX + kTileSize, 0.0f, tileZ - kTileSize);
+			TileVertices[i * 4 + 3].position = D3DXVECTOR3(tileX, 0.0f, tileZ - kTileSize);
 			// D3DFVF_TEX1
-			TileVertices[i * 4].v2VerTex = D3DXVECTOR2(0.0f, 0.0f);
-			TileVertices[i * 4 + 1].v2VerTex = D3DXVECTOR2(1.0f, 0.0f);
-			TileVertices[i * 4 + 2].v2VerTex = D3DXVECTOR2(1.0f, 1.0f);
-			TileVertices[i * 4 + 3].v2VerTex = D3DXVECTOR2(0.0f, 1.0f);
+			TileVertices[i * 4].textureCoordinate = D3DXVECTOR2(0.0f, 0.0f);
+			TileVertices[i * 4 + 1].textureCoordinate = D3DXVECTOR2(1.0f, 0.0f);
+			TileVertices[i * 4 + 2].textureCoordinate = D3DXVECTOR2(1.0f, 1.0f);
+			TileVertices[i * 4 + 3].textureCoordinate = D3DXVECTOR2(0.0f, 1.0f);
 		}
 	}
 	// tile index 입력
@@ -186,15 +186,15 @@ VOID InitializeGeometry()
 	}
 	// Create tile vertex & index buffer
 	g_pd3dDevice->CreateVertexBuffer(sizeof(TileVertices), 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &g_pTileVB, NULL);
-	VOID* pVertices2;
-	g_pTileVB->Lock(0, sizeof(TileVertices), (void**)&pVertices2, 0);
-	memcpy(pVertices2, TileVertices, sizeof(TileVertices));
+	VOID* tileVertexData;
+	g_pTileVB->Lock(0, sizeof(TileVertices), (void**)&tileVertexData, 0);
+	memcpy(tileVertexData, TileVertices, sizeof(TileVertices));
 	g_pTileVB->Unlock();
 
 	g_pd3dDevice->CreateIndexBuffer(sizeof(wTileIndices), 0, D3DFMT_INDEX16, D3DPOOL_DEFAULT, &g_pTileIB, NULL);
-	VOID* pIndices2;
-	g_pTileIB->Lock(0, sizeof(wTileIndices), (void**)&pIndices2, 0);
-	memcpy(pIndices2, wTileIndices, sizeof(wTileIndices));
+	VOID* tileIndexData;
+	g_pTileIB->Lock(0, sizeof(wTileIndices), (void**)&tileIndexData, 0);
+	memcpy(tileIndexData, wTileIndices, sizeof(wTileIndices));
 	g_pTileIB->Unlock();
 
 	//// wall vertex 좌표 입력 - 맵 외곽
@@ -203,71 +203,71 @@ VOID InitializeGeometry()
 		for (i = 0; i < kMazeRowCount; i++)
 		{
 			for (j = 0; j < 4; j++)
-				WallVertices[0][i * 4 + j].v3VerNormal = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
+				WallVertices[0][i * 4 + j].normal = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
 
-			WallVertices[0][i * 4].v3VerPos = D3DXVECTOR3((i - kMazeRowCount / 2.0f) * kTileSize, 10.0f, (kMazeRowCount / 2.0f) * kTileSize);
-			WallVertices[0][i * 4 + 1].v3VerPos = D3DXVECTOR3((i + 1 - kMazeRowCount / 2.0f) * kTileSize, 10.0f, (kMazeRowCount / 2.0f) * kTileSize);
-			WallVertices[0][i * 4 + 2].v3VerPos = D3DXVECTOR3((i + 1 - kMazeRowCount / 2.0f) * kTileSize, 0.0f, (kMazeRowCount / 2.0f) * kTileSize);
-			WallVertices[0][i * 4 + 3].v3VerPos = D3DXVECTOR3((i - kMazeRowCount / 2.0f) * kTileSize, 0.0f, (kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices[0][i * 4].position = D3DXVECTOR3((i - kMazeRowCount / 2.0f) * kTileSize, 10.0f, (kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices[0][i * 4 + 1].position = D3DXVECTOR3((i + 1 - kMazeRowCount / 2.0f) * kTileSize, 10.0f, (kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices[0][i * 4 + 2].position = D3DXVECTOR3((i + 1 - kMazeRowCount / 2.0f) * kTileSize, 0.0f, (kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices[0][i * 4 + 3].position = D3DXVECTOR3((i - kMazeRowCount / 2.0f) * kTileSize, 0.0f, (kMazeRowCount / 2.0f) * kTileSize);
 
-			WallVertices[0][i * 4].v2VerTex = D3DXVECTOR2(0.0f, 0.0f);
-			WallVertices[0][i * 4 + 1].v2VerTex = D3DXVECTOR2(1.0f, 0.0f);
-			WallVertices[0][i * 4 + 2].v2VerTex = D3DXVECTOR2(1.0f, 1.0f);
-			WallVertices[0][i * 4 + 3].v2VerTex = D3DXVECTOR2(0.0f, 1.0f);
+			WallVertices[0][i * 4].textureCoordinate = D3DXVECTOR2(0.0f, 0.0f);
+			WallVertices[0][i * 4 + 1].textureCoordinate = D3DXVECTOR2(1.0f, 0.0f);
+			WallVertices[0][i * 4 + 2].textureCoordinate = D3DXVECTOR2(1.0f, 1.0f);
+			WallVertices[0][i * 4 + 3].textureCoordinate = D3DXVECTOR2(0.0f, 1.0f);
 		}
 		// 아래쪽 면
 		for (i = 0; i < kMazeRowCount; i++)
 		{
 			for (j = 0; j < 4; j++)
-				WallVertices[1][i * 4 + j].v3VerNormal = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
+				WallVertices[1][i * 4 + j].normal = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
 
-			WallVertices[1][i * 4].v3VerPos = D3DXVECTOR3((kMazeRowCount / 2.0f - i) * kTileSize, 10.0f, (-kMazeRowCount / 2.0f) * kTileSize);
-			WallVertices[1][i * 4 + 1].v3VerPos = D3DXVECTOR3((kMazeRowCount / 2.0f - i - 1) * kTileSize, 10.0f, (-kMazeRowCount / 2.0f) * kTileSize);
-			WallVertices[1][i * 4 + 2].v3VerPos = D3DXVECTOR3((kMazeRowCount / 2.0f - i - 1) * kTileSize, 0.0f, (-kMazeRowCount / 2.0f) * kTileSize);
-			WallVertices[1][i * 4 + 3].v3VerPos = D3DXVECTOR3((kMazeRowCount / 2.0f - i) * kTileSize, 0.0f, (-kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices[1][i * 4].position = D3DXVECTOR3((kMazeRowCount / 2.0f - i) * kTileSize, 10.0f, (-kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices[1][i * 4 + 1].position = D3DXVECTOR3((kMazeRowCount / 2.0f - i - 1) * kTileSize, 10.0f, (-kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices[1][i * 4 + 2].position = D3DXVECTOR3((kMazeRowCount / 2.0f - i - 1) * kTileSize, 0.0f, (-kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices[1][i * 4 + 3].position = D3DXVECTOR3((kMazeRowCount / 2.0f - i) * kTileSize, 0.0f, (-kMazeRowCount / 2.0f) * kTileSize);
 
-			WallVertices[1][i * 4].v2VerTex = D3DXVECTOR2(0.0f, 0.0f);
-			WallVertices[1][i * 4 + 1].v2VerTex = D3DXVECTOR2(1.0f, 0.0f);
-			WallVertices[1][i * 4 + 2].v2VerTex = D3DXVECTOR2(1.0f, 1.0f);
-			WallVertices[1][i * 4 + 3].v2VerTex = D3DXVECTOR2(0.0f, 1.0f);
+			WallVertices[1][i * 4].textureCoordinate = D3DXVECTOR2(0.0f, 0.0f);
+			WallVertices[1][i * 4 + 1].textureCoordinate = D3DXVECTOR2(1.0f, 0.0f);
+			WallVertices[1][i * 4 + 2].textureCoordinate = D3DXVECTOR2(1.0f, 1.0f);
+			WallVertices[1][i * 4 + 3].textureCoordinate = D3DXVECTOR2(0.0f, 1.0f);
 		}
 		// 왼쪽 면
 		for (i = 0; i < kMazeRowCount; i++)
 		{
 			for (j = 0; j < 4; j++)
-				WallVertices[2][i * 4 + j].v3VerNormal = D3DXVECTOR3(1.0f, 0.0f, 0.0f);
+				WallVertices[2][i * 4 + j].normal = D3DXVECTOR3(1.0f, 0.0f, 0.0f);
 
-			WallVertices[2][i * 4].v3VerPos = D3DXVECTOR3((-kMazeRowCount / 2.0f + 1) * kTileSize, 10.0f, (i - kMazeRowCount / 2.0f) * kTileSize);
-			WallVertices[2][i * 4 + 1].v3VerPos = D3DXVECTOR3((-kMazeRowCount / 2.0f + 1) * kTileSize, 10.0f, (i + 1 - kMazeRowCount / 2.0f) * kTileSize);
-			WallVertices[2][i * 4 + 2].v3VerPos = D3DXVECTOR3((-kMazeRowCount / 2.0f + 1) * kTileSize, 0.0f, (i + 1 - kMazeRowCount / 2.0f) * kTileSize);
-			WallVertices[2][i * 4 + 3].v3VerPos = D3DXVECTOR3((-kMazeRowCount / 2.0f + 1) * kTileSize, 0.0f, (i - kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices[2][i * 4].position = D3DXVECTOR3((-kMazeRowCount / 2.0f + 1) * kTileSize, 10.0f, (i - kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices[2][i * 4 + 1].position = D3DXVECTOR3((-kMazeRowCount / 2.0f + 1) * kTileSize, 10.0f, (i + 1 - kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices[2][i * 4 + 2].position = D3DXVECTOR3((-kMazeRowCount / 2.0f + 1) * kTileSize, 0.0f, (i + 1 - kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices[2][i * 4 + 3].position = D3DXVECTOR3((-kMazeRowCount / 2.0f + 1) * kTileSize, 0.0f, (i - kMazeRowCount / 2.0f) * kTileSize);
 
-			WallVertices[2][i * 4].v2VerTex = D3DXVECTOR2(0.0f, 0.0f);
-			WallVertices[2][i * 4 + 1].v2VerTex = D3DXVECTOR2(1.0f, 0.0f);
-			WallVertices[2][i * 4 + 2].v2VerTex = D3DXVECTOR2(1.0f, 1.0f);
-			WallVertices[2][i * 4 + 3].v2VerTex = D3DXVECTOR2(0.0f, 1.0f);
+			WallVertices[2][i * 4].textureCoordinate = D3DXVECTOR2(0.0f, 0.0f);
+			WallVertices[2][i * 4 + 1].textureCoordinate = D3DXVECTOR2(1.0f, 0.0f);
+			WallVertices[2][i * 4 + 2].textureCoordinate = D3DXVECTOR2(1.0f, 1.0f);
+			WallVertices[2][i * 4 + 3].textureCoordinate = D3DXVECTOR2(0.0f, 1.0f);
 		}
 		// 오른쪽 면
 		for (i = 0; i < kMazeRowCount; i++)
 		{
 			for (j = 0; j < 4; j++)
-				WallVertices[3][i * 4 + j].v3VerNormal = D3DXVECTOR3(-1.0f, 0.0f, 0.0f);
+				WallVertices[3][i * 4 + j].normal = D3DXVECTOR3(-1.0f, 0.0f, 0.0f);
 
-			WallVertices[3][i * 4].v3VerPos = D3DXVECTOR3((kMazeRowCount / 2.0f - 1) * kTileSize, 10.0f, (kMazeRowCount / 2.0f - i) * kTileSize);
-			WallVertices[3][i * 4 + 1].v3VerPos = D3DXVECTOR3((kMazeRowCount / 2.0f - 1) * kTileSize, 10.0f, (kMazeRowCount / 2.0f - i - 1) * kTileSize);
-			WallVertices[3][i * 4 + 2].v3VerPos = D3DXVECTOR3((kMazeRowCount / 2.0f - 1) * kTileSize, 0.0f, (kMazeRowCount / 2.0f - i - 1) * kTileSize);
-			WallVertices[3][i * 4 + 3].v3VerPos = D3DXVECTOR3((kMazeRowCount / 2.0f - 1) * kTileSize, 0.0f, (kMazeRowCount / 2.0f - i) * kTileSize);
+			WallVertices[3][i * 4].position = D3DXVECTOR3((kMazeRowCount / 2.0f - 1) * kTileSize, 10.0f, (kMazeRowCount / 2.0f - i) * kTileSize);
+			WallVertices[3][i * 4 + 1].position = D3DXVECTOR3((kMazeRowCount / 2.0f - 1) * kTileSize, 10.0f, (kMazeRowCount / 2.0f - i - 1) * kTileSize);
+			WallVertices[3][i * 4 + 2].position = D3DXVECTOR3((kMazeRowCount / 2.0f - 1) * kTileSize, 0.0f, (kMazeRowCount / 2.0f - i - 1) * kTileSize);
+			WallVertices[3][i * 4 + 3].position = D3DXVECTOR3((kMazeRowCount / 2.0f - 1) * kTileSize, 0.0f, (kMazeRowCount / 2.0f - i) * kTileSize);
 
-			WallVertices[3][i * 4].v2VerTex = D3DXVECTOR2(0.0f, 0.0f);
-			WallVertices[3][i * 4 + 1].v2VerTex = D3DXVECTOR2(1.0f, 0.0f);
-			WallVertices[3][i * 4 + 2].v2VerTex = D3DXVECTOR2(1.0f, 1.0f);
-			WallVertices[3][i * 4 + 3].v2VerTex = D3DXVECTOR2(0.0f, 1.0f);
+			WallVertices[3][i * 4].textureCoordinate = D3DXVECTOR2(0.0f, 0.0f);
+			WallVertices[3][i * 4 + 1].textureCoordinate = D3DXVECTOR2(1.0f, 0.0f);
+			WallVertices[3][i * 4 + 2].textureCoordinate = D3DXVECTOR2(1.0f, 1.0f);
+			WallVertices[3][i * 4 + 3].textureCoordinate = D3DXVECTOR2(0.0f, 1.0f);
 		}
 		// Create wall vertex buffer
 		g_pd3dDevice->CreateVertexBuffer(sizeof(WallVertices), 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &g_pWallVB, NULL);
-		VOID* pWallVertices;
-		g_pWallVB->Lock(0, sizeof(WallVertices), (void**)&pWallVertices, 0);
-		memcpy(pWallVertices, WallVertices, sizeof(WallVertices));
+		VOID* wallVertexData;
+		g_pWallVB->Lock(0, sizeof(WallVertices), (void**)&wallVertexData, 0);
+		memcpy(wallVertexData, WallVertices, sizeof(WallVertices));
 		g_pWallVB->Unlock();
 	}
 
@@ -277,71 +277,71 @@ VOID InitializeGeometry()
 		for (i = 0; i < kMazeRowCount; i++)
 		{
 			for (j = 0; j < 4; j++)
-				WallVertices[0][i * 4 + j].v3VerNormal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
+				WallVertices[0][i * 4 + j].normal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
 
-			WallVertices2[0][i * 4].v3VerPos = D3DXVECTOR3((i - kMazeRowCount / 2.0f) * kTileSize, 10.0f, (kMazeRowCount / 2.0f + 1) * kTileSize);
-			WallVertices2[0][i * 4 + 1].v3VerPos = D3DXVECTOR3((i + 1 - kMazeRowCount / 2.0f) * kTileSize, 10.0f, (kMazeRowCount / 2.0f + 1) * kTileSize);
-			WallVertices2[0][i * 4 + 2].v3VerPos = D3DXVECTOR3((i + 1 - kMazeRowCount / 2.0f) * kTileSize, 10.0f, (kMazeRowCount / 2.0f) * kTileSize);
-			WallVertices2[0][i * 4 + 3].v3VerPos = D3DXVECTOR3((i - kMazeRowCount / 2.0f) * kTileSize, 10.0f, (kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices2[0][i * 4].position = D3DXVECTOR3((i - kMazeRowCount / 2.0f) * kTileSize, 10.0f, (kMazeRowCount / 2.0f + 1) * kTileSize);
+			WallVertices2[0][i * 4 + 1].position = D3DXVECTOR3((i + 1 - kMazeRowCount / 2.0f) * kTileSize, 10.0f, (kMazeRowCount / 2.0f + 1) * kTileSize);
+			WallVertices2[0][i * 4 + 2].position = D3DXVECTOR3((i + 1 - kMazeRowCount / 2.0f) * kTileSize, 10.0f, (kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices2[0][i * 4 + 3].position = D3DXVECTOR3((i - kMazeRowCount / 2.0f) * kTileSize, 10.0f, (kMazeRowCount / 2.0f) * kTileSize);
 
-			WallVertices2[0][i * 4].v2VerTex = D3DXVECTOR2(0.0f, 0.0f);
-			WallVertices2[0][i * 4 + 1].v2VerTex = D3DXVECTOR2(1.0f, 0.0f);
-			WallVertices2[0][i * 4 + 2].v2VerTex = D3DXVECTOR2(1.0f, 1.0f);
-			WallVertices2[0][i * 4 + 3].v2VerTex = D3DXVECTOR2(0.0f, 1.0f);
+			WallVertices2[0][i * 4].textureCoordinate = D3DXVECTOR2(0.0f, 0.0f);
+			WallVertices2[0][i * 4 + 1].textureCoordinate = D3DXVECTOR2(1.0f, 0.0f);
+			WallVertices2[0][i * 4 + 2].textureCoordinate = D3DXVECTOR2(1.0f, 1.0f);
+			WallVertices2[0][i * 4 + 3].textureCoordinate = D3DXVECTOR2(0.0f, 1.0f);
 		}
 		// 아래쪽 면
 		for (i = 0; i < kMazeRowCount; i++)
 		{
 			for (j = 0; j < 4; j++)
-				WallVertices[1][i * 4 + j].v3VerNormal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
+				WallVertices[1][i * 4 + j].normal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
 
-			WallVertices2[1][i * 4].v3VerPos = D3DXVECTOR3((kMazeRowCount / 2.0f - i) * kTileSize, 10.0f, (-kMazeRowCount / 2.0f - 1) * kTileSize);
-			WallVertices2[1][i * 4 + 1].v3VerPos = D3DXVECTOR3((kMazeRowCount / 2.0f - i - 1) * kTileSize, 10.0f, (-kMazeRowCount / 2.0f - 1) * kTileSize);
-			WallVertices2[1][i * 4 + 2].v3VerPos = D3DXVECTOR3((kMazeRowCount / 2.0f - i - 1) * kTileSize, 10.0f, (-kMazeRowCount / 2.0f) * kTileSize);
-			WallVertices2[1][i * 4 + 3].v3VerPos = D3DXVECTOR3((kMazeRowCount / 2.0f - i) * kTileSize, 10.0f, (-kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices2[1][i * 4].position = D3DXVECTOR3((kMazeRowCount / 2.0f - i) * kTileSize, 10.0f, (-kMazeRowCount / 2.0f - 1) * kTileSize);
+			WallVertices2[1][i * 4 + 1].position = D3DXVECTOR3((kMazeRowCount / 2.0f - i - 1) * kTileSize, 10.0f, (-kMazeRowCount / 2.0f - 1) * kTileSize);
+			WallVertices2[1][i * 4 + 2].position = D3DXVECTOR3((kMazeRowCount / 2.0f - i - 1) * kTileSize, 10.0f, (-kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices2[1][i * 4 + 3].position = D3DXVECTOR3((kMazeRowCount / 2.0f - i) * kTileSize, 10.0f, (-kMazeRowCount / 2.0f) * kTileSize);
 
-			WallVertices2[1][i * 4].v2VerTex = D3DXVECTOR2(0.0f, 0.0f);
-			WallVertices2[1][i * 4 + 1].v2VerTex = D3DXVECTOR2(1.0f, 0.0f);
-			WallVertices2[1][i * 4 + 2].v2VerTex = D3DXVECTOR2(1.0f, 1.0f);
-			WallVertices2[1][i * 4 + 3].v2VerTex = D3DXVECTOR2(0.0f, 1.0f);
+			WallVertices2[1][i * 4].textureCoordinate = D3DXVECTOR2(0.0f, 0.0f);
+			WallVertices2[1][i * 4 + 1].textureCoordinate = D3DXVECTOR2(1.0f, 0.0f);
+			WallVertices2[1][i * 4 + 2].textureCoordinate = D3DXVECTOR2(1.0f, 1.0f);
+			WallVertices2[1][i * 4 + 3].textureCoordinate = D3DXVECTOR2(0.0f, 1.0f);
 		}
 		// 왼쪽 면
 		for (i = 0; i < kMazeRowCount; i++)
 		{
 			for (j = 0; j < 4; j++)
-				WallVertices[2][i * 4 + j].v3VerNormal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
+				WallVertices[2][i * 4 + j].normal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
 
-			WallVertices2[2][i * 4].v3VerPos = D3DXVECTOR3((-kMazeRowCount / 2.0f) * kTileSize, 10.0f, (i - kMazeRowCount / 2.0f) * kTileSize);
-			WallVertices2[2][i * 4 + 1].v3VerPos = D3DXVECTOR3((-kMazeRowCount / 2.0f) * kTileSize, 10.0f, (i + 1 - kMazeRowCount / 2.0f) * kTileSize);
-			WallVertices2[2][i * 4 + 2].v3VerPos = D3DXVECTOR3((-kMazeRowCount / 2.0f + 1) * kTileSize, 10.0f, (i + 1 - kMazeRowCount / 2.0f) * kTileSize);
-			WallVertices2[2][i * 4 + 3].v3VerPos = D3DXVECTOR3((-kMazeRowCount / 2.0f + 1) * kTileSize, 10.0f, (i - kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices2[2][i * 4].position = D3DXVECTOR3((-kMazeRowCount / 2.0f) * kTileSize, 10.0f, (i - kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices2[2][i * 4 + 1].position = D3DXVECTOR3((-kMazeRowCount / 2.0f) * kTileSize, 10.0f, (i + 1 - kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices2[2][i * 4 + 2].position = D3DXVECTOR3((-kMazeRowCount / 2.0f + 1) * kTileSize, 10.0f, (i + 1 - kMazeRowCount / 2.0f) * kTileSize);
+			WallVertices2[2][i * 4 + 3].position = D3DXVECTOR3((-kMazeRowCount / 2.0f + 1) * kTileSize, 10.0f, (i - kMazeRowCount / 2.0f) * kTileSize);
 
-			WallVertices2[2][i * 4].v2VerTex = D3DXVECTOR2(0.0f, 0.0f);
-			WallVertices2[2][i * 4 + 1].v2VerTex = D3DXVECTOR2(1.0f, 0.0f);
-			WallVertices2[2][i * 4 + 2].v2VerTex = D3DXVECTOR2(1.0f, 1.0f);
-			WallVertices2[2][i * 4 + 3].v2VerTex = D3DXVECTOR2(0.0f, 1.0f);
+			WallVertices2[2][i * 4].textureCoordinate = D3DXVECTOR2(0.0f, 0.0f);
+			WallVertices2[2][i * 4 + 1].textureCoordinate = D3DXVECTOR2(1.0f, 0.0f);
+			WallVertices2[2][i * 4 + 2].textureCoordinate = D3DXVECTOR2(1.0f, 1.0f);
+			WallVertices2[2][i * 4 + 3].textureCoordinate = D3DXVECTOR2(0.0f, 1.0f);
 		}
 		// 오른쪽 면
 		for (i = 0; i < kMazeRowCount; i++)
 		{
 			for (j = 0; j < 4; j++)
-				WallVertices[3][i * 4 + j].v3VerNormal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
+				WallVertices[3][i * 4 + j].normal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
 
-			WallVertices2[3][i * 4].v3VerPos = D3DXVECTOR3((kMazeRowCount / 2.0f) * kTileSize, 10.0f, (kMazeRowCount / 2.0f - i) * kTileSize);
-			WallVertices2[3][i * 4 + 1].v3VerPos = D3DXVECTOR3((kMazeRowCount / 2.0f) * kTileSize, 10.0f, (kMazeRowCount / 2.0f - i - 1) * kTileSize);
-			WallVertices2[3][i * 4 + 2].v3VerPos = D3DXVECTOR3((kMazeRowCount / 2.0f - 1) * kTileSize, 10.0f, (kMazeRowCount / 2.0f - i - 1) * kTileSize);
-			WallVertices2[3][i * 4 + 3].v3VerPos = D3DXVECTOR3((kMazeRowCount / 2.0f - 1) * kTileSize, 10.0f, (kMazeRowCount / 2.0f - i) * kTileSize);
+			WallVertices2[3][i * 4].position = D3DXVECTOR3((kMazeRowCount / 2.0f) * kTileSize, 10.0f, (kMazeRowCount / 2.0f - i) * kTileSize);
+			WallVertices2[3][i * 4 + 1].position = D3DXVECTOR3((kMazeRowCount / 2.0f) * kTileSize, 10.0f, (kMazeRowCount / 2.0f - i - 1) * kTileSize);
+			WallVertices2[3][i * 4 + 2].position = D3DXVECTOR3((kMazeRowCount / 2.0f - 1) * kTileSize, 10.0f, (kMazeRowCount / 2.0f - i - 1) * kTileSize);
+			WallVertices2[3][i * 4 + 3].position = D3DXVECTOR3((kMazeRowCount / 2.0f - 1) * kTileSize, 10.0f, (kMazeRowCount / 2.0f - i) * kTileSize);
 
-			WallVertices2[3][i * 4].v2VerTex = D3DXVECTOR2(0.0f, 0.0f);
-			WallVertices2[3][i * 4 + 1].v2VerTex = D3DXVECTOR2(1.0f, 0.0f);
-			WallVertices2[3][i * 4 + 2].v2VerTex = D3DXVECTOR2(1.0f, 1.0f);
-			WallVertices2[3][i * 4 + 3].v2VerTex = D3DXVECTOR2(0.0f, 1.0f);
+			WallVertices2[3][i * 4].textureCoordinate = D3DXVECTOR2(0.0f, 0.0f);
+			WallVertices2[3][i * 4 + 1].textureCoordinate = D3DXVECTOR2(1.0f, 0.0f);
+			WallVertices2[3][i * 4 + 2].textureCoordinate = D3DXVECTOR2(1.0f, 1.0f);
+			WallVertices2[3][i * 4 + 3].textureCoordinate = D3DXVECTOR2(0.0f, 1.0f);
 		}
 		// Create wall vertex buffer
 		g_pd3dDevice->CreateVertexBuffer(sizeof(WallVertices2), 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &g_pWallVB2, NULL);
-		VOID* pWallVertices2;
-		g_pWallVB2->Lock(0, sizeof(WallVertices2), (void**)&pWallVertices2, 0);
-		memcpy(pWallVertices2, WallVertices2, sizeof(WallVertices2));
+		VOID* upperWallVertexData;
+		g_pWallVB2->Lock(0, sizeof(WallVertices2), (void**)&upperWallVertexData, 0);
+		memcpy(upperWallVertexData, WallVertices2, sizeof(WallVertices2));
 		g_pWallVB2->Unlock();
 	}
 }
@@ -414,19 +414,19 @@ VOID UpdateGameStateFromInput()
 
 	if (GetAsyncKeyState('A') || GetAsyncKeyState(VK_LEFT))
 	{
-		bIsMoved = g_player.Move(MoveDirection::left, chMap1, bIsNoClipOn);
+		bIsMoved = g_player.Move(MoveDirection::Left, chMap1, bIsNoClipOn);
 	}
 	if (GetAsyncKeyState('D') || GetAsyncKeyState(VK_RIGHT))
 	{
-		bIsMoved = g_player.Move(MoveDirection::right, chMap1, bIsNoClipOn);
+		bIsMoved = g_player.Move(MoveDirection::Right, chMap1, bIsNoClipOn);
 	}
 	if (GetAsyncKeyState('W') || GetAsyncKeyState(VK_UP))
 	{
-		bIsMoved = g_player.Move(MoveDirection::front, chMap1, bIsNoClipOn);
+		bIsMoved = g_player.Move(MoveDirection::Forward, chMap1, bIsNoClipOn);
 	}
 	if (GetAsyncKeyState('S') || GetAsyncKeyState(VK_DOWN))
 	{
-		bIsMoved = g_player.Move(MoveDirection::back, chMap1, bIsNoClipOn);
+		bIsMoved = g_player.Move(MoveDirection::Backward, chMap1, bIsNoClipOn);
 	}
 	// Notice & Exit rotation
 	if (bIsMoved)
@@ -539,10 +539,10 @@ VOID Render()
 	if (SUCCEEDED(g_pd3dDevice->BeginScene()))
 	{
 		int i, j;
-		D3DLIGHT9* p_light = g_player.GetLight();
+		D3DLIGHT9* playerLight = g_player.GetLight();
 		// bIsSkyView == TRUE 이면 player의 spot light,
 		// FALSE 이면 하늘 시점에서 point light로 바꿔서 맵 전체가 어느 정도 보이게 하는 것도 좋을듯
-		g_pd3dDevice->SetLight(0, p_light);
+		g_pd3dDevice->SetLight(0, playerLight);
 		if (g_player.IsFlashlightOn() == TRUE)
 		{
 			g_pd3dDevice->LightEnable(0, TRUE);
@@ -565,51 +565,50 @@ VOID Render()
 		g_pd3dDevice->SetLight(1, &skyLight);
 		g_pd3dDevice->LightEnable(1, TRUE);
 
-		D3DXMATRIX mtWorld;
-		D3DXMatrixIdentity(&mtWorld);
-		g_pd3dDevice->SetTransform(D3DTS_WORLD, &mtWorld);
+		D3DXMATRIX worldMatrix;
+		D3DXMatrixIdentity(&worldMatrix);
+		g_pd3dDevice->SetTransform(D3DTS_WORLD, &worldMatrix);
 
-		D3DXMATRIX mtView;
-		D3DXVECTOR3 v3CurrentPosition = g_player.GetPosition();
-		D3DXVECTOR3 v3CurrentLookAt = g_player.GetLookAt();
-		D3DXMATRIX tmpPlayerWorld = g_player.GetWorldMatrix();
+		D3DXMATRIX viewMatrix;
+		D3DXVECTOR3 playerPosition = g_player.GetPosition();
+		D3DXVECTOR3 playerLookAt = g_player.GetLookAt();
 		// frustum culling 시 타일 중심 좌표 표시용
-		D3DXVECTOR3 v3TileCenter;
+		D3DXVECTOR3 tileCenter;
 
 		// 1인칭 시점
 		if (bIsSkyView == FALSE)
 		{
-			D3DXMatrixLookAtLH(&mtView, &v3CurrentPosition, &v3CurrentLookAt, &v3Up);
-			g_pd3dDevice->SetTransform(D3DTS_VIEW, &mtView);
+			D3DXMatrixLookAtLH(&viewMatrix, &playerPosition, &playerLookAt, &v3Up);
+			g_pd3dDevice->SetTransform(D3DTS_VIEW, &viewMatrix);
 		}
 		// 탑뷰 시점
 		else
 		{
-			D3DXMatrixLookAtLH(&mtView, &v3EyeCeiling, &v3DefaultPosition, &v3UpCeiling);
-			g_pd3dDevice->SetTransform(D3DTS_VIEW, &mtView);
+			D3DXMatrixLookAtLH(&viewMatrix, &v3EyeCeiling, &v3DefaultPosition, &v3UpCeiling);
+			g_pd3dDevice->SetTransform(D3DTS_VIEW, &viewMatrix);
 		}
 
-		D3DXMATRIX mtProjection;
-		D3DXMatrixPerspectiveFovLH(&mtProjection, D3DX_PI / 4, 1.0f, 0.1f, 1000.0f);
-		g_pd3dDevice->SetTransform(D3DTS_PROJECTION, &mtProjection);
+		D3DXMATRIX projectionMatrix;
+		D3DXMatrixPerspectiveFovLH(&projectionMatrix, D3DX_PI / 4, 1.0f, 0.1f, 1000.0f);
+		g_pd3dDevice->SetTransform(D3DTS_PROJECTION, &projectionMatrix);
 
 		//// *****frustum culling*****
 
 		// frustum plane을 계산할, view matrix와 projection matrix의 곱
-		D3DXMATRIX mtViewProjection;
+		D3DXMATRIX viewProjectionMatrix;
 
 		// 하늘에서 바라볼 때, 오브젝트의 LookAt matrix를 따로 계산해야함
 		if (bIsSkyView == TRUE)
 		{
-			D3DXMATRIX mtViewTMP;
-			D3DXMatrixLookAtLH(&mtViewTMP, &v3CurrentPosition, &v3CurrentLookAt, &v3Up);
-			D3DXMatrixMultiply(&mtViewProjection, &mtViewTMP, &mtProjection);
+			D3DXMATRIX playerViewMatrix;
+			D3DXMatrixLookAtLH(&playerViewMatrix, &playerPosition, &playerLookAt, &v3Up);
+			D3DXMatrixMultiply(&viewProjectionMatrix, &playerViewMatrix, &projectionMatrix);
 		}
 		else
 		{
-			D3DXMatrixMultiply(&mtViewProjection, &mtView, &mtProjection);
+			D3DXMatrixMultiply(&viewProjectionMatrix, &viewMatrix, &projectionMatrix);
 		}
-		g_pFrustum->Update(&mtViewProjection);
+		g_pFrustum->Update(&viewProjectionMatrix);
 
 		g_pd3dDevice->SetFVF(D3DFVF_CUSTOMVERTEX);
 
@@ -627,8 +626,8 @@ VOID Render()
 			//// tile culling
 			for (i = 0; i < kMazeRowCount * kMazeColumnCount; i++)
 			{
-				v3TileCenter = CalculateMidPoint(TileVertices[i * 4].v3VerPos, TileVertices[i * 4 + 2].v3VerPos);
-				if (g_pFrustum->IntersectsSphere(&v3TileCenter, kTileSize / 2 * kSqrt2) == TRUE)
+				tileCenter = CalculateMidPoint(TileVertices[i * 4].position, TileVertices[i * 4 + 2].position);
+				if (g_pFrustum->IntersectsSphere(&tileCenter, kTileSize / 2 * kSqrt2) == TRUE)
 				{
 					g_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, i * 4, 2);
 				}
@@ -640,8 +639,8 @@ VOID Render()
 			//// wall_outside culling
 			for (i = 0; i < kMazeRowCount * 4; i++)
 			{
-				v3TileCenter = CalculateMidPoint(WallVertices[i / kMazeRowCount][(i * 4) % (kMazeRowCount * 4)].v3VerPos, WallVertices[i / kMazeRowCount][(i * 4) % (kMazeRowCount * 4) + 2].v3VerPos);
-				if (g_pFrustum->IntersectsSphere(&v3TileCenter, kTileSize / 2 * kSqrt2) == TRUE)
+				tileCenter = CalculateMidPoint(WallVertices[i / kMazeRowCount][(i * 4) % (kMazeRowCount * 4)].position, WallVertices[i / kMazeRowCount][(i * 4) % (kMazeRowCount * 4) + 2].position);
+				if (g_pFrustum->IntersectsSphere(&tileCenter, kTileSize / 2 * kSqrt2) == TRUE)
 				{
 					g_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, i * 4, 2);
 				}
@@ -650,8 +649,8 @@ VOID Render()
 			g_pd3dDevice->SetStreamSource(0, g_pWallVB2, 0, sizeof(CustomVertex));
 			for (i = 0; i < kMazeRowCount * 4; i++)
 			{
-				v3TileCenter = CalculateMidPoint(WallVertices2[i / kMazeRowCount][(i * 4) % (kMazeRowCount * 4)].v3VerPos, WallVertices2[i / kMazeRowCount][(i * 4) % (kMazeRowCount * 4) + 2].v3VerPos);
-				if (g_pFrustum->IntersectsSphere(&v3TileCenter, kTileSize / 2 * kSqrt2) == TRUE)
+				tileCenter = CalculateMidPoint(WallVertices2[i / kMazeRowCount][(i * 4) % (kMazeRowCount * 4)].position, WallVertices2[i / kMazeRowCount][(i * 4) % (kMazeRowCount * 4) + 2].position);
+				if (g_pFrustum->IntersectsSphere(&tileCenter, kTileSize / 2 * kSqrt2) == TRUE)
 				{
 					g_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, i * 4, 2);
 				}
@@ -662,8 +661,8 @@ VOID Render()
 			{
 				for (j = 0; j < 5; j++)
 				{
-					v3TileCenter = CalculateMidPoint(MazeWallVertices[i][j * 4].v3VerPos, MazeWallVertices[i][j * 4 + 2].v3VerPos);
-					if (g_pFrustum->IntersectsSphere(&v3TileCenter, kTileSize / 2 * kSqrt2) == TRUE)
+					tileCenter = CalculateMidPoint(MazeWallVertices[i][j * 4].position, MazeWallVertices[i][j * 4 + 2].position);
+					if (g_pFrustum->IntersectsSphere(&tileCenter, kTileSize / 2 * kSqrt2) == TRUE)
 					{
 						g_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, i * 20 + j * 4, 2);
 					}
@@ -673,18 +672,18 @@ VOID Render()
 
 		//// notice rendering
 		g_pd3dDevice->SetTexture(0, g_pNoticeTexture);
-		D3DXMATRIX mtNoticeWorld;
+		D3DXMATRIX noticeWorldMatrix;
 		for (i = 0; i < g_notices[0].GetNoticeCount(); i++)
 		{
-			mtNoticeWorld = g_notices[i].GetWorldMatrix();
-			g_pd3dDevice->SetTransform(D3DTS_WORLD, &mtNoticeWorld);
+			noticeWorldMatrix = g_notices[i].GetWorldMatrix();
+			g_pd3dDevice->SetTransform(D3DTS_WORLD, &noticeWorldMatrix);
 			g_notices[i].Render(g_pd3dDevice);
 		}
 
 		//// Exit rendering
 		g_pd3dDevice->SetTexture(0, g_pExitTexture);
-		mtNoticeWorld = g_mazeExit.GetWorldMatrix();
-		g_pd3dDevice->SetTransform(D3DTS_WORLD, &mtNoticeWorld);
+		noticeWorldMatrix = g_mazeExit.GetWorldMatrix();
+		g_pd3dDevice->SetTransform(D3DTS_WORLD, &noticeWorldMatrix);
 		g_mazeExit.Render(g_pd3dDevice);
 
 		//// Bullet rendering
@@ -694,16 +693,16 @@ VOID Render()
 		// Player 위치 표시용 구체
 		if (bIsSkyView == TRUE)
 		{
-			D3DXMATRIX tmpMatrix;
-			D3DXMatrixTranslation(&tmpMatrix, v3CurrentPosition.x, v3CurrentPosition.y, v3CurrentPosition.z);
-			g_pd3dDevice->SetTransform(D3DTS_WORLD, &tmpMatrix);
+			D3DXMATRIX playerWorldMatrix;
+			D3DXMatrixTranslation(&playerWorldMatrix, playerPosition.x, playerPosition.y, playerPosition.z);
+			g_pd3dDevice->SetTransform(D3DTS_WORLD, &playerWorldMatrix);
 			g_pd3dDevice->SetTexture(0, g_pTileTexture);
 			g_pPlayerSphere->DrawSubset(0);
 		}
 		// Tiger rendering
-		D3DXMATRIX X_World = g_tiger.GetTigerWorld();
+		D3DXMATRIX tigerWorldMatrix = g_tiger.GetWorldMatrix();
 
-		g_pd3dDevice->SetTransform(D3DTS_WORLD, &X_World);
+		g_pd3dDevice->SetTransform(D3DTS_WORLD, &tigerWorldMatrix);
 		g_tiger.Render(g_pd3dDevice);
 
 		//// UI rendering ////
@@ -876,23 +875,23 @@ LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 {
 	// 윈도우 클래스 등록
-	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, MsgProc, 0L, 0L,
+	WNDCLASSEX windowClass = { sizeof(WNDCLASSEX), CS_CLASSDC, MsgProc, 0L, 0L,
 					  GetModuleHandle(NULL), NULL, NULL, NULL, NULL,
 					  kProgramName, NULL };
-	RegisterClassEx(&wc);
+	RegisterClassEx(&windowClass);
 	// 윈도우 생성
-	HWND hWnd = CreateWindow(kProgramName, kProgramName,
+	HWND windowHandle = CreateWindow(kProgramName, kProgramName,
 		WS_OVERLAPPEDWINDOW, 100, 100, kWindowWidth, kWindowHeight,
-		GetDesktopWindow(), NULL, wc.hInstance, NULL);
+		GetDesktopWindow(), NULL, windowClass.hInstance, NULL);
 
 	// Direct3D 초기화
-	if (SUCCEEDED(InitializeD3d(hWnd)))
+	if (SUCCEEDED(InitializeD3d(windowHandle)))
 	{
 		{
 			InitializeGeometry();
 			// 윈도우 출력
-			ShowWindow(hWnd, SW_SHOWDEFAULT);
-			UpdateWindow(hWnd);
+			ShowWindow(windowHandle, SW_SHOWDEFAULT);
+			UpdateWindow(windowHandle);
 			// 메시지 루프
 			MSG msg;
 			ZeroMemory(&msg, sizeof(msg));
@@ -926,6 +925,6 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 	}
 
 	// 등록된 클래스 소거
-	UnregisterClass(kProgramName, wc.hInstance);
+	UnregisterClass(kProgramName, windowClass.hInstance);
 	return 0;
 }
