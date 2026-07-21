@@ -1,11 +1,12 @@
-﻿#include "CFrame.h"
-void CFrame::Initialize()
+﻿#include "FpsCounter.h"
+
+void FpsCounter::Initialize()
 {
 	mFps = 0;
 	mCount = 0;
 	mStartTime = timeGetTime();
 }
-void CFrame::Update()
+void FpsCounter::Update()
 {
 	mCount++;
 	// Sleep(1000 / nLimit);
@@ -20,24 +21,24 @@ void CFrame::Update()
 		mStartTime = timeGetTime();
 	}
 }
-int CFrame::GetFps()
+int FpsCounter::GetFps()
 {
 	return mFps;
 }
-void CFrame::StartTimer()
+void FpsCounter::StartTimer()
 {
 	mStopWatch.Start();
 }
-DWORD CFrame::GetTimerElapsedTime()
+DWORD FpsCounter::GetTimerElapsedTime()
 {
 	return mStopWatch.GetElapsedTime();
 }
-DWORD CFrame::StopTimer()
+DWORD FpsCounter::StopTimer()
 {
 	return mStopWatch.Stop();
 }
 
-BOOL CFrame::IsTimerRunning()
+BOOL FpsCounter::IsTimerRunning()
 {
 	return mStopWatch.IsRunning();
 }

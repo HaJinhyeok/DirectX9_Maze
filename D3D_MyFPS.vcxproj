@@ -146,37 +146,37 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="CExit.cpp" />
-    <ClCompile Include="CFrame.cpp">
+    <ClCompile Include="Exit.cpp" />
+    <ClCompile Include="FpsCounter.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="CFrustum.cpp" />
-    <ClCompile Include="CNotice.cpp" />
-    <ClCompile Include="CPlayer.cpp" />
-    <ClCompile Include="CSetting.cpp" />
-    <ClCompile Include="CSkyBox.cpp" />
+    <ClCompile Include="Frustum.cpp" />
+    <ClCompile Include="Notice.cpp" />
+    <ClCompile Include="Player.cpp" />
+    <ClCompile Include="SettingsOverlay.cpp" />
+    <ClCompile Include="SkyBox.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="maze_function.cpp" />
+    <ClCompile Include="MazeGenerator.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="Stopwatch.cpp" />
-    <ClCompile Include="XFileUtil.cpp" />
+    <ClCompile Include="Tiger.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ComUtils.h" />
-    <ClInclude Include="CExit.h" />
-    <ClInclude Include="CFrame.h">
+    <ClInclude Include="Exit.h" />
+    <ClInclude Include="FpsCounter.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="CFrustum.h" />
-    <ClInclude Include="CNotice.h" />
-    <ClInclude Include="CPlayer.h" />
-    <ClInclude Include="CSetting.h" />
-    <ClInclude Include="CSkyBox.h" />
+    <ClInclude Include="Frustum.h" />
+    <ClInclude Include="Notice.h" />
+    <ClInclude Include="Player.h" />
+    <ClInclude Include="SettingsOverlay.h" />
+    <ClInclude Include="SkyBox.h" />
     <ClInclude Include="main.h" />
-    <ClInclude Include="maze_function.h" />
+    <ClInclude Include="MazeGenerator.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Stopwatch.h" />
-    <ClInclude Include="XFileUtil.h" />
+    <ClInclude Include="Tiger.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

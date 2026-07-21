@@ -1,10 +1,10 @@
 ﻿
-#include "maze_function.h"
+#include "MazeGenerator.h"
 #include "Input.h"
-#include "CFrustum.h"
-#include "CFrame.h"
-#include "CSkyBox.h"
-#include "XFileUtil.h"
+#include "Frustum.h"
+#include "FpsCounter.h"
+#include "SkyBox.h"
+#include "Tiger.h"
 #include "ComUtils.h"
 
 LPDIRECT3D9 g_pD3D = NULL;
@@ -39,17 +39,17 @@ D3DLIGHT9 skyLight;
 
 DWORD dwRotationTime = timeGetTime();
 
-CPlayer g_player;
-vector<CNotice> g_notices;
-CExit g_mazeExit;
-CSetting g_settingsOverlay;
-CFrame g_fpsCounter;
+Player g_player;
+vector<Notice> g_notices;
+Exit g_mazeExit;
+SettingsOverlay g_settingsOverlay;
+FpsCounter g_fpsCounter;
 // 프레임 값에 상관없이 플레이어 및 호랑이 움직임이 일정하도록 조절하기 위한 스톱워치
 Stopwatch PlayerWatch, TigerWatch;
-CXFileUtil g_tiger(D3DXVECTOR3(55.0f, 5.0f, 65.0f));
-CSkyBox g_skyBox;
+Tiger g_tiger(D3DXVECTOR3(55.0f, 5.0f, 65.0f));
+SkyBox g_skyBox;
 
-CFrustum* g_pFrustum = new CFrustum;
+Frustum* g_pFrustum = new Frustum;
 RECT rt, rtExitButton;
 
 char testSTR[500];
@@ -133,10 +133,10 @@ VOID InitializeGeometry()
 
 	//// 미궁 내 벽을 구성할 vertex들의 buffer 생성
 	GenerateMazeWalls(1, MazeWallVertices, &g_notices, &g_mazeExit);
-	g_pd3dDevice->CreateVertexBuffer(sizeof(CUSTOMVERTEX) * 72 * 20, 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &g_pMazeVB, NULL);
+	g_pd3dDevice->CreateVertexBuffer(sizeof(CustomVertex) * 72 * 20, 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &g_pMazeVB, NULL);
 	VOID** MazeVertices;
-	g_pMazeVB->Lock(0, sizeof(CUSTOMVERTEX) * 72 * 20, (void**)&MazeVertices, 0);
-	memcpy(MazeVertices, MazeWallVertices, sizeof(CUSTOMVERTEX) * 72 * 20);
+	g_pMazeVB->Lock(0, sizeof(CustomVertex) * 72 * 20, (void**)&MazeVertices, 0);
+	memcpy(MazeVertices, MazeWallVertices, sizeof(CustomVertex) * 72 * 20);
 	g_pMazeVB->Unlock();
 
 	//// Notice를 구성하는 vertex buffer 생성
@@ -414,19 +414,19 @@ VOID UpdateGameStateFromInput()
 
 	if (GetAsyncKeyState('A') || GetAsyncKeyState(VK_LEFT))
 	{
-		bIsMoved = g_player.Move(MOVE_DIRECTION::left, chMap1, bIsNoClipOn);
+		bIsMoved = g_player.Move(MoveDirection::left, chMap1, bIsNoClipOn);
 	}
 	if (GetAsyncKeyState('D') || GetAsyncKeyState(VK_RIGHT))
 	{
-		bIsMoved = g_player.Move(MOVE_DIRECTION::right, chMap1, bIsNoClipOn);
+		bIsMoved = g_player.Move(MoveDirection::right, chMap1, bIsNoClipOn);
 	}
 	if (GetAsyncKeyState('W') || GetAsyncKeyState(VK_UP))
 	{
-		bIsMoved = g_player.Move(MOVE_DIRECTION::front, chMap1, bIsNoClipOn);
+		bIsMoved = g_player.Move(MoveDirection::front, chMap1, bIsNoClipOn);
 	}
 	if (GetAsyncKeyState('S') || GetAsyncKeyState(VK_DOWN))
 	{
-		bIsMoved = g_player.Move(MOVE_DIRECTION::back, chMap1, bIsNoClipOn);
+		bIsMoved = g_player.Move(MoveDirection::back, chMap1, bIsNoClipOn);
 	}
 	// Notice & Exit rotation
 	if (bIsMoved)
@@ -617,7 +617,7 @@ VOID Render()
 		g_skyBox.Render();
 
 		g_pd3dDevice->SetTexture(0, g_pGrassTexture);
-		g_pd3dDevice->SetStreamSource(0, g_pTileVB, 0, sizeof(CUSTOMVERTEX));
+		g_pd3dDevice->SetStreamSource(0, g_pTileVB, 0, sizeof(CustomVertex));
 		g_pd3dDevice->SetIndices(g_pTileIB);
 		//// tile rendering
 		{
@@ -636,7 +636,7 @@ VOID Render()
 
 			//// wall rendering
 			g_pd3dDevice->SetTexture(0, g_pWallTexture);
-			g_pd3dDevice->SetStreamSource(0, g_pWallVB, 0, sizeof(CUSTOMVERTEX));
+			g_pd3dDevice->SetStreamSource(0, g_pWallVB, 0, sizeof(CustomVertex));
 			//// wall_outside culling
 			for (i = 0; i < kMazeRowCount * 4; i++)
 			{
@@ -647,7 +647,7 @@ VOID Render()
 				}
 			}
 			//// wall_outside_upper culling
-			g_pd3dDevice->SetStreamSource(0, g_pWallVB2, 0, sizeof(CUSTOMVERTEX));
+			g_pd3dDevice->SetStreamSource(0, g_pWallVB2, 0, sizeof(CustomVertex));
 			for (i = 0; i < kMazeRowCount * 4; i++)
 			{
 				v3TileCenter = CalculateMidPoint(WallVertices2[i / kMazeRowCount][(i * 4) % (kMazeRowCount * 4)].v3VerPos, WallVertices2[i / kMazeRowCount][(i * 4) % (kMazeRowCount * 4) + 2].v3VerPos);
@@ -657,7 +657,7 @@ VOID Render()
 				}
 			}
 			//// wall_inside culling
-			g_pd3dDevice->SetStreamSource(0, g_pMazeVB, 0, sizeof(CUSTOMVERTEX));
+			g_pd3dDevice->SetStreamSource(0, g_pMazeVB, 0, sizeof(CustomVertex));
 			for (i = 0; i < 72; i++)
 			{
 				for (j = 0; j < 5; j++)
@@ -712,7 +712,7 @@ VOID Render()
 		// 탈출구 UI
 		if (!bIsPlaying)
 		{
-			g_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, PopUpVertices, sizeof(UI_VERTEX));
+			g_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, PopUpVertices, sizeof(UiVertex));
 			wsprintf(testSTR, "C L E A R");
 			SetRect(&rt, 250, 200, 0, 0);
 			g_pClearFont->DrawTextA(NULL, testSTR, -1, &rt, DT_NOCLIP, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
@@ -729,7 +729,7 @@ VOID Render()
 			//// Transformed Vertex
 			g_pd3dDevice->SetTexture(0, NULL);
 			g_pd3dDevice->SetFVF(D3DFVF_UI_VERTEX);
-			g_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, UIVertices, sizeof(UI_VERTEX));
+			g_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, UIVertices, sizeof(UiVertex));
 
 			//// Menu
 			SetRect(&rt, 20, 20, 0, 0);

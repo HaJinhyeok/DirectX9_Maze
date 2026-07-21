@@ -1,14 +1,14 @@
 ﻿#pragma once
 #include "main.h"
 
-class CNotice
+class Notice
 {
 	// notice의 position, player와 충돌 상태인지 확인하는 변수
 private:
 	D3DXVECTOR3 m_Position;
 	D3DXVECTOR3 m_LookAt;
 	D3DXMATRIX m_World;
-	CUSTOMVERTEX m_Vertex[4];
+	CustomVertex m_Vertex[4];
 	LPDIRECT3DVERTEXBUFFER9 m_pNoticeVB = NULL;
 
 public:

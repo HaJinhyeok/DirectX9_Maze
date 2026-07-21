@@ -4,7 +4,7 @@
 
 #include "main.h"
 
-class CPlayer
+class Player
 {
 private:
 	D3DXVECTOR3 m_LookAt;
@@ -24,7 +24,7 @@ private:
 	// 매 프레임마다 방향벡터 활용해서 각 총알의 예상 이동 위치를 구하고, 그 위치가 벽과 접촉하면 총알 객체 사라지게 만들자
 
 public:
-	CPlayer();
+	Player();
 
 	VOID SetPosition(D3DXVECTOR3 position)
 	{
@@ -65,7 +65,7 @@ public:
 		return &m_FlashLight;
 	}
 
-	BOOL Move(MOVE_DIRECTION direction, const char (*map)[kMazeColumnCount+1], BOOL NoClip);
+	BOOL Move(MoveDirection direction, const char (*map)[kMazeColumnCount+1], BOOL NoClip);
 	VOID Rotate(BOOL bIsCCW);
 	VOID Rotate(BOOL bIsCCW, BOOL bIsUpDown, FLOAT angle);
 	VOID FireBullet(LPPOINT CursorPosition);

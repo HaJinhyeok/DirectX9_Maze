@@ -1,7 +1,7 @@
-﻿#include "CSkyBox.h"
+﻿#include "SkyBox.h"
 #include "ComUtils.h"
 
-CSkyBox::CSkyBox()
+SkyBox::SkyBox()
 {
 	for (int i = 0; i < 6; i++)
 		m_BoxTextures[i] = NULL;
@@ -72,7 +72,7 @@ CSkyBox::CSkyBox()
 		}
 	}
 }
-CSkyBox::~CSkyBox()
+SkyBox::~SkyBox()
 {
 	// texture release
 	for (int i = 0; i < 6; i++)
@@ -82,7 +82,7 @@ CSkyBox::~CSkyBox()
 	// vertex buffer release
 	SafeRelease(m_BoxVertexBuffer);
 }
-VOID CSkyBox::LoadTextures()
+VOID SkyBox::LoadTextures()
 {
 	// 앞 - 뒤 - 좌 - 우 - 상 - 하
 	D3DXCreateTextureFromFile(g_pd3dDevice, "Daylight Box_Pieces/Daylight Box_Front.bmp", &m_BoxTextures[0]);
@@ -92,7 +92,7 @@ VOID CSkyBox::LoadTextures()
 	D3DXCreateTextureFromFile(g_pd3dDevice, "Daylight Box_Pieces/Daylight Box_Top.bmp", &m_BoxTextures[4]);
 	D3DXCreateTextureFromFile(g_pd3dDevice, "Daylight Box_Pieces/Daylight Box_Bottom.bmp", &m_BoxTextures[5]);
 }
-VOID CSkyBox::CreateVertexBuffer()
+VOID SkyBox::CreateVertexBuffer()
 {
 	// vertex buffer 생성
 	g_pd3dDevice->CreateVertexBuffer(sizeof(m_BoxVertices), 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &m_BoxVertexBuffer, NULL);
@@ -101,9 +101,9 @@ VOID CSkyBox::CreateVertexBuffer()
 	memcpy(SkyBoxVertices, m_BoxVertices, sizeof(m_BoxVertices));
 	m_BoxVertexBuffer->Unlock();
 }
-VOID CSkyBox::Render()
+VOID SkyBox::Render()
 {
-	g_pd3dDevice->SetStreamSource(0, m_BoxVertexBuffer, 0, sizeof(CUSTOMVERTEX));
+	g_pd3dDevice->SetStreamSource(0, m_BoxVertexBuffer, 0, sizeof(CustomVertex));
 	for (int i = 0; i < 6; i++)
 	{
 		g_pd3dDevice->SetTexture(0, m_BoxTextures[i]);

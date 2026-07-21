@@ -1,4 +1,4 @@
-﻿#include "CPlayer.h"
+﻿#include "Player.h"
 
 namespace
 {
@@ -14,7 +14,7 @@ namespace
 	}
 }
 
-CPlayer::CPlayer()
+Player::Player()
 {
 	D3DXMATRIX tmpMatrix;
 	// 일반화된 m by n matrix로 미로 정보를 받게 되면 수정해야함
@@ -58,7 +58,7 @@ CPlayer::CPlayer()
 // PLAYER MOVE
 // 바꾸어야 할 것: 플레이어 위치, 플레이어 LookAt
 // 필요한 것: 플레이어가 움직일 방향 벡터, 거리, 플에이어 현 위치, 플레이어 현 LookAt, 맵 정보
-BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[kMazeColumnCount + 1], BOOL NoClip)
+BOOL Player::Move(MoveDirection direction, const char(*map)[kMazeColumnCount + 1], BOOL NoClip)
 {
 	DWORD currentTime = timeGetTime();
 	if (currentTime - m_CurrentMoveTime < 10) return FALSE;
@@ -71,7 +71,7 @@ BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[kMazeColumnCount +
 
 	// y축 움직임은 없으므로 y축 정보는 걍 빼고 계산
 	// => 자유시점의 경우도 생각해서 y축도 이동
-	if (direction == MOVE_DIRECTION::left)
+	if (direction == MoveDirection::left)
 	{
 		vecDirection.x = -m_PlayerWorld._11;
 		vecDirection.y = -m_PlayerWorld._12;
@@ -82,7 +82,7 @@ BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[kMazeColumnCount +
 		tmpPosition.y = currentPosition.y + vecDirection.y * fCoefficient;
 		tmpPosition.z = currentPosition.z + vecDirection.z * fCoefficient;
 	}
-	else if (direction == MOVE_DIRECTION::right)
+	else if (direction == MoveDirection::right)
 	{
 		vecDirection.x = m_PlayerWorld._11;
 		vecDirection.y = m_PlayerWorld._12;
@@ -93,7 +93,7 @@ BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[kMazeColumnCount +
 		tmpPosition.y = currentPosition.y + vecDirection.y * fCoefficient;
 		tmpPosition.z = currentPosition.z + vecDirection.z * fCoefficient;
 	}
-	else if (direction == MOVE_DIRECTION::front)
+	else if (direction == MoveDirection::front)
 	{
 		vecDirection.x = m_PlayerWorld._31;
 		vecDirection.y = m_PlayerWorld._32;
@@ -104,7 +104,7 @@ BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[kMazeColumnCount +
 		tmpPosition.y = currentPosition.y + vecDirection.y * fCoefficient;
 		tmpPosition.z = currentPosition.z + vecDirection.z * fCoefficient;
 	}
-	else if (direction == MOVE_DIRECTION::back)
+	else if (direction == MoveDirection::back)
 	{
 		vecDirection.x = -m_PlayerWorld._31;
 		vecDirection.y = -m_PlayerWorld._32;
@@ -276,7 +276,7 @@ BOOL CPlayer::Move(MOVE_DIRECTION direction, const char(*map)[kMazeColumnCount +
 	return TRUE;
 }
 
-VOID CPlayer::Rotate(BOOL bIsCCW)
+VOID Player::Rotate(BOOL bIsCCW)
 {
 	DWORD currentTime = timeGetTime();
 	if (currentTime - m_CurrentRotateTime < 10) return;
@@ -312,7 +312,7 @@ VOID CPlayer::Rotate(BOOL bIsCCW)
 
 	m_FlashLight.Direction = D3DXVECTOR3(m_PlayerWorld._31, m_PlayerWorld._32, m_PlayerWorld._33);
 }
-VOID CPlayer::Rotate(BOOL bIsCCW, BOOL bIsUpDown, FLOAT angle)
+VOID Player::Rotate(BOOL bIsCCW, BOOL bIsUpDown, FLOAT angle)
 {
 	DWORD currentTime = timeGetTime();
 	//if (currentTime - m_CurrentRotateTime < 10) return;
@@ -388,7 +388,7 @@ VOID CPlayer::Rotate(BOOL bIsCCW, BOOL bIsUpDown, FLOAT angle)
 	m_FlashLight.Direction = D3DXVECTOR3(m_PlayerWorld._31, m_PlayerWorld._32, m_PlayerWorld._33);
 }
 
-VOID CPlayer::FireBullet(LPPOINT CursorPosition)
+VOID Player::FireBullet(LPPOINT CursorPosition)
 {
 	// 마우스 클릭 시, 클릭한 방향으로 벡터를 설정하고 일직선으로 날아가는 투사체 발사
 	// world 상에서 플레이어 위치를 (0,0,0)으로 생각하고, 마우스가 클릭되는 평면을
@@ -399,7 +399,7 @@ VOID CPlayer::FireBullet(LPPOINT CursorPosition)
 	tmpBullet.Time = timeGetTime();
 	m_Bullet.push_back(tmpBullet);
 }
-VOID CPlayer::UpdateBullets()
+VOID Player::UpdateBullets()
 {
 	// 매 프레임마다 호출해서 총알의 이동 및 충돌 후 제거 연산 수행 (x)
 	// 프레임마다 호출하면 프레임 낮은 똥컴에서는 총알 속도가 느려지는 말도 안 되는 상황 발생한다.
@@ -433,7 +433,7 @@ VOID CPlayer::UpdateBullets()
 		}
 	}
 }
-VOID CPlayer::RenderBullets(LPDIRECT3DDEVICE9 device, LPD3DXMESH sphere)
+VOID Player::RenderBullets(LPDIRECT3DDEVICE9 device, LPD3DXMESH sphere)
 {
 	D3DXMATRIX world;
 	for (size_t i = 0; i < m_Bullet.size(); i++)

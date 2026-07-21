@@ -1,7 +1,7 @@
 #pragma once
 #include "Stopwatch.h"
 
-class CFrame
+class FpsCounter
 {
 private:
 	int mFps, mCount;

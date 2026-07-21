@@ -7,7 +7,7 @@
 constexpr float kTigerMoveDistance = 0.2f;
 constexpr float kTigerScale = 7.0f;
 
-class CXFileUtil
+class Tiger
 {
 private:
 	// x 파일 로드용 변수
@@ -67,7 +67,7 @@ public:
 		return m_TigerWorld;
 	}
 
-	CXFileUtil(D3DXVECTOR3 position);
-	virtual ~CXFileUtil();
+	Tiger(D3DXVECTOR3 position);
+	virtual ~Tiger();
 };
 

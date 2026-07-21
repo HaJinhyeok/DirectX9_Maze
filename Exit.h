@@ -1,12 +1,12 @@
 #pragma once
-#include "CNotice.h"
+#include "Notice.h"
 
-class CExit :
-    public CNotice
+class Exit :
+    public Notice
 {
 private:
     BOOL bIsPressed = FALSE;
-    UI_VERTEX m_ExitButtonVertices[4] =
+    UiVertex m_ExitButtonVertices[4] =
     {
         D3DXVECTOR3(300.0f, 450.0f, 0.0f), 1.0f, kButtonDefaultColor, D3DXVECTOR2(0.0f, 0.0f),
         D3DXVECTOR3(400.0f, 450.0f, 0.0f), 1.0f, kButtonDefaultColor, D3DXVECTOR2(1.0f, 0.0f),

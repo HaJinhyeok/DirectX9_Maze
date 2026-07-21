@@ -18,37 +18,37 @@
     <ClCompile Include="main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="maze_function.cpp">
+    <ClCompile Include="MazeGenerator.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Input.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="CPlayer.cpp">
+    <ClCompile Include="Player.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="CFrustum.cpp">
+    <ClCompile Include="Frustum.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="CNotice.cpp">
+    <ClCompile Include="Notice.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="CExit.cpp">
+    <ClCompile Include="Exit.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="CSetting.cpp">
+    <ClCompile Include="SettingsOverlay.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="CFrame.cpp">
+    <ClCompile Include="FpsCounter.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Stopwatch.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="XFileUtil.cpp">
+    <ClCompile Include="Tiger.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="CSkyBox.cpp">
+    <ClCompile Include="SkyBox.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -59,37 +59,37 @@
     <ClInclude Include="main.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="maze_function.h">
+    <ClInclude Include="MazeGenerator.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Input.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="CPlayer.h">
+    <ClInclude Include="Player.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="CFrustum.h">
+    <ClInclude Include="Frustum.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="CNotice.h">
+    <ClInclude Include="Notice.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="CExit.h">
+    <ClInclude Include="Exit.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="CSetting.h">
+    <ClInclude Include="SettingsOverlay.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="CFrame.h">
+    <ClInclude Include="FpsCounter.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Stopwatch.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="XFileUtil.h">
+    <ClInclude Include="Tiger.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="CSkyBox.h">
+    <ClInclude Include="SkyBox.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

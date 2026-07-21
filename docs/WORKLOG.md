@@ -480,6 +480,7 @@
 - 이전 `KEY_*` 상태 매크로가 남아 있지 않음을 확인했다.
 - 프로젝트에 남은 `D3DFVF_CUSTOMVERTEX`, `D3DFVF_UI_VERTEX`는 DirectX 정점 포맷 조합이므로 의도적으로 유지한다.
 - `Debug|x86` 전체 빌드에 성공했으며 경고 0개, 오류 0개다.
+
 - Roadmap의 `P2-03`을 완료했으며 `P2-04`는 다음 작업으로 남겼다.
 
 ## 2026-07-21 - 함수명 규칙 통일 시작
@@ -661,6 +662,31 @@
 - `Debug|x86` 전체 빌드에 성공했으며 경고 0개, 오류 0개다.
 - Roadmap의 `P2-04`를 완료했으며 다음 작업은 `P2-06 타입명과 파일명 통일`이다.
 
+## 2026-07-21 - 타입명과 파일명 통일 시작
+
+### 원칙
+
+- 기존 클래스의 `C` 접두사를 제거하고 역할을 나타내는 `PascalCase` 타입명을 사용한다.
+- 대표 헤더와 소스 파일명은 타입명과 일치시킨다.
+- 상속 관계와 include 의존성이 적은 타입부터 변경하고 각 묶음마다 이전 이름 검색과 `Debug|x86` 빌드를 수행한다.
+
+### 타입 이름 방향
+
+- `CFrame`은 FPS와 타이머를 관리하므로 `FpsCounter`로 변경한다.
+- `CFrustum`은 `Frustum`으로 변경한다.
+- `CSetting`은 설정 화면 오버레이를 렌더링하므로 `SettingsOverlay`로 변경한다.
+- `CSkyBox`, `CPlayer`, `CNotice`, `CExit`은 각각 `SkyBox`, `Player`, `Notice`, `Exit`로 변경한다.
+- `CXFileUtil`은 X 파일 유틸리티가 아니라 호랑이 객체의 리소스와 상태를 소유하므로 `Tiger`로 변경한다.
+- `CUSTOMVERTEX`, `UI_VERTEX`, `MOVE_DIRECTION`은 각각 `CustomVertex`, `UiVertex`, `MoveDirection`으로 변경한다.
+- 사용되지 않는 `POSITION_WITH_FRUSTUM`은 이름 변경보다 삭제 여부를 별도로 확인한다.
+
+### 첫 변경 대상
+
+- `CFrame`과 `CFrame.h/.cpp`를 `FpsCounter`와 `FpsCounter.h/.cpp`로 변경한다.
+- `CFrustum`과 `CFrustum.h/.cpp`를 `Frustum`과 `Frustum.h/.cpp`로 변경한다.
+- `CSetting`과 `CSetting.h/.cpp`를 `SettingsOverlay`와 `SettingsOverlay.h/.cpp`로 변경한다.
+- Roadmap의 `P2-06`을 진행 중으로 변경했다.
+
 ## 2026-07-21 - 학습 기록 체계 추가
 
 ### 문서화
@@ -673,3 +699,111 @@
 
 - 프로젝트 맥락과 학습 과정을 다른 환경에서도 재현할 수 있도록 `docs/LEARNING_NOTES.md`는 공개 Git 추적 대상에 포함한다.
 - 민감 정보, 비공개 코드와 채팅 전문은 기록하지 않는다.
+
+## 2026-07-21 - 타입명과 파일명 1차 변경 검증
+
+### 변경
+
+- `CFrame`과 관련 파일을 `FpsCounter`로 변경했다.
+- `CFrustum`과 관련 파일을 `Frustum`으로 변경했다.
+- `CSetting`과 관련 파일을 `SettingsOverlay`로 변경했다.
+- 프로젝트 파일과 include 경로를 새 파일명에 맞게 갱신했다.
+
+### 검증
+
+- 소스와 프로젝트 파일에서 이전 타입명 참조가 남아 있지 않음을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했으며 경고 0개, 오류 0개다.
+
+## 2026-07-21 - 타입명과 파일명 2차 변경 검증
+
+### 변경
+
+- `CSkyBox`와 관련 파일을 `SkyBox`로 변경했다.
+- `CPlayer`와 관련 파일을 `Player`로 변경했다.
+- 프로젝트 파일과 include 경로를 새 파일명에 맞게 갱신했다.
+
+### 검증
+
+- 소스와 프로젝트 파일에서 이전 타입명 참조가 남아 있지 않음을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했으며 경고 0개, 오류 0개다.
+
+## 2026-07-21 - 타입명과 파일명 3차 변경 검증
+
+### 변경
+
+- `CNotice`와 관련 파일을 `Notice`로 변경했다.
+- `CExit`와 관련 파일을 `Exit`로 변경했다.
+- `Exit`의 `Notice` 상속 관계와 include 경로를 새 타입명에 맞게 갱신했다.
+
+### 검증
+
+- 소스와 프로젝트 파일에서 이전 타입명 참조가 남아 있지 않음을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했으며 경고 0개, 오류 0개다.
+
+## 2026-07-21 - 타입명과 파일명 4차 변경 검증
+
+### 변경
+
+- `CXFileUtil` 타입과 `XFileUtil.h/.cpp`를 `Tiger`와 `Tiger.h/.cpp`로 변경했다.
+- 범용 유틸리티처럼 보이던 이름을 실제로 소유하는 게임 객체의 역할에 맞게 정리했다.
+- 프로젝트 파일과 include 경로를 새 파일명에 맞게 갱신했다.
+
+### 검증
+
+- 소스와 프로젝트 파일에서 `CXFileUtil` 및 `XFileUtil` 참조가 남아 있지 않음을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했으며 경고 0개, 오류 0개다.
+
+## 2026-07-21 - 타입명과 파일명 5차 변경 검증
+
+### 변경
+
+- `CUSTOMVERTEX`, `UI_VERTEX`, `MOVE_DIRECTION`을 각각 `CustomVertex`, `UiVertex`, `MoveDirection`으로 변경했다.
+- DirectX 정점 포맷 매크로인 `D3DFVF_CUSTOMVERTEX`, `D3DFVF_UI_VERTEX`는 외부 API 관례에 따라 유지했다.
+
+### 검증
+
+- 선언과 모든 사용처가 새 타입명을 사용함을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했으며 경고 0개, 오류 0개다.
+- `POSITION_WITH_FRUSTUM`은 선언 외 사용처가 없어 다음 삭제 대상으로 확인했다.
+
+## 2026-07-21 - P2-06 타입명과 파일명 통일 완료
+
+### 정리 및 검증
+
+- 선언 외 사용처가 없던 `POSITION_WITH_FRUSTUM` 열거형을 삭제했다.
+- 프로젝트 타입이 접두사 없는 `PascalCase`를 사용하고 대표 헤더·소스 파일명이 타입명과 일치함을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했으며 경고 0개, 오류 0개다.
+- Roadmap의 `P2-06`을 완료하고 `P2-07`을 진행 중으로 변경했다.
+
+### P2-07 첫 대상
+
+- 멤버 수가 적은 `FpsCounter`, `Exit`, `SettingsOverlay`, `SkyBox`부터 `m_` + `camelCase` 규칙을 적용한다.
+- 각 클래스 묶음마다 이전 이름 검색과 `Debug|x86` 빌드를 수행한다.
+
+## 2026-07-21 - P2-06 완료 판정 보류
+
+### 확인 결과
+
+- 대표 타입이 없는 자유 함수 모듈 `maze_function.h/.cpp`가 파일명 규칙 검토에서 누락됐음을 확인했다.
+- 자유 함수 모듈도 예외로 두지 않고 역할을 나타내는 `PascalCase` 파일명을 사용하기로 했다.
+- 현재 함수들이 미로 벽, 표지판과 출구를 생성하므로 파일명을 `MazeGenerator.h/.cpp`로 변경하기로 했다.
+- `P2-06`을 다시 진행 중으로, 아직 시작하지 않은 `P2-07`을 예정으로 변경했다.
+
+### 다음 검증
+
+- 파일명, include와 Visual Studio 프로젝트 항목을 변경한다.
+- 이전 파일명 참조가 없는지 검색하고 `Debug|x86` 전체 빌드를 수행한다.
+
+## 2026-07-21 - P2-06 타입명과 파일명 통일 최종 완료
+
+### 변경 및 검증
+
+- `maze_function.h/.cpp`를 역할 중심의 `MazeGenerator.h/.cpp`로 변경했다.
+- include, Visual Studio 프로젝트 및 필터 항목이 새 파일명을 사용함을 확인했다.
+- 이전 파일명 참조와 기존 타입명 참조가 남아 있지 않음을 확인했다.
+- `Debug|x86` 전체 빌드에 성공했으며 경고 0개, 오류 0개다.
+- Roadmap의 `P2-06`을 완료하고 `P2-07`을 진행 중으로 변경했다.
+
+### P2-07 첫 대상
+
+- `FpsCounter`, `Exit`, `SettingsOverlay`, `SkyBox`의 멤버 변수를 `m_` + `camelCase` 규칙으로 통일한다.

@@ -1,7 +1,7 @@
-﻿#include "XFileUtil.h"
+﻿#include "Tiger.h"
 #include "ComUtils.h"
 
-CXFileUtil::CXFileUtil(D3DXVECTOR3 position)
+Tiger::Tiger(D3DXVECTOR3 position)
 {
 	g_pMesh = NULL; // 메쉬 객체
 	g_pMeshMaterials = NULL; // 메쉬에 대한 재질
@@ -24,7 +24,7 @@ CXFileUtil::CXFileUtil(D3DXVECTOR3 position)
 	m_RotationAmount = 0;
 	m_RotationCount = 0;
 }
-CXFileUtil::~CXFileUtil()
+Tiger::~Tiger()
 {
 	SafeRelease(g_pMesh);
 	if (g_pMeshTextures != NULL)
@@ -44,7 +44,7 @@ CXFileUtil::~CXFileUtil()
 // 이름 : Load()
 // 기능 : x 파일을 로드 한다.
 //---------------------------------------------------------------------------------
-int CXFileUtil::Load(LPDIRECT3DDEVICE9 pD3DDevice, char* xFileName)
+int Tiger::Load(LPDIRECT3DDEVICE9 pD3DDevice, char* xFileName)
 {
 	LPD3DXBUFFER pD3DXMtrlBuffer;
 	// x 파일을 로딩한다.
@@ -104,7 +104,7 @@ int CXFileUtil::Load(LPDIRECT3DDEVICE9 pD3DDevice, char* xFileName)
 // 이름 : Render()
 // 기능 : x 파일을 출력 해준다.
 //---------------------------------------------------------------------------------
-int CXFileUtil::Render(LPDIRECT3DDEVICE9 pD3DDevice)
+int Tiger::Render(LPDIRECT3DDEVICE9 pD3DDevice)
 {
 	// 메쉬 출력
 	for (DWORD i = 0; i < g_dwNumMaterials; i++)
@@ -120,7 +120,7 @@ int CXFileUtil::Render(LPDIRECT3DDEVICE9 pD3DDevice)
 	return 0;
 }
 
-VOID CXFileUtil::Move(const char(*map)[kMazeColumnCount + 1])
+VOID Tiger::Move(const char(*map)[kMazeColumnCount + 1])
 {
 	DWORD currentTime = timeGetTime();
 	if (currentTime - m_CurrentTime >= 10)
@@ -609,7 +609,7 @@ VOID CXFileUtil::Move(const char(*map)[kMazeColumnCount + 1])
 }
 // 90도 회전시키고 나서 벡터값 조정이 필요할 듯
 // 
-VOID CXFileUtil::Rotate(BOOL clockwise)
+VOID Tiger::Rotate(BOOL clockwise)
 {
 	D3DXMATRIX tmpRotation, tmpTranslation;
 	D3DXVECTOR3 tmpPosition = D3DXVECTOR3(m_TigerWorld._41, m_TigerWorld._42, m_TigerWorld._43);

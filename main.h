@@ -65,19 +65,21 @@ inline FLOAT CalculateAngle(D3DXVECTOR3 vec1, D3DXVECTOR3 vec2)
     return angle;
 }
 
-struct CUSTOMVERTEX
+struct CustomVertex
 {
     D3DXVECTOR3 v3VerPos;       // 정점의 x, y, z 좌표
     D3DXVECTOR3 v3VerNormal;    // 정점의 수직 벡터
     D3DXVECTOR2 v2VerTex;       // 정점의 텍스처 좌표
 };
-struct UI_VERTEX
+
+struct UiVertex
 {
     D3DXVECTOR3 v3VerPos;
     FLOAT w;
     D3DCOLOR VerColor;
     D3DXVECTOR2 v2VerTex;
 };
+
 struct Bullet
 {
     D3DXVECTOR3 v3Position;
@@ -85,13 +87,7 @@ struct Bullet
     DWORD Time;
 };
 
-enum class POSITION_WITH_FRUSTUM : WORD
-{
-    outside,
-    inside,
-    intersection
-};
-enum class MOVE_DIRECTION : WORD
+enum class MoveDirection : WORD
 {
     left = 1,
     right,
@@ -99,7 +95,7 @@ enum class MOVE_DIRECTION : WORD
     back
 };
 
-static UI_VERTEX UIVertices[4] =
+static UiVertex UIVertices[4] =
 {
     D3DXVECTOR3(10.0f, 10.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(255, 0, 0), D3DXVECTOR2(0.0f, 0.0f),
     D3DXVECTOR3(210.0f, 10.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(0, 0, 0), D3DXVECTOR2(1.0f, 0.0f),
@@ -107,7 +103,7 @@ static UI_VERTEX UIVertices[4] =
     D3DXVECTOR3(10.0f, 135.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(255, 0, 0), D3DXVECTOR2(0.0f, 1.0f)
 };
 
-static UI_VERTEX Log_UI_Vertices[4] =
+static UiVertex Log_UI_Vertices[4] =
 {
     D3DXVECTOR3(10.0f, 110.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(255, 255, 255), D3DXVECTOR2(0.0f, 0.0f),
     D3DXVECTOR3(410.0f, 110.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(255, 255, 255), D3DXVECTOR2(1.0f, 0.0f),
@@ -116,7 +112,7 @@ static UI_VERTEX Log_UI_Vertices[4] =
 };
 
 // 게임 화면 크기에 따라 달라질 수 있게 위치 다시 찍어야할듯
-static UI_VERTEX PopUpVertices[4] =
+static UiVertex PopUpVertices[4] =
 {
     D3DXVECTOR3(100.0f, 150.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(0, 255, 0), D3DXVECTOR2(0.0f, 0.0f),
     D3DXVECTOR3(600.0f, 150.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(0, 255, 0), D3DXVECTOR2(0.0f, 0.0f),
@@ -177,11 +173,11 @@ static D3DXVECTOR3 v3Up(0.0f, 1.0f, 0.0f);
 static D3DXVECTOR3 v3DefaultPosition(0.0f, 0.0f, 0.0f);
 const static D3DXVECTOR3 v3StartPosition(55.0f, kTileSize / 2, -65.0f);
 
-static CUSTOMVERTEX TileVertices[4 * kMazeRowCount * kMazeColumnCount];
-static CUSTOMVERTEX WallVertices[4][4 * kMazeRowCount];
-static CUSTOMVERTEX WallVertices2[4][4 * kMazeRowCount];
+static CustomVertex TileVertices[4 * kMazeRowCount * kMazeColumnCount];
+static CustomVertex WallVertices[4][4 * kMazeRowCount];
+static CustomVertex WallVertices2[4][4 * kMazeRowCount];
 
-static CUSTOMVERTEX MazeWallVertices[72][20];
+static CustomVertex MazeWallVertices[72][20];
 
 static WORD wTileIndices[2 * kMazeRowCount * kMazeColumnCount][3];
 

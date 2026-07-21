@@ -1,9 +1,9 @@
-﻿#include "CNotice.h"
+﻿#include "Notice.h"
 #include "ComUtils.h"
 
-WORD CNotice::m_NoticeCount = 0;
+WORD Notice::m_NoticeCount = 0;
 
-VOID CNotice::Initialize(D3DXVECTOR3 position)
+VOID Notice::Initialize(D3DXVECTOR3 position)
 {
 	D3DXMatrixIdentity(&m_World);
 	m_Position = position;
@@ -24,15 +24,15 @@ VOID CNotice::Initialize(D3DXVECTOR3 position)
 	m_LookAt = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
 	m_NoticeCount++;
 }
-VOID CNotice::CreateVertexBuffer(LPDIRECT3DDEVICE9 device)
+VOID Notice::CreateVertexBuffer(LPDIRECT3DDEVICE9 device)
 {
-	device->CreateVertexBuffer(sizeof(CUSTOMVERTEX) * 4, 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &m_pNoticeVB, NULL);
+	device->CreateVertexBuffer(sizeof(CustomVertex) * 4, 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &m_pNoticeVB, NULL);
 	VOID** NoticeVertices;
-	m_pNoticeVB->Lock(0, sizeof(CUSTOMVERTEX) * 4, (void**)&NoticeVertices, 0);
-	memcpy(NoticeVertices, m_Vertex, sizeof(CUSTOMVERTEX) * 4);
+	m_pNoticeVB->Lock(0, sizeof(CustomVertex) * 4, (void**)&NoticeVertices, 0);
+	memcpy(NoticeVertices, m_Vertex, sizeof(CustomVertex) * 4);
 	m_pNoticeVB->Unlock();
 }
-VOID CNotice::UpdateFacing(D3DXVECTOR3 player_position)
+VOID Notice::UpdateFacing(D3DXVECTOR3 player_position)
 {
 	D3DXVECTOR3 v3Vertices[4], v3Cross, v3Dst = player_position - m_Position;
 	D3DXMATRIX mtRotation, mtTranslation;
@@ -68,16 +68,16 @@ VOID CNotice::UpdateFacing(D3DXVECTOR3 player_position)
 	D3DXMatrixTranslation(&mtTranslation, m_Position.x, m_Position.y, m_Position.z);
 	D3DXMatrixMultiply(&m_World, &m_World, &mtTranslation);
 }
-VOID CNotice::Render(LPDIRECT3DDEVICE9 device)
+VOID Notice::Render(LPDIRECT3DDEVICE9 device)
 {
-	device->SetStreamSource(0, m_pNoticeVB, 0, sizeof(CUSTOMVERTEX));
+	device->SetStreamSource(0, m_pNoticeVB, 0, sizeof(CustomVertex));
 	device->DrawPrimitive(D3DPT_TRIANGLEFAN, 0, 2);
 }
-VOID CNotice::ReleaseVertexBuffer()
+VOID Notice::ReleaseVertexBuffer()
 {
 	SafeRelease(m_pNoticeVB);
 }
-BOOL CNotice::CanInteract(D3DXVECTOR3 playerPosition)
+BOOL Notice::CanInteract(D3DXVECTOR3 playerPosition)
 {
 	if (bIsNoClipOn)
 		return FALSE;
