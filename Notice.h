@@ -21,7 +21,7 @@ public:
 	VOID Render(LPDIRECT3DDEVICE9 device);
 	VOID ReleaseVertexBuffer();
 
-	BOOL CanInteract(D3DXVECTOR3 playerPosition);
+	BOOL CanInteract(D3DXVECTOR3 playerPosition, BOOL isNoClipEnabled);
 	BOOL IsNotice()
 	{
 		return m_isNotice;

@@ -24,6 +24,7 @@ VOID Notice::Initialize(D3DXVECTOR3 position)
 	m_lookAt = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
 	s_noticeCount++;
 }
+
 VOID Notice::CreateVertexBuffer(LPDIRECT3DDEVICE9 device)
 {
 	device->CreateVertexBuffer(sizeof(CustomVertex) * 4, 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &m_noticeVertexBuffer, NULL);
@@ -32,6 +33,7 @@ VOID Notice::CreateVertexBuffer(LPDIRECT3DDEVICE9 device)
 	memcpy(noticeVertices, m_vertices, sizeof(CustomVertex) * 4);
 	m_noticeVertexBuffer->Unlock();
 }
+
 VOID Notice::UpdateFacing(D3DXVECTOR3 playerPosition)
 {
 	D3DXVECTOR3 crossProduct, targetDirection = playerPosition - m_position;
@@ -68,18 +70,21 @@ VOID Notice::UpdateFacing(D3DXVECTOR3 playerPosition)
 	D3DXMatrixTranslation(&translationMatrix, m_position.x, m_position.y, m_position.z);
 	D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
 }
+
 VOID Notice::Render(LPDIRECT3DDEVICE9 device)
 {
 	device->SetStreamSource(0, m_noticeVertexBuffer, 0, sizeof(CustomVertex));
 	device->DrawPrimitive(D3DPT_TRIANGLEFAN, 0, 2);
 }
+
 VOID Notice::ReleaseVertexBuffer()
 {
 	SafeRelease(m_noticeVertexBuffer);
 }
-BOOL Notice::CanInteract(D3DXVECTOR3 playerPosition)
+
+BOOL Notice::CanInteract(D3DXVECTOR3 playerPosition, BOOL isNoClipEnabled)
 {
-	if (bIsNoClipOn)
+	if (isNoClipEnabled)
 		return FALSE;
 	// 충돌을 검사할 블록의 왼쪽아래(minX, minZ)와 오른쪽위(maxX,maxZ) 두 점
 	D3DXVECTOR2 noticeBounds[2];

@@ -18,11 +18,11 @@ Player::Player()
 {
 	// 일반화된 m by n matrix로 미로 정보를 받게 되면 수정해야함
 	// 현재는 고정된 위치 시작
-	m_lookAt = v3StartPosition;
+	m_lookAt = kPlayerStartPosition;
 	m_lookAt.z += kLookAtDistance;
 	// player world matrix initialization
 	D3DXMatrixIdentity(&m_worldMatrix);
-	D3DXMatrixTranslation(&m_worldMatrix, v3StartPosition.x, v3StartPosition.y, v3StartPosition.z);
+	D3DXMatrixTranslation(&m_worldMatrix, kPlayerStartPosition.x, kPlayerStartPosition.y, kPlayerStartPosition.z);
 
 	//// light setting
 	m_isFlashlightOn = TRUE;
@@ -35,7 +35,7 @@ Player::Player()
 	m_flashlight.Specular.r = 1.0f;
 	m_flashlight.Specular.g = 1.0f;
 	m_flashlight.Specular.b = 1.0f;
-	m_flashlight.Position = v3StartPosition;
+	m_flashlight.Position = kPlayerStartPosition;
 	m_flashlight.Direction = D3DXVECTOR3(m_worldMatrix._31, m_worldMatrix._32, m_worldMatrix._33);
 	D3DXVec3Normalize((D3DXVECTOR3*)&m_flashlight.Direction, (D3DXVECTOR3*)&m_flashlight.Direction);
 	m_flashlight.Range = 1500.0f;
@@ -328,7 +328,7 @@ VOID Player::Rotate(BOOL isCounterClockwise, BOOL isVertical, FLOAT angle)
 	else
 	{
 		// up vector와 player가 바라보는 방향 vector 사이의 각도 구하기
-		FLOAT lookAngle = CalculateAngle(v3Up, D3DXVECTOR3(m_worldMatrix._31, m_worldMatrix._32, m_worldMatrix._33));
+		FLOAT lookAngle = CalculateAngle(kWorldUp, D3DXVECTOR3(m_worldMatrix._31, m_worldMatrix._32, m_worldMatrix._33));
 
 		rotationAxis = D3DXVECTOR3(m_worldMatrix._11, 0, m_worldMatrix._13);
 		// 아래

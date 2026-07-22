@@ -95,95 +95,11 @@ enum class MoveDirection : WORD
     Backward
 };
 
-static UiVertex UIVertices[4] =
-{
-    D3DXVECTOR3(10.0f, 10.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(255, 0, 0), D3DXVECTOR2(0.0f, 0.0f),
-    D3DXVECTOR3(210.0f, 10.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(0, 0, 0), D3DXVECTOR2(1.0f, 0.0f),
-    D3DXVECTOR3(210.0f, 135.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(0, 0, 0), D3DXVECTOR2(1.0f, 1.0f),
-    D3DXVECTOR3(10.0f, 135.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(255, 0, 0), D3DXVECTOR2(0.0f, 1.0f)
-};
-
-static UiVertex Log_UI_Vertices[4] =
-{
-    D3DXVECTOR3(10.0f, 110.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(255, 255, 255), D3DXVECTOR2(0.0f, 0.0f),
-    D3DXVECTOR3(410.0f, 110.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(255, 255, 255), D3DXVECTOR2(1.0f, 0.0f),
-    D3DXVECTOR3(410.0f, 200.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(255, 255, 255), D3DXVECTOR2(1.0f, 1.0f),
-    D3DXVECTOR3(10.0f, 200.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(255, 255, 255), D3DXVECTOR2(0.0f, 1.0f)
-};
-
-// 게임 화면 크기에 따라 달라질 수 있게 위치 다시 찍어야할듯
-static UiVertex PopUpVertices[4] =
-{
-    D3DXVECTOR3(100.0f, 150.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(0, 255, 0), D3DXVECTOR2(0.0f, 0.0f),
-    D3DXVECTOR3(600.0f, 150.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(0, 255, 0), D3DXVECTOR2(0.0f, 0.0f),
-    D3DXVECTOR3(600.0f, 550.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(0, 255, 0), D3DXVECTOR2(0.0f, 0.0f),
-    D3DXVECTOR3(100.0f, 550.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(0, 255, 0), D3DXVECTOR2(0.0f, 0.0f)
-};
-
-// 시점 변환 시
-const static D3DXVECTOR3 v3EyeCeiling(0.0f, 200.0f, 0.0f);
-const static D3DXVECTOR3 v3UpCeiling(0.0f, 0.0f, 1.0f);
-
 // 맵의 정보를 2차원 배열 형태로 저장
-const static char chMap1[kMazeRowCount][kMazeColumnCount + 1] =
-{
-    "X   *@ * @* ",
-    "*** ** * ** ",
-    " @* ** * ** ",
-    " ** ** *    ",
-    "    ** **** ",
-    " **       * ",
-    " **     * * ",
-    " **  ** * * ",
-    " *   ** * * ",
-    " * * ** *   ",
-    " * * ** * * ",
-    " *   ** * * ",
-    " * **** *** ",
-    "@*@*        "
-};
+extern const char kMazeMap[kMazeRowCount][kMazeColumnCount + 1];
 
-static char chFileName[] = "tiger.x";
-
-// 시점 변환 확인 변수
-static BOOL bIsSkyView = FALSE;
-// 자유시점 변환 확인 변수
-static BOOL bIsNoClipOn = FALSE;
-// 일시정지(or 환경설정) 확인 변수
-static BOOL bIsPaused = FALSE;
-// 컬링 확인 변수
-static BOOL bIsFrustumCulling = TRUE;
-// 상호작용 확인 변수
-static BOOL bIsInteractive = FALSE;
-// 플레이어 이동 여부 확인 변수
-static BOOL bIsMoved = FALSE;
-// 게임 종료 확인 변수
-static BOOL bIsPlaying = TRUE;
-// 버튼 클릭 확인 변수
-static BOOL bIsClicked = FALSE;
-// 낮밤 확인 변수
-static BOOL bIsLightOn = FALSE;
-// 커서 확인 변수
-static SHORT bIsCursorOn = 1;
-
-static D3DXVECTOR3 v3CurrentLookAt(0.0f, 5.0f, 10.0f);
-static D3DXVECTOR3 v3LookAt(v3CurrentLookAt);
-static D3DXVECTOR3 v3Eye(0.0f, 5.0f, 0.0f);
-static D3DXVECTOR3 v3Up(0.0f, 1.0f, 0.0f);
-static D3DXVECTOR3 v3DefaultPosition(0.0f, 0.0f, 0.0f);
-const static D3DXVECTOR3 v3StartPosition(55.0f, kTileSize / 2, -65.0f);
-
-static CustomVertex TileVertices[4 * kMazeRowCount * kMazeColumnCount];
-static CustomVertex WallVertices[4][4 * kMazeRowCount];
-static CustomVertex WallVertices2[4][4 * kMazeRowCount];
-
-static CustomVertex MazeWallVertices[72][20];
-
-static WORD wTileIndices[2 * kMazeRowCount * kMazeColumnCount][3];
-
-// 자유 시점으로 전환하기 위해, 현재 플레이어 위치 및 lookat 정보 저장해두기
-static D3DXMATRIX mtSavedWorld;
-static D3DXVECTOR3 v3SavedLookAt;
+extern const D3DXVECTOR3 kWorldUp;
+extern const D3DXVECTOR3 kPlayerStartPosition;
 
 // tile culling 수정: 정사각형 중심으로부터 거리가 변의 길이의 절반 이하(d <= kTileSize / 2) culling 해주어야 함.
 // 추가할 기능: 플레이어 시점이 qe가 아닌 마우스 움직임에 따라 변하면 좋을 듯? ==> 창모드에서는 뭔가뭔가임 창 밖에서 마우스 움직임 제어는 어케

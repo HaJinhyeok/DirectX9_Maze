@@ -20,18 +20,18 @@ VOID GenerateMazeWalls(int mapNumber, CustomVertex(*mazeVertices)[20], vector<No
         {
             for (j = 0; j < kMazeColumnCount; j++)
             {
-                if (chMap1[i][j] == '*')
+                if (kMazeMap[i][j] == '*')
                 {
                     GenerateWallBlock(mazeVertices[blockIndex++], D3DXVECTOR3((-kMazeColumnCount / 2 + j + 0.5f) * kTileSize, 5.0f, (kMazeRowCount / 2 - i - 0.5f) * kTileSize));
                 }
-                else if (chMap1[i][j] == '@')
+                else if (kMazeMap[i][j] == '@')
                 {
                     Notice notice;
                     notice.Initialize(D3DXVECTOR3((-kMazeColumnCount / 2 + j + 0.5f) * kTileSize, 5.0f, (kMazeRowCount / 2 - i - 0.5f) * kTileSize));
                     notices->push_back(notice);
                 }
                 // 탈출구는 모든 맵마다 단 하나만 존재
-                else if (chMap1[i][j] == 'X')
+                else if (kMazeMap[i][j] == 'X')
                 {
                     exit->Initialize(D3DXVECTOR3((-kMazeColumnCount / 2 + j + 0.5f) * kTileSize, 5.0f, (kMazeRowCount / 2 - i - 0.5f) * kTileSize));
                 }
