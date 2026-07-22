@@ -62,7 +62,7 @@ SkyBox::SkyBox()
 		m_boxVertices[21].normal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
 		m_boxVertices[22].normal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
 		m_boxVertices[23].normal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
-		// tex 좌표 입력
+		// 각 면에 동일한 텍스처 좌표 적용
 		for (int i = 0; i < 6; i++)
 		{
 			m_boxVertices[i * 4].textureCoordinate = D3DXVECTOR2(0.0f, 0.0f);
@@ -74,39 +74,36 @@ SkyBox::SkyBox()
 }
 SkyBox::~SkyBox()
 {
-	// texture release
 	for (int i = 0; i < 6; i++)
 	{
 		SafeRelease(m_boxTextures[i]);
 	}
-	// vertex buffer release
 	SafeRelease(m_boxVertexBuffer);
 }
-VOID SkyBox::LoadTextures()
+VOID SkyBox::LoadTextures(LPDIRECT3DDEVICE9 device)
 {
-	// 앞 - 뒤 - 좌 - 우 - 상 - 하
-	D3DXCreateTextureFromFile(g_pd3dDevice, "Daylight Box_Pieces/Daylight Box_Front.bmp", &m_boxTextures[0]);
-	D3DXCreateTextureFromFile(g_pd3dDevice, "Daylight Box_Pieces/Daylight Box_Back.bmp", &m_boxTextures[1]);
-	D3DXCreateTextureFromFile(g_pd3dDevice, "Daylight Box_Pieces/Daylight Box_Left.bmp", &m_boxTextures[2]);
-	D3DXCreateTextureFromFile(g_pd3dDevice, "Daylight Box_Pieces/Daylight Box_Right.bmp", &m_boxTextures[3]);
-	D3DXCreateTextureFromFile(g_pd3dDevice, "Daylight Box_Pieces/Daylight Box_Top.bmp", &m_boxTextures[4]);
-	D3DXCreateTextureFromFile(g_pd3dDevice, "Daylight Box_Pieces/Daylight Box_Bottom.bmp", &m_boxTextures[5]);
+	// 텍스처 배열 순서: 앞, 뒤, 왼쪽, 오른쪽, 위, 아래
+	D3DXCreateTextureFromFile(device, "Daylight Box_Pieces/Daylight Box_Front.bmp", &m_boxTextures[0]);
+	D3DXCreateTextureFromFile(device, "Daylight Box_Pieces/Daylight Box_Back.bmp", &m_boxTextures[1]);
+	D3DXCreateTextureFromFile(device, "Daylight Box_Pieces/Daylight Box_Left.bmp", &m_boxTextures[2]);
+	D3DXCreateTextureFromFile(device, "Daylight Box_Pieces/Daylight Box_Right.bmp", &m_boxTextures[3]);
+	D3DXCreateTextureFromFile(device, "Daylight Box_Pieces/Daylight Box_Top.bmp", &m_boxTextures[4]);
+	D3DXCreateTextureFromFile(device, "Daylight Box_Pieces/Daylight Box_Bottom.bmp", &m_boxTextures[5]);
 }
-VOID SkyBox::CreateVertexBuffer()
+VOID SkyBox::CreateVertexBuffer(LPDIRECT3DDEVICE9 device)
 {
-	// vertex buffer 생성
-	g_pd3dDevice->CreateVertexBuffer(sizeof(m_boxVertices), 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &m_boxVertexBuffer, NULL);
+	device->CreateVertexBuffer(sizeof(m_boxVertices), 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &m_boxVertexBuffer, NULL);
 	VOID** vertexData;
 	m_boxVertexBuffer->Lock(0, sizeof(m_boxVertices), (void**)&vertexData, 0);
 	memcpy(vertexData, m_boxVertices, sizeof(m_boxVertices));
 	m_boxVertexBuffer->Unlock();
 }
-VOID SkyBox::Render()
+VOID SkyBox::Render(LPDIRECT3DDEVICE9 device)
 {
-	g_pd3dDevice->SetStreamSource(0, m_boxVertexBuffer, 0, sizeof(CustomVertex));
+	device->SetStreamSource(0, m_boxVertexBuffer, 0, sizeof(CustomVertex));
 	for (int i = 0; i < 6; i++)
 	{
-		g_pd3dDevice->SetTexture(0, m_boxTextures[i]);
-		g_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, i * 4, 2);
+		device->SetTexture(0, m_boxTextures[i]);
+		device->DrawPrimitive(D3DPT_TRIANGLEFAN, i * 4, 2);
 	}
 }
