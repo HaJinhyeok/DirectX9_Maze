@@ -1,7 +1,7 @@
 ﻿#pragma once
-#pragma warning(disable:4996)
 #include <d3dx9.h>
 #include "main.h"
+#include "XFileModel.h"
 
 constexpr float kTigerMoveDistance = 0.2f;
 constexpr float kTigerScale = 7.0f;
@@ -10,11 +10,7 @@ constexpr float kTigerUpdateIntervalSeconds = 0.01f;
 class Tiger
 {
 private:
-	// x 파일 로드용 변수
-	LPD3DXMESH m_mesh; // 메쉬 객체
-	D3DMATERIAL9* m_meshMaterials; // 메쉬에 대한 재질
-	LPDIRECT3DTEXTURE9* m_meshTextures; // 메쉬에 대한 텍스쳐
-	DWORD m_materialCount; // 재질의 수
+	XFileModel m_model;
 
 	// x 파일 객체의 위치와 바라보는 방향
 	D3DXVECTOR3 m_position;

@@ -159,6 +159,7 @@
     <ClCompile Include="MazeGenerator.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="Tiger.cpp" />
+    <ClCompile Include="XFileModel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ComUtils.h" />
@@ -175,6 +176,7 @@
     <ClInclude Include="MazeGenerator.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Tiger.h" />
+    <ClInclude Include="XFileModel.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

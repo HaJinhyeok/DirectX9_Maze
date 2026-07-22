@@ -1,13 +1,7 @@
 ﻿#include "Tiger.h"
-#include "ComUtils.h"
 
 Tiger::Tiger(D3DXVECTOR3 position)
 {
-	m_mesh = NULL; // 메쉬 객체
-	m_meshMaterials = NULL; // 메쉬에 대한 재질
-	m_meshTextures = NULL; // 메쉬에 대한 텍스쳐
-	m_materialCount = 0L; // 메쉬 재질의 개수
-
 	// scale 먼저 하고 translation
 	D3DXMatrixScaling(&m_worldMatrix, kTigerScale, kTigerScale, kTigerScale * 2.0f / 3.0f);
 	D3DXMATRIX translationMatrix;
@@ -25,100 +19,16 @@ Tiger::Tiger(D3DXVECTOR3 position)
 	m_accumulatedTimeSeconds = 0.0f;
 }
 
-Tiger::~Tiger()
-{
-	SafeRelease(m_mesh);
-	if (m_meshTextures != NULL)
-	{
-		for (DWORD i = 0; i < m_materialCount; i++)
-		{
-			SafeRelease(m_meshTextures[i]);
-		}
-		delete[] m_meshTextures;
-		m_meshTextures = nullptr;
-	}
-	delete[] m_meshMaterials;
-	m_meshMaterials = nullptr;
-}
+Tiger::~Tiger() = default;
 
-//---------------------------------------------------------------------------------
-// 이름 : Load()
-// 기능 : x 파일을 로드 한다.
-//---------------------------------------------------------------------------------
 int Tiger::Load(LPDIRECT3DDEVICE9 device, char* xFilePath)
 {
-	LPD3DXBUFFER materialBuffer;
-	// x 파일을 로딩한다.
-	if (FAILED(D3DXLoadMeshFromX(xFilePath, D3DXMESH_SYSTEMMEM, device, NULL,
-		&materialBuffer, NULL, &m_materialCount, &m_mesh)))
-	{
-		MessageBox(NULL, "X파일 로드 실패", "메쉬로드 실패", MB_OK);
-		return E_FAIL;
-	}
-	// 텍스쳐 파일이 다른 폴더에 있을 경우를 위하여 텍스쳐 패스 위치 닫기
-	char texturePath[256];
-	// 현재 폴더의 경우
-	if (strchr(xFilePath, '\\') == NULL)
-		wsprintf(texturePath, "..\\");
-	else
-	{
-		// 기타 폴더의 경우
-		char reversedPath[256], * pathSeparator;
-		strcpy(reversedPath, xFilePath);
-		_strrev(reversedPath);
-		pathSeparator = strchr(reversedPath, '\\');
-		strcpy(texturePath, pathSeparator);
-		_strrev(texturePath);
-	}
-	// x 파일 로딩 코드
-	D3DXMATERIAL* d3dxMaterials = (D3DXMATERIAL*)materialBuffer->GetBufferPointer();
-	m_meshMaterials = new D3DMATERIAL9[m_materialCount];
-	m_meshTextures = new LPDIRECT3DTEXTURE9[m_materialCount];
-	for (DWORD i = 0; i < m_materialCount; i++)
-	{
-		// 재질 복사
-		m_meshMaterials[i] = d3dxMaterials[i].MatD3D;
-		// 재질에 대한 앰비언트 색상 설정(D3DX 가 해주지 않으므로)
-		m_meshMaterials[i].Ambient = m_meshMaterials[i].Diffuse;
-		m_meshTextures[i] = NULL;
-		// 텍스쳐 파일이 존재하는 경우
-		if (d3dxMaterials[i].pTextureFilename != NULL &&
-			lstrlen(d3dxMaterials[i].pTextureFilename) > 0)
-		{
-			// 텍스쳐 생성
-			if (FAILED(D3DXCreateTextureFromFile(device, d3dxMaterials[i].pTextureFilename, &m_meshTextures[i])))
-			{
-				// 경로 + 텍스쳐 파일 이름 만들기
-				char fallbackTexturePath[256];
-				wsprintf(fallbackTexturePath, "%s%s", texturePath, d3dxMaterials[i].pTextureFilename);
-				m_meshTextures[i] = NULL;
-				MessageBox(NULL, "Could not find texture map", "D3D_TEST.exe", MB_OK);
-			}
-		}
-	}
-	// 재질 버퍼 사용끝 & 해제
-	SafeRelease(materialBuffer);
-	return S_OK;
+	return m_model.Load(device, xFilePath);
 }
 
-//---------------------------------------------------------------------------------
-// 이름 : Render()
-// 기능 : x 파일을 출력 해준다.
-//---------------------------------------------------------------------------------
 int Tiger::Render(LPDIRECT3DDEVICE9 device)
 {
-	// 메쉬 출력
-	for (DWORD i = 0; i < m_materialCount; i++)
-	{
-		device->SetMaterial(&m_meshMaterials[i]);
-		// 현재 sub Set에 대한 재질 설정
-		device->SetTexture(0, m_meshTextures[i]);
-		// Draw the mesh subset
-		m_mesh->DrawSubset(i);
-	}
-	device->SetTexture(0, NULL);
-
-	return 0;
+	return m_model.Render(device);
 }
 
 VOID Tiger::Move(const char(*map)[kMazeColumnCount + 1], FLOAT deltaTimeSeconds)
