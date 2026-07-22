@@ -378,6 +378,11 @@ VOID Player::Rotate(BOOL isCounterClockwise, BOOL isVertical, FLOAT angle)
 	m_flashlight.Direction = D3DXVECTOR3(m_worldMatrix._31, m_worldMatrix._32, m_worldMatrix._33);
 }
 
+VOID Player::Jump()
+{
+	// TODO: 점프 혹은 스페이스바 기능 추가
+}
+
 VOID Player::FireBullet(LPPOINT cursorPosition)
 {
 	// 마우스 클릭 시, 클릭한 방향으로 벡터를 설정하고 일직선으로 날아가는 투사체 발사

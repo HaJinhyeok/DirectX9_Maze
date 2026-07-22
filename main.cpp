@@ -382,63 +382,145 @@ VOID ReleaseResources()
 	SafeRelease(g_pD3D);
 }
 
-VOID UpdateGameStateFromInput()
+/// <summary>
+/// 이동 시, 벽과 일정 거리(kPlayerRadius) 이하로는 가까워지지 않도록 조정하기
+///	현재 위치를 단순화하여 좌표로 나타내고, 그 점을 둘러싼 8개의 좌표에 대해 충돌 검사 시행
+///	만약 현재 위치가 블록 사이 선에 걸쳐있다고 하더라도, 문제는 없을 것으로 예상.
+/// </summary>
+VOID HandleMovementInput()
 {
-	int i;
+	if (IsKeyDown('A') || IsKeyDown(VK_LEFT))
+	{
+		bIsMoved = g_player.Move(MoveDirection::Left, chMap1, bIsNoClipOn);
+	}
 
-	UpdateInput();
+	if (IsKeyDown('D') || IsKeyDown(VK_RIGHT))
+	{
+		bIsMoved = g_player.Move(MoveDirection::Right, chMap1, bIsNoClipOn);
+	}
 
+	if (IsKeyDown('W') || IsKeyDown(VK_UP))
+	{
+		bIsMoved = g_player.Move(MoveDirection::Forward, chMap1, bIsNoClipOn);
+	}
+
+	if (IsKeyDown('S') || IsKeyDown(VK_DOWN))
+	{
+		bIsMoved = g_player.Move(MoveDirection::Backward, chMap1, bIsNoClipOn);
+	}
+}
+
+VOID HandleRotationInput()
+{
+	if (IsKeyDown('Q'))
+	{
+		g_player.Rotate(TRUE);
+	}
+
+	if (IsKeyDown('E'))
+	{
+		g_player.Rotate(FALSE);
+	}
+}
+
+VOID HandlePauseInput()
+{
 	if (IsKeyPressed(VK_ESCAPE) == TRUE)
 	{
 		bIsPaused = !bIsPaused;
 	}
+}
 
-	if (bIsPaused)
+VOID HandleFeatureToggleInput()
+{
+	// light option on/off
+	if (IsKeyPressed('1') == TRUE)
 	{
+		if (bIsLightOn == TRUE)
+		{
+			g_pd3dDevice->SetRenderState(D3DRS_LIGHTING, TRUE);
+			bIsLightOn = FALSE;
+		}
+		else
+		{
+			g_pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
+			bIsLightOn = TRUE;
+		}
+	}
+
+	// camera TopView on/off
+	if (IsKeyPressed('2') == TRUE)
+	{
+		if (bIsSkyView == FALSE)
+			bIsSkyView = TRUE;
+		else
+			bIsSkyView = FALSE;
+	}
+
+	// player flashlight on/off
+	if (IsKeyPressed('3') == TRUE)
+	{
+		if (g_player.IsFlashlightOn() == TRUE)
+		{
+			g_player.SetFlashlight(FALSE);
+		}
+		else
+		{
+			g_player.SetFlashlight(TRUE);
+		}
+	}
+
+	// NoClip(FreeFly) on/off
+	if (IsKeyPressed('4') == TRUE)
+	{
+		if (bIsNoClipOn == TRUE)
+		{
+			bIsNoClipOn = FALSE;
+			// 자유시점 종료 시, 저장해뒀던 player 정보 복구
+			g_player.SetWorldMatrix(mtSavedWorld);
+			g_player.SetLookAt(v3SavedLookAt);
+		}
+		else
+		{
+			bIsNoClipOn = TRUE;
+			mtSavedWorld = g_player.GetWorldMatrix();
+			v3SavedLookAt = g_player.GetLookAt();
+		}
+	}
+}
+
+VOID HandleJumpInput()
+{
+	if (IsKeyPressed(VK_SPACE))
+	{
+		g_player.Jump();
+	}
+}
+
+VOID UpdateDynamicObjects()
+{
+	if (!bIsPlaying)
 		return;
-	}
 
-	if (!bIsPaused && bIsPlaying)
-	{
-		// 총알 움직임 계산
-		g_player.UpdateBullets();
-		// 호랑이 움직임 계산
-		g_tiger.Move(chMap1);
-	}
+	// 총알 움직임 계산
+	g_player.UpdateBullets();
+	// 호랑이 움직임 계산
+	g_tiger.Move(chMap1);
+}
 
-	// wasd 또는 방향키 : 플레이어 앞뒤좌우 움직임
-
-	// 이동 시, 벽과 일정 거리(kPlayerRadius) 이하로는 가까워지지 않도록 조정하기
-	// 현재 위치를 단순화하여 좌표로 나타내고, 그 점을 둘러싼 8개의 좌표에 대해 충돌 검사 시행
-	// 만약 현재 위치가 블록 사이 선에 걸쳐있다고 하더라도, 문제는 없을 것으로 예상.
-
-	if (GetAsyncKeyState('A') || GetAsyncKeyState(VK_LEFT))
-	{
-		bIsMoved = g_player.Move(MoveDirection::Left, chMap1, bIsNoClipOn);
-	}
-	if (GetAsyncKeyState('D') || GetAsyncKeyState(VK_RIGHT))
-	{
-		bIsMoved = g_player.Move(MoveDirection::Right, chMap1, bIsNoClipOn);
-	}
-	if (GetAsyncKeyState('W') || GetAsyncKeyState(VK_UP))
-	{
-		bIsMoved = g_player.Move(MoveDirection::Forward, chMap1, bIsNoClipOn);
-	}
-	if (GetAsyncKeyState('S') || GetAsyncKeyState(VK_DOWN))
-	{
-		bIsMoved = g_player.Move(MoveDirection::Backward, chMap1, bIsNoClipOn);
-	}
-	// Notice & Exit rotation
+VOID UpdateInteractionState()
+{
 	if (bIsMoved)
 	{
-		for (i = 0; i < g_notices[0].GetNoticeCount(); i++)
+		for (int i = 0; i < g_notices[0].GetNoticeCount(); i++)
 		{
 			g_notices[i].UpdateFacing(g_player.GetPosition());
 		}
+
 		g_mazeExit.UpdateFacing(g_player.GetPosition());
 	}
 
-	for (i = 0; i < g_notices[0].GetNoticeCount(); i++)
+	for (int i = 0; i < g_notices[0].GetNoticeCount(); i++)
 	{
 		if (g_notices[i].CanInteract(g_player.GetPosition()) == TRUE)
 		{
@@ -446,83 +528,39 @@ VOID UpdateGameStateFromInput()
 			bIsSkyView = TRUE;
 			break;
 		}
-		else
-		{
-			bIsInteractive = FALSE;
-			//bIsSkyView = FALSE;
-		}
+
+		bIsInteractive = FALSE;
 	}
+
 	bIsPlaying = g_mazeExit.CanInteract(g_player.GetPosition()) ? FALSE : TRUE;
+}
+
+VOID UpdateGame()
+{
+	// ESC
+	HandlePauseInput();
+
+	if (bIsPaused)
+	{
+		return;
+	}
+
+	UpdateDynamicObjects();
+
+	// wasd 또는 방향키 : 플레이어 앞뒤좌우 움직임
+	HandleMovementInput();
+
+	// Notice & Exit rotation
+	UpdateInteractionState();
 
 	// Q/E : 플레이어 CCW/CW 회전
-	if (GetAsyncKeyState('Q'))
-	{
-		g_player.Rotate(TRUE);
-	}
-	if (GetAsyncKeyState('E'))
-	{
-		g_player.Rotate(FALSE);
-	}
+	HandleRotationInput();
+
+	// 스페이스
+	HandleJumpInput();
+
 	//// 추가 기능
-	{
-		// 점프?는 일단 제외
-		if (GetAsyncKeyState(VK_SPACE))
-		{
-
-		}
-		// light option on/off
-		if (IsKeyPressed('1') == TRUE)
-		{
-			if (bIsLightOn == TRUE)
-			{
-				g_pd3dDevice->SetRenderState(D3DRS_LIGHTING, TRUE);
-				bIsLightOn = FALSE;
-			}
-			else
-			{
-				g_pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
-				bIsLightOn = TRUE;
-			}
-		}
-		// camera TopView on/off
-		if (IsKeyPressed('2') == TRUE)
-		{
-			if (bIsSkyView == FALSE)
-				bIsSkyView = TRUE;
-			else
-				bIsSkyView = FALSE;
-		}
-		// player flashlight on/off
-		if (IsKeyPressed('3') == TRUE)
-		{
-			if (g_player.IsFlashlightOn() == TRUE)
-			{
-				g_player.SetFlashlight(FALSE);
-			}
-			else
-			{
-				g_player.SetFlashlight(TRUE);
-			}
-		}
-		// NoClip(FreeFly) on/off
-		if (IsKeyPressed('4') == TRUE)
-		{
-			if (bIsNoClipOn == TRUE)
-			{
-				bIsNoClipOn = FALSE;
-				// 자유시점 종료 시, 저장해뒀던 player 정보 복구
-				g_player.SetWorldMatrix(mtSavedWorld);
-				g_player.SetLookAt(v3SavedLookAt);
-			}
-			else
-			{
-				bIsNoClipOn = TRUE;
-				mtSavedWorld = g_player.GetWorldMatrix();
-				v3SavedLookAt = g_player.GetLookAt();
-			}
-		}
-	}
-
+	HandleFeatureToggleInput();
 }
 
 VOID Render()
@@ -916,7 +954,10 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 						while (bIsCursorOn >= 0)
 							bIsCursorOn = ShowCursor(FALSE);
 					}
-					UpdateGameStateFromInput();
+
+					// 입력 상태 갱신 -> 게임 갱신 -> 렌더링
+					UpdateInput();
+					UpdateGame();
 					Render();
 					g_fpsCounter.Update();
 				}

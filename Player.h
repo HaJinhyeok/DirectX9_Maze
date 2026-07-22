@@ -67,6 +67,7 @@ public:
 	BOOL Move(MoveDirection direction, const char (*map)[kMazeColumnCount+1], BOOL isNoClipEnabled);
 	VOID Rotate(BOOL isCounterClockwise);
 	VOID Rotate(BOOL isCounterClockwise, BOOL isVertical, FLOAT angle);
+	VOID Jump();
 	VOID FireBullet(LPPOINT cursorPosition);
 	VOID UpdateBullets();
 	VOID RenderBullets(LPDIRECT3DDEVICE9 device, LPD3DXMESH sphere);
