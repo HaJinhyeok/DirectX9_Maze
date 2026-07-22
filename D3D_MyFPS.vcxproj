@@ -158,7 +158,6 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MazeGenerator.cpp" />
     <ClCompile Include="Input.cpp" />
-    <ClCompile Include="Stopwatch.cpp" />
     <ClCompile Include="Tiger.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -175,7 +174,6 @@
     <ClInclude Include="main.h" />
     <ClInclude Include="MazeGenerator.h" />
     <ClInclude Include="Input.h" />
-    <ClInclude Include="Stopwatch.h" />
     <ClInclude Include="Tiger.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

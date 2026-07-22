@@ -34,18 +34,19 @@ constexpr char kSkyBoxTexturePath[] = "SkyBox1.dds";
 constexpr int kWindowWidth = 700;
 constexpr int kWindowHeight = 700;
 constexpr float kEpsilon = 0.001f;
-constexpr float kPlayerMoveDistance = 0.3f;   // 플레이어 이동거리
 constexpr float kLookAtDistance = 5.0f;
 constexpr float kPlayerRadius = 2.0f;
 constexpr float kBulletRadius = 0.4f;
 constexpr float kSqrt2 = 1.41421356237f;
-constexpr float kRotationAmount = D3DX_PI / 200.0f; // 플레이어 회전각
-constexpr float kMouseHorizontalRotationSensitivity = 0.001f; // 좌우 1pixel 당 회전각
-constexpr float kMouseVerticalRotationSensitivity = 0.001f; // 상하 1pixel 당 회전각
-constexpr int kMazeColumnCount = 12; // 즉, 가로 길이
-constexpr int kMazeRowCount = 14;    // 즉, 세로 길이
+constexpr float kPlayerMoveSpeed = 30.0f;                       // 초당 이동 거리
+constexpr float kPlayerRotationSpeed = D3DX_PI / 2.0f;          // 초당 90도 회전
+constexpr float kMouseHorizontalRotationSensitivity = 0.001f;   // 좌우 1pixel 당 회전각
+constexpr float kMouseVerticalRotationSensitivity = 0.001f;     // 상하 1pixel 당 회전각
+constexpr int kMazeColumnCount = 12;                            // 미로의 가로 칸 수
+constexpr int kMazeRowCount = 14;                               // 미로의 세로 칸 수
 constexpr float kTileSize = 10.0f;
 constexpr float kSkyBoxSize = 500.0f;
+constexpr float kMaxDeltaTimeSeconds = 0.1f;
 
 // Calculate the norm of 3-D vector
 inline FLOAT CalculateLength(D3DXVECTOR3 vectorValue)
@@ -84,7 +85,6 @@ struct Bullet
 {
     D3DXVECTOR3 position;
     D3DXVECTOR3 direction;
-    DWORD lastUpdateTime;
 };
 
 enum class MoveDirection : WORD
@@ -184,11 +184,6 @@ static WORD wTileIndices[2 * kMazeRowCount * kMazeColumnCount][3];
 // 자유 시점으로 전환하기 위해, 현재 플레이어 위치 및 lookat 정보 저장해두기
 static D3DXMATRIX mtSavedWorld;
 static D3DXVECTOR3 v3SavedLookAt;
-
-//// FRAME ////
-static DWORD FPS_Frames = 0;
-static DWORD FPS_Num = 0, FPS_LastTime = timeGetTime();
-static DWORD FPS_Time;
 
 // tile culling 수정: 정사각형 중심으로부터 거리가 변의 길이의 절반 이하(d <= kTileSize / 2) culling 해주어야 함.
 // 추가할 기능: 플레이어 시점이 qe가 아닌 마우스 움직임에 따라 변하면 좋을 듯? ==> 창모드에서는 뭔가뭔가임 창 밖에서 마우스 움직임 제어는 어케

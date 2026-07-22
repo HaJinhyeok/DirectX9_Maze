@@ -12,9 +12,7 @@ private:
 	BOOL m_isFlashlightOn;
 	D3DLIGHT9 m_flashlight;
 	deque<Bullet> m_bullets;
-	DWORD m_currentMoveTime;
-	DWORD m_currentRotateTime;
-	const FLOAT m_bulletVelocity = 0.1f;
+	const FLOAT m_bulletVelocity = 100.0f;	// 초당 이동 거리
 	// 플레이어가 발사한 총알 객체를 하나하나 다 갖고 있는게 아니라,
 	// 위치값만 갖고 있다가 매 프레임마다 위치에 총알 그림 그려주면 되지 않을까?
 	// 위치벡터만 배열이든 STL 큐나 벡터든 쭉 갖고있으면 될듯
@@ -64,12 +62,16 @@ public:
 		return &m_flashlight;
 	}
 
-	BOOL Move(MoveDirection direction, const char (*map)[kMazeColumnCount+1], BOOL isNoClipEnabled);
-	VOID Rotate(BOOL isCounterClockwise);
+	BOOL Move(
+		MoveDirection direction,
+		const char (*map)[kMazeColumnCount + 1],
+		BOOL isNoClipEnabled,
+		FLOAT deltaTimeSeconds);
+	VOID Rotate(BOOL isCounterClockwise, FLOAT deltaTimeSeconds);
 	VOID Rotate(BOOL isCounterClockwise, BOOL isVertical, FLOAT angle);
 	VOID Jump();
 	VOID FireBullet(LPPOINT cursorPosition);
-	VOID UpdateBullets();
+	VOID UpdateBullets(FLOAT deltaTimeSeconds);
 	VOID RenderBullets(LPDIRECT3DDEVICE9 device, LPD3DXMESH sphere);
 };
 

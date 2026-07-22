@@ -45,23 +45,18 @@ Player::Player()
 	m_flashlight.Falloff = 2.0f;
 	m_flashlight.Phi = D3DXToRadian(60.0f);
 	m_flashlight.Theta = D3DXToRadian(30.0f);
-
-	m_currentMoveTime = timeGetTime();
-	m_currentRotateTime = timeGetTime();
 }
 
 // PLAYER MOVE
 // 바꾸어야 할 것: 플레이어 위치, 플레이어 LookAt
 // 필요한 것: 플레이어가 움직일 방향 벡터, 거리, 플에이어 현 위치, 플레이어 현 LookAt, 맵 정보
-BOOL Player::Move(MoveDirection direction, const char(*map)[kMazeColumnCount + 1], BOOL isNoClipEnabled)
+BOOL Player::Move(MoveDirection direction, const char(*map)[kMazeColumnCount + 1], BOOL isNoClipEnabled, FLOAT deltaTimeSeconds)
 {
-	DWORD currentTime = timeGetTime();
-	if (currentTime - m_currentMoveTime < 10) return FALSE;
-	m_currentMoveTime = currentTime;
+	FLOAT movementScale = kPlayerMoveSpeed * deltaTimeSeconds;
 
-	D3DXVECTOR3 movementDirection, targetPosition; // 벽을 생각하지 않고 이동된 위치. 주변 8개 벽과 이것을 대조해 최종 위치 결정
+	D3DXVECTOR3 movementDirection;
+	D3DXVECTOR3 targetPosition; // 벽을 생각하지 않고 이동된 위치. 주변 8개 벽과 이것을 대조해 최종 위치 결정
 	D3DXVECTOR3 currentPosition = GetPosition();
-	FLOAT movementScale = kPlayerMoveDistance;
 	int i, column, row;
 
 	// y축 움직임은 없으므로 y축 정보는 걍 빼고 계산
@@ -271,11 +266,9 @@ BOOL Player::Move(MoveDirection direction, const char(*map)[kMazeColumnCount + 1
 	return TRUE;
 }
 
-VOID Player::Rotate(BOOL isCounterClockwise)
+VOID Player::Rotate(BOOL isCounterClockwise, FLOAT deltaTimeSeconds)
 {
-	DWORD currentTime = timeGetTime();
-	if (currentTime - m_currentRotateTime < 10) return;
-	m_currentRotateTime = currentTime;
+	FLOAT rotationAmount = kPlayerRotationSpeed * deltaTimeSeconds;
 
 	// isCounterClockwise로 q인지 e인지 구분하고, angle만큼 회전을 하며, LookAt과 Position 사이 간격은 distance
 	// 이 함수는 좌우 회전만 하므로, CalculateAngle 불필요
@@ -288,11 +281,11 @@ VOID Player::Rotate(BOOL isCounterClockwise)
 
 	if (isCounterClockwise == TRUE)
 	{
-		D3DXMatrixRotationY(&rotationMatrix, -kRotationAmount);
+		D3DXMatrixRotationY(&rotationMatrix, -rotationAmount);
 	}
 	else
 	{
-		D3DXMatrixRotationY(&rotationMatrix, kRotationAmount);
+		D3DXMatrixRotationY(&rotationMatrix, rotationAmount);
 	}
 	D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &rotationMatrix);
 
@@ -309,8 +302,6 @@ VOID Player::Rotate(BOOL isCounterClockwise)
 
 VOID Player::Rotate(BOOL isCounterClockwise, BOOL isVertical, FLOAT angle)
 {
-	DWORD currentTime = timeGetTime();
-
 	// 위아래일때 ccw면 위, !ccw면 아래
 	D3DXMATRIX rotationMatrix, translationMatrix;
 	D3DXVECTOR3 rotationAxis;
@@ -344,7 +335,7 @@ VOID Player::Rotate(BOOL isCounterClockwise, BOOL isVertical, FLOAT angle)
 		if (isCounterClockwise == TRUE)
 		{
 			// 밑으로 너무 숙이면 회전 안시킴
-			if (lookAngle + kRotationAmount > D3DXToRadian(175.0f))
+			if (lookAngle + angle > D3DXToRadian(175.0f))
 			{
 				D3DXMatrixTranslation(&translationMatrix, currentPosition.x, currentPosition.y, currentPosition.z);
 				D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
@@ -356,7 +347,7 @@ VOID Player::Rotate(BOOL isCounterClockwise, BOOL isVertical, FLOAT angle)
 		else
 		{
 			// 위로 너무 올라가면 회전 안시킴
-			if (lookAngle - kRotationAmount < D3DXToRadian(5.0f))
+			if (lookAngle - angle < D3DXToRadian(5.0f))
 			{
 				D3DXMatrixTranslation(&translationMatrix, currentPosition.x, currentPosition.y, currentPosition.z);
 				D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
@@ -391,41 +382,34 @@ VOID Player::FireBullet(LPPOINT cursorPosition)
 	Bullet bullet;
 	bullet.position = this->GetPosition();
 	bullet.direction = this->GetLookAt() - this->GetPosition();
-	bullet.lastUpdateTime = timeGetTime();
 	m_bullets.push_back(bullet);
 }
 
-VOID Player::UpdateBullets()
+VOID Player::UpdateBullets(FLOAT deltaTimeSeconds)
 {
 	// 매 프레임마다 호출해서 총알의 이동 및 충돌 후 제거 연산 수행 (x)
 	// 프레임마다 호출하면 프레임 낮은 똥컴에서는 총알 속도가 느려지는 말도 안 되는 상황 발생한다.
 	// 프레임이 아닌, 실제 시간을 기준으로 이동시켜야함
 	// 발사된 총알이 없을 시 건너뜀
-	DWORD currentTime = timeGetTime();
-	if (m_bullets.size() == 0)
+	if (m_bullets.empty())
 		return;
-	else
+
+	for (auto iter = m_bullets.begin(); iter != m_bullets.end();)
 	{
-		FLOAT travelDistance;
-		for (auto iter = m_bullets.begin(); iter != m_bullets.end();)
+		FLOAT travelDistance = m_bulletVelocity * deltaTimeSeconds;
+
+		travelDistance /= CalculateLength(iter->direction);
+		iter->position += travelDistance * iter->direction;
+
+		// 벽 또는 장애물과 충돌 검사
+		// 일단은 플레이어로부터 100만큼 떨어지면 제거되게
+		if (CalculateLength(iter->position - GetPosition()) >= 100.0f)
 		{
-			travelDistance = this->m_bulletVelocity * (currentTime - iter->lastUpdateTime);
-			iter->lastUpdateTime = currentTime;
-			// 우선 이동
-			travelDistance /= sqrtf(iter->direction.x * iter->direction.x + iter->direction.y * iter->direction.y + iter->direction.z * iter->direction.z);
-			iter->position.x += travelDistance * iter->direction.x;
-			iter->position.y += travelDistance * iter->direction.y;
-			iter->position.z += travelDistance * iter->direction.z;
-			// 벽 또는 장애물과 충돌 검사
-			// 일단은 플레이어로부터 100만큼 떨어지면 제거되게
-			if (CalculateLength(iter->position - this->GetPosition()) >= 100.0f)
-			{
-				iter = m_bullets.erase(iter);
-			}
-			else
-			{
-				++iter;
-			}
+			iter = m_bullets.erase(iter);
+		}
+		else
+		{
+			++iter;
 		}
 	}
 }

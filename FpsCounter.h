@@ -1,22 +1,13 @@
 #pragma once
-#include "Stopwatch.h"
 
 class FpsCounter
 {
 private:
 	int m_fps, m_count;
-	unsigned long m_startTime;
-
-	Stopwatch m_stopwatch;
+	float m_elapsedTimeSeconds;
 
 public:
 	void Initialize();
-	void Update();
+	void Update(float deltaTimeSeconds);
 	int GetFps();
-
-	void StartTimer();
-	DWORD GetTimerElapsedTime();
-	DWORD StopTimer();
-
-	BOOL IsTimerRunning();
 };

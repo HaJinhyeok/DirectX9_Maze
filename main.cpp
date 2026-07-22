@@ -37,15 +37,11 @@ LPPOINT g_pCurrentMouse = new POINT; // 마우스 이동 시, 이동한 좌표 �
 D3DMATERIAL9 material;
 D3DLIGHT9 skyLight;
 
-DWORD dwRotationTime = timeGetTime();
-
 Player g_player;
 vector<Notice> g_notices;
 Exit g_mazeExit;
 SettingsOverlay g_settingsOverlay;
 FpsCounter g_fpsCounter;
-// 프레임 값에 상관없이 플레이어 및 호랑이 움직임이 일정하도록 조절하기 위한 스톱워치
-Stopwatch PlayerWatch, TigerWatch;
 Tiger g_tiger(D3DXVECTOR3(55.0f, 5.0f, 65.0f));
 SkyBox g_skyBox;
 
@@ -387,39 +383,39 @@ VOID ReleaseResources()
 ///	현재 위치를 단순화하여 좌표로 나타내고, 그 점을 둘러싼 8개의 좌표에 대해 충돌 검사 시행
 ///	만약 현재 위치가 블록 사이 선에 걸쳐있다고 하더라도, 문제는 없을 것으로 예상.
 /// </summary>
-VOID HandleMovementInput()
+VOID HandleMovementInput(FLOAT deltaTimeSeconds)
 {
 	if (IsKeyDown('A') || IsKeyDown(VK_LEFT))
 	{
-		bIsMoved = g_player.Move(MoveDirection::Left, chMap1, bIsNoClipOn);
+		bIsMoved = g_player.Move(MoveDirection::Left, chMap1, bIsNoClipOn, deltaTimeSeconds);
 	}
 
 	if (IsKeyDown('D') || IsKeyDown(VK_RIGHT))
 	{
-		bIsMoved = g_player.Move(MoveDirection::Right, chMap1, bIsNoClipOn);
+		bIsMoved = g_player.Move(MoveDirection::Right, chMap1, bIsNoClipOn, deltaTimeSeconds);
 	}
 
 	if (IsKeyDown('W') || IsKeyDown(VK_UP))
 	{
-		bIsMoved = g_player.Move(MoveDirection::Forward, chMap1, bIsNoClipOn);
+		bIsMoved = g_player.Move(MoveDirection::Forward, chMap1, bIsNoClipOn, deltaTimeSeconds);
 	}
 
 	if (IsKeyDown('S') || IsKeyDown(VK_DOWN))
 	{
-		bIsMoved = g_player.Move(MoveDirection::Backward, chMap1, bIsNoClipOn);
+		bIsMoved = g_player.Move(MoveDirection::Backward, chMap1, bIsNoClipOn, deltaTimeSeconds);
 	}
 }
 
-VOID HandleRotationInput()
+VOID HandleRotationInput(FLOAT deltaTimeSeconds)
 {
 	if (IsKeyDown('Q'))
 	{
-		g_player.Rotate(TRUE);
+		g_player.Rotate(TRUE, deltaTimeSeconds);
 	}
 
 	if (IsKeyDown('E'))
 	{
-		g_player.Rotate(FALSE);
+		g_player.Rotate(FALSE, deltaTimeSeconds);
 	}
 }
 
@@ -497,15 +493,15 @@ VOID HandleJumpInput()
 	}
 }
 
-VOID UpdateDynamicObjects()
+VOID UpdateDynamicObjects(FLOAT deltaTimeSeconds)
 {
 	if (!bIsPlaying)
 		return;
 
 	// 총알 움직임 계산
-	g_player.UpdateBullets();
+	g_player.UpdateBullets(deltaTimeSeconds);
 	// 호랑이 움직임 계산
-	g_tiger.Move(chMap1);
+	g_tiger.Move(chMap1, deltaTimeSeconds);
 }
 
 VOID UpdateInteractionState()
@@ -535,7 +531,7 @@ VOID UpdateInteractionState()
 	bIsPlaying = g_mazeExit.CanInteract(g_player.GetPosition()) ? FALSE : TRUE;
 }
 
-VOID UpdateGame()
+VOID UpdateGame(FLOAT deltaTimeSeconds)
 {
 	// ESC
 	HandlePauseInput();
@@ -545,16 +541,16 @@ VOID UpdateGame()
 		return;
 	}
 
-	UpdateDynamicObjects();
+	UpdateDynamicObjects(deltaTimeSeconds);
 
 	// wasd 또는 방향키 : 플레이어 앞뒤좌우 움직임
-	HandleMovementInput();
+	HandleMovementInput(deltaTimeSeconds);
 
 	// Notice & Exit rotation
 	UpdateInteractionState();
 
 	// Q/E : 플레이어 CCW/CW 회전
-	HandleRotationInput();
+	HandleRotationInput(deltaTimeSeconds);
 
 	// 스페이스
 	HandleJumpInput();
@@ -841,28 +837,23 @@ LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		GetCursorPos(g_pCurrentMouse);
 		if (!bIsSkyView && bIsPlaying && !bIsPaused)
 		{
-			DWORD currentTime = timeGetTime();
-			if (currentTime - dwRotationTime >= 10)
+			if (g_pCurrentMouse->x > g_pMidPoint->x)
 			{
-				if (g_pCurrentMouse->x > g_pMidPoint->x)
-				{
-					g_player.Rotate(FALSE, FALSE, (g_pCurrentMouse->x - g_pMidPoint->x) * kMouseHorizontalRotationSensitivity);
-				}
-				else if (g_pCurrentMouse->x < g_pMidPoint->x)
-				{
-					g_player.Rotate(TRUE, FALSE, (g_pMidPoint->x - g_pCurrentMouse->x) * kMouseHorizontalRotationSensitivity);
-				}
-				// y좌표는 아래로 갈수록 커지므로, 이게 아래 회전
-				if (g_pCurrentMouse->y > g_pMidPoint->y)
-				{
-					g_player.Rotate(TRUE, TRUE, (g_pCurrentMouse->y - g_pMidPoint->y) * kMouseVerticalRotationSensitivity);
-				}
-				else if (g_pCurrentMouse->y < g_pMidPoint->y)
-				{
-					g_player.Rotate(FALSE, TRUE, (g_pMidPoint->y - g_pCurrentMouse->y) * kMouseVerticalRotationSensitivity);
-				}
+				g_player.Rotate(FALSE, FALSE, (g_pCurrentMouse->x - g_pMidPoint->x) * kMouseHorizontalRotationSensitivity);
 			}
-
+			else if (g_pCurrentMouse->x < g_pMidPoint->x)
+			{
+				g_player.Rotate(TRUE, FALSE, (g_pMidPoint->x - g_pCurrentMouse->x) * kMouseHorizontalRotationSensitivity);
+			}
+			// y좌표는 아래로 갈수록 커지므로, 이게 아래 회전
+			if (g_pCurrentMouse->y > g_pMidPoint->y)
+			{
+				g_player.Rotate(TRUE, TRUE, (g_pCurrentMouse->y - g_pMidPoint->y) * kMouseVerticalRotationSensitivity);
+			}
+			else if (g_pCurrentMouse->y < g_pMidPoint->y)
+			{
+				g_player.Rotate(FALSE, TRUE, (g_pMidPoint->y - g_pCurrentMouse->y) * kMouseVerticalRotationSensitivity);
+			}
 		}
 		if (!bIsPlaying || bIsPaused)
 		{
@@ -905,7 +896,6 @@ LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
-
 /*------------------------------------------------------------------------------
  * 이 프로그램의 시작점
  *------------------------------------------------------------------------------
@@ -934,6 +924,8 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 			MSG msg;
 			ZeroMemory(&msg, sizeof(msg));
 
+			DWORD previousFrameTime = timeGetTime();
+
 			while (msg.message != WM_QUIT)
 			{
 				if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
@@ -943,12 +935,18 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 				}
 				else
 				{
+					DWORD currentFrameTime = timeGetTime();
+					FLOAT deltaTimeSeconds =
+						static_cast<FLOAT>(currentFrameTime - previousFrameTime) / 1000.0f;
+					if (deltaTimeSeconds > kMaxDeltaTimeSeconds)
+						deltaTimeSeconds = kMaxDeltaTimeSeconds;
+					previousFrameTime = currentFrameTime;
+
 					if (!bIsPlaying || bIsPaused)
 					{
 						while (bIsCursorOn < 0)
 							bIsCursorOn = ShowCursor(TRUE);
 					}
-
 					else
 					{
 						while (bIsCursorOn >= 0)
@@ -957,9 +955,9 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 
 					// 입력 상태 갱신 -> 게임 갱신 -> 렌더링
 					UpdateInput();
-					UpdateGame();
+					UpdateGame(deltaTimeSeconds);
 					Render();
-					g_fpsCounter.Update();
+					g_fpsCounter.Update(deltaTimeSeconds);
 				}
 			}
 		}

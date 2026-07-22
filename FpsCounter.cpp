@@ -4,39 +4,26 @@ void FpsCounter::Initialize()
 {
 	m_fps = 0;
 	m_count = 0;
-	m_startTime = timeGetTime();
+	m_elapsedTimeSeconds = 0.0f;
 }
-void FpsCounter::Update()
+
+void FpsCounter::Update(float deltaTimeSeconds)
 {
 	m_count++;
-	// '현재' 시각이 '시작' 시각으로부터 1000ms(1초) 지났을 때
-	if (timeGetTime() >= m_startTime + 1000)
+	m_elapsedTimeSeconds += deltaTimeSeconds;
+
+	// 누적 시간이 1초 이상이면 FPS 갱신
+	if (m_elapsedTimeSeconds >= 1.0f)
 	{
-		m_fps = m_count;
+		m_fps = static_cast<int>(m_count / m_elapsedTimeSeconds);
 		// 카운트 초기화
 		m_count = 0;
-		// '현재' 시각을 다시 '시작' 시각으로 설정
-		m_startTime = timeGetTime();
+		// 시간 경과 리셋
+		m_elapsedTimeSeconds = 0.0f;
 	}
 }
+
 int FpsCounter::GetFps()
 {
 	return m_fps;
-}
-void FpsCounter::StartTimer()
-{
-	m_stopwatch.Start();
-}
-DWORD FpsCounter::GetTimerElapsedTime()
-{
-	return m_stopwatch.GetElapsedTime();
-}
-DWORD FpsCounter::StopTimer()
-{
-	return m_stopwatch.Stop();
-}
-
-BOOL FpsCounter::IsTimerRunning()
-{
-	return m_stopwatch.IsRunning();
 }

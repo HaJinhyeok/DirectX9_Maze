@@ -20,9 +20,9 @@ Tiger::Tiger(D3DXVECTOR3 position)
 	{
 		m_isWallOpen[i] = TRUE;
 	}
-	m_currentTime = timeGetTime();
 	m_rotationAmount = 0;
 	m_rotationCount = 0;
+	m_accumulatedTimeSeconds = 0.0f;
 }
 
 Tiger::~Tiger()
@@ -121,10 +121,11 @@ int Tiger::Render(LPDIRECT3DDEVICE9 device)
 	return 0;
 }
 
-VOID Tiger::Move(const char(*map)[kMazeColumnCount + 1])
+VOID Tiger::Move(const char(*map)[kMazeColumnCount + 1], FLOAT deltaTimeSeconds)
 {
-	DWORD currentTime = timeGetTime();
-	if (currentTime - m_currentTime >= 10)
+	m_accumulatedTimeSeconds += deltaTimeSeconds;
+
+	while (m_accumulatedTimeSeconds >= kTigerUpdateIntervalSeconds)
 	{
 		// 호랑이가 통로를 따라 움직이게 한다.
 		// 호랑이가 현재 바라보는 방향 정보와 맵 정보를 이용해서 현재 방향으로 더 전진해도 되는지 여부 판단
@@ -604,8 +605,9 @@ VOID Tiger::Move(const char(*map)[kMazeColumnCount + 1])
 			movementScale /= sqrtf(currentLookAt.x * currentLookAt.x + currentLookAt.y * currentLookAt.y + currentLookAt.z * currentLookAt.z);
 			D3DXMatrixTranslation(&translationMatrix, currentLookAt.x * movementScale, currentLookAt.y * movementScale, currentLookAt.z * movementScale);
 			D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
-			m_currentTime = currentTime;
 		}
+
+		m_accumulatedTimeSeconds -= kTigerUpdateIntervalSeconds;
 	}
 }
 

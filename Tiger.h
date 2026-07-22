@@ -1,11 +1,11 @@
 ﻿#pragma once
 #pragma warning(disable:4996)
 #include <d3dx9.h>
-#include <time.h>
 #include "main.h"
 
 constexpr float kTigerMoveDistance = 0.2f;
 constexpr float kTigerScale = 7.0f;
+constexpr float kTigerUpdateIntervalSeconds = 0.01f;
 
 class Tiger
 {
@@ -27,15 +27,15 @@ private:
 	BOOL m_isRotating; // 현재 호랑이가 방향전환 중인지 확인
 	BOOL m_isClockwise;
 	BOOL m_isWallOpen[4]; // 현재 호랑이 위치 기준 앞, 뒤, 좌, 우로 진행 가능한지 확인
-	DWORD m_currentTime;
 	DWORD m_rotationAmount, m_rotationCount;
+	FLOAT m_accumulatedTimeSeconds;
 
 	random_device m_randomDevice; // 시드값을 얻기 위한 random_device
 
 public:
 	int Render(LPDIRECT3DDEVICE9 device);
 	int Load(LPDIRECT3DDEVICE9 device, char* xFilePath);
-	VOID Move(const char(*map)[kMazeColumnCount + 1]);
+	VOID Move(const char(*map)[kMazeColumnCount + 1], FLOAT deltaTimeSeconds);
 	VOID Rotate(BOOL clockwise);
 
 	VOID SetPosition(D3DXVECTOR3 position)
