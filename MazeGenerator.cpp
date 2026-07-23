@@ -1,69 +1,78 @@
 ﻿#include "MazeGenerator.h"
 
+static D3DXVECTOR3 CalculateMazeCellCenter(int row, int column)
+{
+    return D3DXVECTOR3(
+        (-kMazeColumnCount / 2 + column + 0.5f) * kTileSize,
+        kTileSize / 2,
+        (kMazeRowCount / 2 - row - 0.5f) * kTileSize);
+}
+
 D3DXVECTOR3 CalculateMidPoint(D3DXVECTOR3 firstPoint, D3DXVECTOR3 secondPoint)
 {
     return D3DXVECTOR3((firstPoint + secondPoint).x / 2, (firstPoint + secondPoint).y / 2, (firstPoint + secondPoint).z / 2);
 }
 
-// 몇 번째 맵을 만들건지 주어지면, (맵 외곽을 제외한) 맵 내부를 구성하는 벽들의 vertex 좌표를 생성
-// 일단 맵은 하나만...
-// 맵 내부 구조를 ' '과 '*'로 이루어진 문자열로 표현하고, 이 문자열을 받으면 내부 vertex를 생성할 수 있게 만들면 베스트일듯...
-// 벽멱을 전부 vertex 정보로 저장할지, 아니면 한 칸 한 칸의 블록형태로 만들지 미지수
-VOID GenerateMazeWalls(int mapNumber, CustomVertex(*mazeVertices)[20], vector<Notice>* notices, Exit* exit)
+int GenerateMazeWalls(const char (*map)[kMazeColumnCount + 1], CustomVertex(*mazeVertices)[kWallBlockVertexCount])
 {
-    int i,j;
     int blockIndex = 0;
-    // 현재 맵은 하나 뿐임
-    if (mapNumber == 1)
+    for (int row = 0; row < kMazeRowCount; row++)
     {
-        for (i = 0; i < kMazeRowCount; i++)
+        for (int column = 0; column < kMazeColumnCount; column++)
         {
-            for (j = 0; j < kMazeColumnCount; j++)
+            const D3DXVECTOR3 cellCenter = CalculateMazeCellCenter(row, column);
+            if (map[row][column] == '*')
             {
-                if (kMazeMap[i][j] == '*')
-                {
-                    GenerateWallBlock(mazeVertices[blockIndex++], D3DXVECTOR3((-kMazeColumnCount / 2 + j + 0.5f) * kTileSize, 5.0f, (kMazeRowCount / 2 - i - 0.5f) * kTileSize));
-                }
-                else if (kMazeMap[i][j] == '@')
-                {
-                    Notice notice;
-                    notice.Initialize(D3DXVECTOR3((-kMazeColumnCount / 2 + j + 0.5f) * kTileSize, 5.0f, (kMazeRowCount / 2 - i - 0.5f) * kTileSize));
-                    notices->push_back(notice);
-                }
-                // 탈출구는 모든 맵마다 단 하나만 존재
-                else if (kMazeMap[i][j] == 'X')
-                {
-                    exit->Initialize(D3DXVECTOR3((-kMazeColumnCount / 2 + j + 0.5f) * kTileSize, 5.0f, (kMazeRowCount / 2 - i - 0.5f) * kTileSize));
-                }
+                GenerateWallBlock(mazeVertices[blockIndex++], cellCenter);
             }
         }
     }
-    // 추후 맵 추가 생각
-    else
-        return;
+
+    return blockIndex;
+}
+
+VOID InitializeMazeEntities(const char (*map)[kMazeColumnCount + 1], vector<Notice>* notices, Exit* exit)
+{
+    for (int row = 0; row < kMazeRowCount; row++)
+    {
+        for (int column = 0; column < kMazeColumnCount; column++)
+        {
+            const D3DXVECTOR3 cellCenter = CalculateMazeCellCenter(row, column);
+            if (map[row][column] == '@')
+            {
+                Notice notice;
+                notice.Initialize(cellCenter);
+                notices->push_back(notice);
+            }
+            // 탈출구는 모든 맵마다 단 하나만 존재
+            else if (map[row][column] == 'X')
+            {
+                exit->Initialize(cellCenter);
+            }
+        }
+    }
 }
 
 VOID GenerateWallBlock(CustomVertex* blockVertices, D3DXVECTOR3 position)
 {
     int i;
-    // 밑면을 제외한 5개 면의 vertex만 생성해주자
-    // 여기서 겹치는 면 vertex는 없애주는 과정이 필요할듯?
-    for (i = 0; i < 20; i++)
+    // 바닥과 맞닿는 밑면을 제외한 다섯 면을 생성한다.
+    for (i = 0; i < kWallBlockVertexCount; i++)
     {
-        if (i % 4 == 0)
+        if (i % kVerticesPerWallFace == 0)
             blockVertices[i].textureCoordinate = D3DXVECTOR2(0.0f, 0.0f);
-        else if (i % 4 == 1)
+        else if (i % kVerticesPerWallFace == 1)
             blockVertices[i].textureCoordinate = D3DXVECTOR2(1.0f, 0.0f);
-        else if (i % 4 == 2)
+        else if (i % kVerticesPerWallFace == 2)
             blockVertices[i].textureCoordinate = D3DXVECTOR2(1.0f, 1.0f);
         else
             blockVertices[i].textureCoordinate = D3DXVECTOR2(0.0f, 1.0f);
 
-        if (i / 4 == 0)
+        if (i / kVerticesPerWallFace == 0)
             blockVertices[i].normal = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
-        else if (i / 4 == 1)
+        else if (i / kVerticesPerWallFace == 1)
             blockVertices[i].normal = D3DXVECTOR3(1.0f, 0.0f, 0.0f);
-        else if (i / 4 == 2)
+        else if (i / kVerticesPerWallFace == 2)
             blockVertices[i].normal = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
         else
             blockVertices[i].normal = D3DXVECTOR3(-1.0f, 0.0f, 0.0f);

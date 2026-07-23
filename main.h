@@ -95,9 +95,6 @@ enum class MoveDirection : WORD
     Backward
 };
 
-// 맵의 정보를 2차원 배열 형태로 저장
-extern const char kMazeMap[kMazeRowCount][kMazeColumnCount + 1];
-
 extern const D3DXVECTOR3 kWorldUp;
 extern const D3DXVECTOR3 kPlayerStartPosition;
 

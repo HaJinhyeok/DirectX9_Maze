@@ -6,24 +6,7 @@
 #include "SkyBox.h"
 #include "Tiger.h"
 #include "ComUtils.h"
-
-const char kMazeMap[kMazeRowCount][kMazeColumnCount + 1] =
-{
-	"X   *@ * @* ",
-	"*** ** * ** ",
-	" @* ** * ** ",
-	" ** ** *    ",
-	"    ** **** ",
-	" **       * ",
-	" **     * * ",
-	" **  ** * * ",
-	" *   ** * * ",
-	" * * ** *   ",
-	" * * ** * * ",
-	" *   ** * * ",
-	" * **** *** ",
-	"@*@*        "
-};
+#include "MazeData.h"
 
 const D3DXVECTOR3 kWorldUp(0.0f, 1.0f, 0.0f);
 const D3DXVECTOR3 kPlayerStartPosition(55.0f, kTileSize / 2, -65.0f);
@@ -66,7 +49,8 @@ static CustomVertex g_tileVertices[4 * kMazeRowCount * kMazeColumnCount];
 static CustomVertex g_outerWallVertices[4][4 * kMazeRowCount];
 static CustomVertex g_upperWallVertices[4][4 * kMazeRowCount];
 
-static CustomVertex g_mazeWallVertices[72][20];
+static CustomVertex g_mazeWallVertices[kMazeRowCount * kMazeColumnCount][kWallBlockVertexCount];
+static int g_mazeWallCount = 0;
 
 static WORD g_tileIndices[2 * kMazeRowCount * kMazeColumnCount][3];
 
@@ -206,20 +190,22 @@ static VOID CreateMazeGeometry()
 {
 	int i;
 
-	// 미궁 내 벽을 구성할 vertex들의 buffer 생성
-	GenerateMazeWalls(1, g_mazeWallVertices, &g_notices, &g_mazeExit);
-	g_pd3dDevice->CreateVertexBuffer(sizeof(CustomVertex) * 72 * 20, 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &g_pMazeVB, NULL);
-	VOID** mazeVertexData;
-	g_pMazeVB->Lock(0, sizeof(CustomVertex) * 72 * 20, (void**)&mazeVertexData, 0);
-	memcpy(mazeVertexData, g_mazeWallVertices, sizeof(CustomVertex) * 72 * 20);
+	g_mazeWallCount = GenerateMazeWalls(kMazeMap, g_mazeWallVertices);
+	InitializeMazeEntities(kMazeMap, &g_notices, &g_mazeExit);
+
+	const UINT mazeVertexDataSize = sizeof(CustomVertex) * g_mazeWallCount * kWallBlockVertexCount;
+
+	g_pd3dDevice->CreateVertexBuffer(mazeVertexDataSize, 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &g_pMazeVB, NULL);
+	VOID* mazeVertexData = nullptr;
+	g_pMazeVB->Lock(0, mazeVertexDataSize, &mazeVertexData, 0);
+	memcpy(mazeVertexData, g_mazeWallVertices, mazeVertexDataSize);
 	g_pMazeVB->Unlock();
 
-	// Notice를 구성하는 vertex buffer 생성
 	for (i = 0; i < g_notices[0].GetNoticeCount(); i++)
 	{
 		g_notices[i].CreateVertexBuffer(g_pd3dDevice);
 	}
-	// Exit vertex buffer 생성
+
 	g_mazeExit.CreateVertexBuffer(g_pd3dDevice);
 }
 
@@ -854,14 +840,14 @@ static VOID RenderWorld()
 	}
 	// 미로 내부 벽 컬링
 	g_pd3dDevice->SetStreamSource(0, g_pMazeVB, 0, sizeof(CustomVertex));
-	for (i = 0; i < 72; i++)
+	for (i = 0; i < g_mazeWallCount; i++)
 	{
-		for (j = 0; j < 5; j++)
+		for (j = 0; j < kWallBlockFaceCount; j++)
 		{
-			tileCenter = CalculateMidPoint(g_mazeWallVertices[i][j * 4].position, g_mazeWallVertices[i][j * 4 + 2].position);
+			tileCenter = CalculateMidPoint(g_mazeWallVertices[i][j * kVerticesPerWallFace].position, g_mazeWallVertices[i][j * kVerticesPerWallFace + 2].position);
 			if (g_frustum.IntersectsSphere(&tileCenter, kTileSize / 2 * kSqrt2) == TRUE)
 			{
-				g_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, i * 20 + j * 4, 2);
+				g_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, i * kWallBlockVertexCount + j * kVerticesPerWallFace, 2);
 			}
 		}
 	}

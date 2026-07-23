@@ -51,6 +51,9 @@
     <ClCompile Include="XFileModel.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="MazeData.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ComUtils.h">
@@ -90,6 +93,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="XFileModel.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MazeData.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
