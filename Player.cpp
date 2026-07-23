@@ -1,16 +1,38 @@
 ﻿#include "Player.h"
+#include "PlayerCollision.h"
 
 namespace
 {
-	bool IsWall(const char (*map)[kMazeColumnCount + 1], int row, int column)
+	D3DXVECTOR3 CalculateMovementDirection(MoveDirection direction, const D3DXMATRIX& worldMatrix)
 	{
-		if (row < 0 || row >= kMazeRowCount ||
-			column < 0 || column >= kMazeColumnCount)
+		switch (direction)
 		{
-			return false;
+		case MoveDirection::Left:
+			return D3DXVECTOR3(
+				-worldMatrix._11,
+				-worldMatrix._12,
+				-worldMatrix._13);
+
+		case MoveDirection::Right:
+			return D3DXVECTOR3(
+				worldMatrix._11,
+				worldMatrix._12,
+				worldMatrix._13);
+
+		case MoveDirection::Forward:
+			return D3DXVECTOR3(
+				worldMatrix._31,
+				worldMatrix._32,
+				worldMatrix._33);
+
+		case MoveDirection::Backward:
+			return D3DXVECTOR3(
+				-worldMatrix._31,
+				-worldMatrix._32,
+				-worldMatrix._33);
 		}
 
-		return map[row][column] == '*';
+		return D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 	}
 }
 
@@ -47,200 +69,20 @@ Player::Player()
 	m_flashlight.Theta = D3DXToRadian(30.0f);
 }
 
-// PLAYER MOVE
-// 바꾸어야 할 것: 플레이어 위치, 플레이어 LookAt
-// 필요한 것: 플레이어가 움직일 방향 벡터, 거리, 플에이어 현 위치, 플레이어 현 LookAt, 맵 정보
 BOOL Player::Move(MoveDirection direction, const char(*map)[kMazeColumnCount + 1], BOOL isNoClipEnabled, FLOAT deltaTimeSeconds)
 {
 	FLOAT movementScale = kPlayerMoveSpeed * deltaTimeSeconds;
-
-	D3DXVECTOR3 movementDirection;
-	D3DXVECTOR3 targetPosition; // 벽을 생각하지 않고 이동된 위치. 주변 8개 벽과 이것을 대조해 최종 위치 결정
 	D3DXVECTOR3 currentPosition = GetPosition();
-	int i, column, row;
+	D3DXVECTOR3 movementDirection = CalculateMovementDirection(direction, m_worldMatrix);
 
-	// y축 움직임은 없으므로 y축 정보는 걍 빼고 계산
-	// => 자유시점의 경우도 생각해서 y축도 이동
-	if (direction == MoveDirection::Left)
-	{
-		movementDirection.x = -m_worldMatrix._11;
-		movementDirection.y = -m_worldMatrix._12;
-		movementDirection.z = -m_worldMatrix._13;
-		movementScale /= sqrtf(movementDirection.x * movementDirection.x + movementDirection.y * movementDirection.y + movementDirection.z * movementDirection.z);
+	movementScale /= CalculateLength(movementDirection);
 
-		targetPosition.x = currentPosition.x + movementDirection.x * movementScale;
-		targetPosition.y = currentPosition.y + movementDirection.y * movementScale;
-		targetPosition.z = currentPosition.z + movementDirection.z * movementScale;
-	}
-	else if (direction == MoveDirection::Right)
-	{
-		movementDirection.x = m_worldMatrix._11;
-		movementDirection.y = m_worldMatrix._12;
-		movementDirection.z = m_worldMatrix._13;
-		movementScale /= sqrtf(movementDirection.x * movementDirection.x + movementDirection.y * movementDirection.y + movementDirection.z * movementDirection.z);
+	D3DXVECTOR3 targetPosition = currentPosition + movementDirection * movementScale;
 
-		targetPosition.x = currentPosition.x + movementDirection.x * movementScale;
-		targetPosition.y = currentPosition.y + movementDirection.y * movementScale;
-		targetPosition.z = currentPosition.z + movementDirection.z * movementScale;
-	}
-	else if (direction == MoveDirection::Forward)
-	{
-		movementDirection.x = m_worldMatrix._31;
-		movementDirection.y = m_worldMatrix._32;
-		movementDirection.z = m_worldMatrix._33;
-		movementScale /= sqrtf(movementDirection.x * movementDirection.x + movementDirection.y * movementDirection.y + movementDirection.z * movementDirection.z);
 
-		targetPosition.x = currentPosition.x + movementDirection.x * movementScale;
-		targetPosition.y = currentPosition.y + movementDirection.y * movementScale;
-		targetPosition.z = currentPosition.z + movementDirection.z * movementScale;
-	}
-	else if (direction == MoveDirection::Backward)
-	{
-		movementDirection.x = -m_worldMatrix._31;
-		movementDirection.y = -m_worldMatrix._32;
-		movementDirection.z = -m_worldMatrix._33;
-		movementScale /= sqrtf(movementDirection.x * movementDirection.x + movementDirection.y * movementDirection.y + movementDirection.z * movementDirection.z);
-
-		targetPosition.x = currentPosition.x + movementDirection.x * movementScale;
-		targetPosition.y = currentPosition.y + movementDirection.y * movementScale;
-		targetPosition.z = currentPosition.z + movementDirection.z * movementScale;
-
-	}
 	if (!isNoClipEnabled)
 	{
-		// 충돌을 검사할 블록의 왼쪽아래(minX, minZ)와 오른쪽위(maxX,maxZ) 두 점
-		D3DXVECTOR2 wallBounds[2];
-		// 현재 좌표
-		column = static_cast<int>(floorf(currentPosition.x / kTileSize)) + kMazeColumnCount / 2;
-		row = kMazeRowCount / 2 - static_cast<int>(floorf(currentPosition.z / kTileSize)) - 1;
-		// 해결: 외곽 벽에 부딪히는 경우 추가, 몇몇 곳에서 블록 속으로 들어가버리는 버그 수정하기
-		// x축 음의 방향으로 이동일 경우
-		if (movementDirection.x < 0)
-		{
-			for (i = 0; i < 3; i++)
-			{
-				// 현재 위치 기준 왼쪽 3개 블록에 대해 검사
-				// 제일 외곽 벽일 경우 따로 검사
-				if (column == 0)
-				{
-					if (targetPosition.x - kPlayerRadius <= -kMazeColumnCount / 2 * kTileSize)
-					{
-						targetPosition.x = -kMazeColumnCount / 2 * kTileSize + kPlayerRadius;
-					}
-				}
-				else if (IsWall(map, row - 1 + i, column - 1))
-				{
-					wallBounds[0].x = (column - 1 - kMazeColumnCount / 2) * kTileSize;
-					wallBounds[0].y = (kMazeRowCount / 2 - (row - 1 + i) - 1) * kTileSize;
-					wallBounds[1].x = (column - kMazeColumnCount / 2) * kTileSize;
-					wallBounds[1].y = (kMazeRowCount / 2 - (row - 1 + i)) * kTileSize;
-
-					//충돌 시
-					if (wallBounds[0].x <= targetPosition.x + kPlayerRadius && wallBounds[1].x >= targetPosition.x - kPlayerRadius
-						&& wallBounds[0].y <= targetPosition.z + kPlayerRadius && wallBounds[1].y >= targetPosition.z - kPlayerRadius)
-					{
-						if (IsWall(map, row, column - 1))
-							targetPosition.x = wallBounds[1].x + kPlayerRadius + 0.1f;
-						break;
-					}
-				}
-			}
-		}
-		// x축 양의 방향으로 이동일 경우
-		else if (movementDirection.x > 0)
-		{
-			for (i = 0; i < 3; i++)
-			{
-				// 현재 위치 기준 오른쪽 3개 블록에 대해 검사
-				// 제일 외곽 벽일 경우 따로 검사
-				if (column == kMazeColumnCount - 1)
-				{
-					if (targetPosition.x + kPlayerRadius >= kMazeColumnCount / 2 * kTileSize)
-					{
-						targetPosition.x = kMazeColumnCount / 2 * kTileSize - kPlayerRadius;
-					}
-				}
-				else if (IsWall(map, row - 1 + i, column + 1))
-				{
-					wallBounds[0].x = (column + 1 - kMazeColumnCount / 2) * kTileSize;
-					wallBounds[0].y = (kMazeRowCount / 2 - (row - 1 + i) - 1) * kTileSize;
-					wallBounds[1].x = (column + 2 - kMazeColumnCount / 2) * kTileSize;
-					wallBounds[1].y = (kMazeRowCount / 2 - (row - 1 + i)) * kTileSize;
-
-					//충돌 시
-					if (wallBounds[0].x <= targetPosition.x + kPlayerRadius && wallBounds[1].x >= targetPosition.x - kPlayerRadius
-						&& wallBounds[0].y <= targetPosition.z + kPlayerRadius && wallBounds[1].y >= targetPosition.z - kPlayerRadius)
-					{
-						if (IsWall(map, row, column + 1))
-							targetPosition.x = wallBounds[0].x - kPlayerRadius - 0.1f;
-						break;
-					}
-				}
-			}
-		}
-
-		// z축 음의 방향으로 이동일 경우
-		if (movementDirection.z < 0)
-		{
-			for (i = 0; i < 3; i++)
-			{
-				// 현재 위치 기준 아래쪽 3개 블록에 대해 검사
-				// 제일 외곽 벽일 경우 따로 검사
-				if (row == kMazeRowCount - 1)
-				{
-					if (targetPosition.z - kPlayerRadius <= -kMazeRowCount / 2 * kTileSize)
-					{
-						targetPosition.z = -kMazeRowCount / 2 * kTileSize + kPlayerRadius;
-					}
-				}
-				else if (IsWall(map, row + 1, column - 1 + i))
-				{
-					wallBounds[0].x = (column - 1 + i - kMazeColumnCount / 2) * kTileSize;
-					wallBounds[0].y = (kMazeRowCount / 2 - (row + 1) - 1) * kTileSize;
-					wallBounds[1].x = (column + i - kMazeColumnCount / 2) * kTileSize;
-					wallBounds[1].y = (kMazeRowCount / 2 - (row + 1)) * kTileSize;
-
-					//충돌 시
-					if (wallBounds[0].x <= targetPosition.x + kPlayerRadius && wallBounds[1].x >= targetPosition.x - kPlayerRadius
-						&& wallBounds[0].y <= targetPosition.z + kPlayerRadius && wallBounds[1].y >= targetPosition.z - kPlayerRadius)
-					{
-						targetPosition.z = wallBounds[1].y + kPlayerRadius + 0.1f;
-						break;
-					}
-				}
-			}
-		}
-		// z축 양의 방향으로 이동일 경우
-		else if (movementDirection.z > 0)
-		{
-			for (i = 0; i < 3; i++)
-			{
-				// 현재 위치 기준 위쪽 3개 블록에 대해 검사
-				// 제일 외곽 벽일 경우 따로 검사
-				if (row == 0)
-				{
-					if (targetPosition.z + kPlayerRadius >= kMazeRowCount / 2 * kTileSize)
-					{
-						targetPosition.z = kMazeRowCount / 2 * kTileSize - kPlayerRadius;
-					}
-				}
-				else if (IsWall(map, row - 1, column - 1 + i))
-				{
-					wallBounds[0].x = (column - 1 + i - kMazeColumnCount / 2) * kTileSize;
-					wallBounds[0].y = (kMazeRowCount / 2 - (row - 1) - 1) * kTileSize;
-					wallBounds[1].x = (column + i - kMazeColumnCount / 2) * kTileSize;
-					wallBounds[1].y = (kMazeRowCount / 2 - (row - 1)) * kTileSize;
-
-					//충돌 시
-					if (wallBounds[0].x <= targetPosition.x + kPlayerRadius && wallBounds[1].x >= targetPosition.x - kPlayerRadius
-						&& wallBounds[0].y <= targetPosition.z + kPlayerRadius && wallBounds[1].y >= targetPosition.z - kPlayerRadius)
-					{
-						targetPosition.z = wallBounds[0].y - kPlayerRadius - 0.1f;
-						break;
-					}
-				}
-			}
-		}
+		targetPosition = ResolvePlayerMazeCollision(map, currentPosition, targetPosition, movementDirection);
 	}
 	// LookAt은 Position이 이동한 만큼만 더하거나 빼주면 됨
 	m_lookAt.x += targetPosition.x - currentPosition.x;
@@ -259,8 +101,6 @@ BOOL Player::Move(MoveDirection direction, const char(*map)[kMazeColumnCount + 1
 	D3DXMATRIX translationMatrix;
 	D3DXMatrixTranslation(&translationMatrix, targetPosition.x - currentPosition.x, targetPosition.y - currentPosition.y, targetPosition.z - currentPosition.z);
 	D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
-
-	//SetPosition(targetPosition);
 
 	m_flashlight.Position = GetPosition();
 	return TRUE;

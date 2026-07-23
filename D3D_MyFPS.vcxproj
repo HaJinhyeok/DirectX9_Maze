@@ -154,6 +154,7 @@
     <ClCompile Include="MazeData.cpp" />
     <ClCompile Include="Notice.cpp" />
     <ClCompile Include="Player.cpp" />
+    <ClCompile Include="PlayerCollision.cpp" />
     <ClCompile Include="SettingsOverlay.cpp" />
     <ClCompile Include="SkyBox.cpp" />
     <ClCompile Include="main.cpp" />
@@ -172,6 +173,7 @@
     <ClInclude Include="MazeData.h" />
     <ClInclude Include="Notice.h" />
     <ClInclude Include="Player.h" />
+    <ClInclude Include="PlayerCollision.h" />
     <ClInclude Include="SettingsOverlay.h" />
     <ClInclude Include="SkyBox.h" />
     <ClInclude Include="main.h" />
