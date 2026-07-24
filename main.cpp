@@ -534,6 +534,11 @@ static VOID HandlePauseInput()
 	if (IsKeyPressed(VK_ESCAPE) == TRUE)
 	{
 		g_isPaused = !g_isPaused;
+
+		if (g_isPaused == FALSE)
+		{
+			SetCursorPos(g_cursorCenter.x, g_cursorCenter.y);
+		}
 	}
 }
 
@@ -942,17 +947,36 @@ static VOID Render()
 	g_pd3dDevice->Present(NULL, NULL, NULL, NULL);
 }
 
+static VOID UpdateCursorCenter(HWND windowHandle)
+{
+	RECT clientRect;
+	if (GetClientRect(windowHandle, &clientRect) == FALSE)
+		return;
+
+	POINT clientCenter =
+	{
+		(clientRect.left + clientRect.right) / 2,
+		(clientRect.top + clientRect.bottom) / 2
+	};
+
+	if (ClientToScreen(windowHandle, &clientCenter) == FALSE)
+		return;
+
+	g_cursorCenter = clientCenter;
+}
+
 static LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
 	{
 	case WM_CREATE:
-		g_cursorCenter.x = kWindowWidth / 2;
-		g_cursorCenter.y = kWindowHeight / 2;
-
-		ClientToScreen(hWnd, &g_cursorCenter);
+		UpdateCursorCenter(hWnd);
 		SetCursorPos(g_cursorCenter.x, g_cursorCenter.y);
 		g_cursorDisplayCount = ShowCursor(FALSE);
+		break;
+
+	case WM_MOVE:
+		UpdateCursorCenter(hWnd);
 		break;
 
 	case WM_LBUTTONDOWN:
@@ -1042,10 +1066,37 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 					  GetModuleHandle(NULL), NULL, NULL, NULL, NULL,
 					  kProgramName, NULL };
 	RegisterClassEx(&windowClass);
+
+	// 모니터 중앙에 게임 창 생성
+	RECT workArea =
+	{
+		0,
+		0,
+		GetSystemMetrics(SM_CXSCREEN),
+		GetSystemMetrics(SM_CYSCREEN)
+	};
+
+	SystemParametersInfo(SPI_GETWORKAREA, 0, &workArea, 0);
+
+	const int workAreaWidth = workArea.right - workArea.left;
+	const int workAreaHeight = workArea.bottom - workArea.top;
+
+	const int windowX = workArea.left + (workAreaWidth - kWindowWidth) / 2;
+	const int windowY = workArea.top + (workAreaHeight - kWindowHeight) / 2;
+
 	// 윈도우 생성
-	HWND windowHandle = CreateWindow(kProgramName, kProgramName,
-		WS_OVERLAPPEDWINDOW, 100, 100, kWindowWidth, kWindowHeight,
-		GetDesktopWindow(), NULL, windowClass.hInstance, NULL);
+	HWND windowHandle = CreateWindow(
+		kProgramName,
+		kProgramName,
+		WS_OVERLAPPEDWINDOW,
+		windowX,
+		windowY,
+		kWindowWidth,
+		kWindowHeight,
+		GetDesktopWindow(),
+		NULL,
+		windowClass.hInstance,
+		NULL);
 
 	// Direct3D 초기화
 	if (SUCCEEDED(InitializeD3d(windowHandle)))
