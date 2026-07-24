@@ -101,16 +101,36 @@ static HRESULT InitializeD3d(HWND windowHandle)
 	if (NULL == (g_pD3D = Direct3DCreate9(D3D_SDK_VERSION)))
 		return E_FAIL;
 
+	D3DCAPS9 deviceCapabilities = {};
+	if (FAILED(g_pD3D->GetDeviceCaps(
+		D3DADAPTER_DEFAULT,
+		D3DDEVTYPE_HAL,
+		&deviceCapabilities)))
+	{
+		return E_FAIL;
+	}
+
+	const DWORD vertexProcessingFlag =
+		(deviceCapabilities.DevCaps & D3DDEVCAPS_HWTRANSFORMANDLIGHT) != 0
+		? D3DCREATE_HARDWARE_VERTEXPROCESSING
+		: D3DCREATE_SOFTWARE_VERTEXPROCESSING;
+
 	D3DPRESENT_PARAMETERS presentationParameters;
 	ZeroMemory(&presentationParameters, sizeof(presentationParameters));
 	presentationParameters.Windowed = TRUE;
 	presentationParameters.SwapEffect = D3DSWAPEFFECT_DISCARD;
 	presentationParameters.BackBufferFormat = D3DFMT_UNKNOWN;
-	presentationParameters.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE; // FPS 설정을 위한 설정?
+	presentationParameters.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE; // 수직 동기화를 끄고 프레젠테이션을 즉시 수행한다.
 	presentationParameters.EnableAutoDepthStencil = TRUE;
 	presentationParameters.AutoDepthStencilFormat = D3DFMT_D16;
 
-	if (FAILED(g_pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, windowHandle, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &presentationParameters, &g_pd3dDevice)))
+	if (FAILED(g_pD3D->CreateDevice(
+		D3DADAPTER_DEFAULT,
+		D3DDEVTYPE_HAL,
+		windowHandle,
+		vertexProcessingFlag,
+		&presentationParameters,
+		&g_pd3dDevice)))
 		return E_FAIL;
 
 	g_pd3dDevice->SetRenderState(D3DRS_LIGHTING, TRUE);
@@ -707,10 +727,21 @@ static VOID RenderUi()
 		g_pFrameFont->DrawTextA(NULL, textBuffer, -1, &textRect, DT_NOCLIP, D3DCOLOR_XRGB(255, 0, 0));
 	}
 
-	// FPS 표시
-	SetRect(&textRect, kWindowWidth - 110, 0, 0, 0);
-	wsprintf(textBuffer, "FPS: %3d", g_fpsCounter.GetFps());
-	g_pFrameFont->DrawTextA(NULL, textBuffer, -1, &textRect, DT_NOCLIP, D3DCOLOR_XRGB(0, 255, 0));
+	// 성능 지표 표시
+	SetRect(&textRect, kWindowWidth - 220, 0, kWindowWidth - 20, 50);
+	std::snprintf(
+		textBuffer,
+		sizeof(textBuffer),
+		"FPS: %3d\nFrame: %.2f ms",
+		g_fpsCounter.GetFps(),
+		g_fpsCounter.GetAverageFrameTimeMilliseconds());
+	g_pFrameFont->DrawTextA(
+		NULL,
+		textBuffer,
+		-1,
+		&textRect,
+		DT_RIGHT | DT_TOP,
+		D3DCOLOR_XRGB(0, 255, 0));
 }
 
 static VOID ConfigureLighting()
@@ -1028,7 +1059,11 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 			MSG msg;
 			ZeroMemory(&msg, sizeof(msg));
 
-			DWORD previousFrameTime = timeGetTime();
+			LARGE_INTEGER performanceFrequency;
+			LARGE_INTEGER previousFrameCounter;
+
+			QueryPerformanceFrequency(&performanceFrequency);
+			QueryPerformanceCounter(&previousFrameCounter);
 
 			while (msg.message != WM_QUIT)
 			{
@@ -1039,12 +1074,21 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 				}
 				else
 				{
-					DWORD currentFrameTime = timeGetTime();
-					FLOAT deltaTimeSeconds =
-						static_cast<FLOAT>(currentFrameTime - previousFrameTime) / 1000.0f;
+					LARGE_INTEGER currentFrameCounter;
+					QueryPerformanceCounter(&currentFrameCounter);
+
+					const LONGLONG elapsedCounts = currentFrameCounter.QuadPart - previousFrameCounter.QuadPart;
+
+					const FLOAT frameTimeSeconds = static_cast<FLOAT>(
+						static_cast<double>(elapsedCounts) /
+						static_cast<double>(performanceFrequency.QuadPart));
+
+					FLOAT deltaTimeSeconds = frameTimeSeconds;
+
 					if (deltaTimeSeconds > kMaxDeltaTimeSeconds)
 						deltaTimeSeconds = kMaxDeltaTimeSeconds;
-					previousFrameTime = currentFrameTime;
+
+					previousFrameCounter = currentFrameCounter;
 
 					if (!g_isPlaying || g_isPaused)
 					{
@@ -1061,7 +1105,7 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 					UpdateInput();
 					UpdateGame(deltaTimeSeconds);
 					Render();
-					g_fpsCounter.Update(deltaTimeSeconds);
+					g_fpsCounter.Update(frameTimeSeconds);
 				}
 			}
 		}

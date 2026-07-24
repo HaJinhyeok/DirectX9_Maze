@@ -236,6 +236,46 @@ private 멤버 변수를 `m_` + `camelCase`로 작성하는 방식은 실제로 
 
 기존 코드에 `m_` 계열 이름이 많고 전역 변수에는 `g_` 범위 표식을 사용하므로, private 멤버는 `m_` + `camelCase`로 통일한다.
 
+## Win32 고해상도 타이머와 `QueryPerformanceCounter`
+
+### 질문
+
+`LARGE_INTEGER`, `QueryPerformanceCounter()`, `QueryPerformanceFrequency()`와 `QuadPart`는 무엇이며 프레임 시간을 어떻게 계산하는가?
+
+### 핵심 답변
+
+- `LARGE_INTEGER`는 Win32 API에서 큰 정수 값을 전달하기 위해 사용하는 64비트 정수형 구조체다.
+- `QuadPart`는 `LARGE_INTEGER`에 저장된 전체 64비트 정수 값에 접근하는 멤버다.
+- `QueryPerformanceCounter()`는 고해상도 성능 카운터의 현재 누적 틱 값을 반환한다.
+- `QueryPerformanceFrequency()`는 성능 카운터가 1초 동안 증가하는 틱 수를 반환한다.
+- 두 시점의 카운터 차이를 주파수로 나누면 실제 경과 시간을 초 단위로 얻을 수 있다.
+- 큰 누적 카운터를 먼저 실수로 변환해 빼면 정밀도가 손실될 수 있으므로, 64비트 정수 상태에서 먼저 차이를 계산한 뒤 `double`로 나눈다.
+- 측정 결과는 CPU 클럭 주기 자체가 아니라 Windows가 제공하는 단조 증가 고해상도 시간 기준으로 이해해야 한다.
+
+### 프로젝트 적용
+
+P3-08에서 메인 루프의 `timeGetTime()` 기반 밀리초 측정을 고해상도 성능 카운터로 교체했다. `currentFrameCounter.QuadPart - previousFrameCounter.QuadPart`로 프레임 사이의 틱 수를 구한 뒤 `performanceFrequency.QuadPart`로 나누어 `deltaTimeSeconds`를 계산한다.
+
+## Direct3D 9 장치 기능 조회와 정점 처리 방식 선택
+
+### 질문
+
+`D3DCAPS9`, `GetDeviceCaps()`, `D3DDEVTYPE_HAL`과 정점 처리 플래그 선택 코드는 각각 무엇을 의미하는가?
+
+### 핵심 답변
+
+- `D3DCAPS9`는 Direct3D 9 장치가 지원하는 기능과 제한을 저장하는 구조체다.
+- `GetDeviceCaps()`는 지정한 그래픽 어댑터와 장치 유형의 기능 정보를 `D3DCAPS9`에 채운다.
+- `D3DADAPTER_DEFAULT`는 Windows에서 사용하는 기본 그래픽 어댑터를 가리킨다.
+- `D3DDEVTYPE_HAL`은 실제 그래픽 드라이버와 GPU 하드웨어 가속 경로를 사용하는 장치 유형이다.
+- `DevCaps`는 장치 전반의 기능을 비트 플래그로 저장하는 멤버다.
+- `D3DDEVCAPS_HWTRANSFORMANDLIGHT` 비트가 있으면 하드웨어 정점 변환과 조명을 지원한다.
+- 비트 AND 연산으로 지원 여부를 검사한 뒤 하드웨어 또는 소프트웨어 정점 처리 생성 플래그를 선택할 수 있다.
+
+### 프로젝트 적용
+
+P3-08에서 하드웨어 변환 및 조명 지원 장치에는 `D3DCREATE_HARDWARE_VERTEXPROCESSING`을 사용하고, 미지원 장치에는 `D3DCREATE_SOFTWARE_VERTEXPROCESSING`을 사용하는 장치 생성 정책을 적용했다.
+
 ## 데이터 선택 ID와 데이터 주입
 
 ### 질문
