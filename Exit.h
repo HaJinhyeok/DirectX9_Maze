@@ -21,5 +21,6 @@ public:
     VOID PressButton();
     VOID ReleaseButton();
     BOOL IsButtonPressed();
+    VOID SetButtonBounds(const RECT& bounds);
 };
 

@@ -11,6 +11,16 @@
 const D3DXVECTOR3 kWorldUp(0.0f, 1.0f, 0.0f);
 const D3DXVECTOR3 kPlayerStartPosition(55.0f, kTileSize / 2, -65.0f);
 
+constexpr LONG kPauseOverlayWidth = 500;
+constexpr LONG kPauseOverlayHeight = 500;
+constexpr LONG kClearPopupWidth = 500;
+constexpr LONG kClearPopupHeight = 400;
+constexpr LONG kExitButtonWidth = 100;
+constexpr LONG kExitButtonHeight = 50;
+constexpr LONG kExitButtonTopOffsetFromCenter = 100;
+constexpr LONG kMinimumWindowTrackWidth = 600;
+constexpr LONG kMinimumWindowTrackHeight = 600;
+
 static UiVertex g_uiVertices[4] =
 {
 	D3DXVECTOR3(10.0f, 10.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(255, 0, 0), D3DXVECTOR2(0.0f, 0.0f),
@@ -63,10 +73,17 @@ static POINT g_cursorCenter{};
 static POINT g_mousePosition{};
 static POINT g_currentMousePosition{};
 static Frustum g_frustum;
+static RECT g_pauseOverlayRect{};
+static RECT g_clearPopupRect{};
 static RECT g_exitButtonRect{};
 
 static LPDIRECT3D9 g_pD3D = NULL;
 static LPDIRECT3DDEVICE9 g_pd3dDevice = NULL;
+static D3DPRESENT_PARAMETERS g_presentationParameters{};
+static UINT g_clientWidth = 0;
+static UINT g_clientHeight = 0;
+static BOOL g_isDeviceResetPending = FALSE;
+static BOOL g_areFontResourcesLost = FALSE;
 
 static LPDIRECT3DVERTEXBUFFER9 g_pTileVB = NULL;
 static LPDIRECT3DINDEXBUFFER9 g_pTileIB = NULL;
@@ -96,6 +113,20 @@ static FpsCounter g_fpsCounter;
 static Tiger g_tiger(D3DXVECTOR3(55.0f, 5.0f, 65.0f));
 static SkyBox g_skyBox;
 
+static VOID ConfigureDeviceRenderStates(LPDIRECT3DDEVICE9 device)
+{
+	// 장치 리셋 후에도 현재 낮·밤 상태를 유지한다.
+	const DWORD isLightingEnabled = g_isDaytime == TRUE ? FALSE : TRUE;
+
+	device->SetRenderState(D3DRS_LIGHTING, isLightingEnabled);
+
+	device->SetRenderState(D3DRS_ZENABLE, TRUE);
+	device->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);
+	device->SetRenderState(D3DRS_ALPHAFUNC, D3DCMP_NOTEQUAL);
+	device->SetRenderState(D3DRS_ALPHAREF, 0);
+	device->SetRenderState(D3DRS_NORMALIZENORMALS, TRUE);
+}
+
 static HRESULT InitializeD3d(HWND windowHandle)
 {
 	if (NULL == (g_pD3D = Direct3DCreate9(D3D_SDK_VERSION)))
@@ -115,34 +146,76 @@ static HRESULT InitializeD3d(HWND windowHandle)
 		? D3DCREATE_HARDWARE_VERTEXPROCESSING
 		: D3DCREATE_SOFTWARE_VERTEXPROCESSING;
 
-	D3DPRESENT_PARAMETERS presentationParameters;
-	ZeroMemory(&presentationParameters, sizeof(presentationParameters));
-	presentationParameters.Windowed = TRUE;
-	presentationParameters.SwapEffect = D3DSWAPEFFECT_DISCARD;
-	presentationParameters.BackBufferFormat = D3DFMT_UNKNOWN;
-	presentationParameters.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE; // 수직 동기화를 끄고 프레젠테이션을 즉시 수행한다.
-	presentationParameters.EnableAutoDepthStencil = TRUE;
-	presentationParameters.AutoDepthStencilFormat = D3DFMT_D16;
+	ZeroMemory(&g_presentationParameters, sizeof(g_presentationParameters));
+	g_presentationParameters.Windowed = TRUE;
+	g_presentationParameters.SwapEffect = D3DSWAPEFFECT_DISCARD;
+	g_presentationParameters.BackBufferFormat = D3DFMT_UNKNOWN;
+	g_presentationParameters.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE; // 수직 동기화를 끄고 프레젠테이션을 즉시 수행한다.
+	g_presentationParameters.EnableAutoDepthStencil = TRUE;
+	g_presentationParameters.AutoDepthStencilFormat = D3DFMT_D16;
 
 	if (FAILED(g_pD3D->CreateDevice(
 		D3DADAPTER_DEFAULT,
 		D3DDEVTYPE_HAL,
 		windowHandle,
 		vertexProcessingFlag,
-		&presentationParameters,
+		&g_presentationParameters,
 		&g_pd3dDevice)))
 		return E_FAIL;
 
-	g_pd3dDevice->SetRenderState(D3DRS_LIGHTING, TRUE);
-	g_pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
-
-	g_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);
-	g_pd3dDevice->SetRenderState(D3DRS_ALPHAFUNC, D3DCMP_NOTEQUAL);
-	g_pd3dDevice->SetRenderState(D3DRS_ALPHAREF, 0);
-
-	g_pd3dDevice->SetRenderState(D3DRS_NORMALIZENORMALS, TRUE);
+	ConfigureDeviceRenderStates(g_pd3dDevice);
 
 	return S_OK;
+}
+
+static VOID UpdateUiLayout()
+{
+	if (g_clientWidth == 0 || g_clientHeight == 0)
+		return;
+
+	const LONG centerX = static_cast<LONG>(g_clientWidth) / 2;
+	const LONG centerY = static_cast<LONG>(g_clientHeight) / 2;
+
+	SetRect(
+		&g_pauseOverlayRect,
+		centerX - kPauseOverlayWidth / 2,
+		centerY - kPauseOverlayHeight / 2,
+		centerX + kPauseOverlayWidth / 2,
+		centerY + kPauseOverlayHeight / 2);
+
+	g_settingsOverlay.SetBounds(g_pauseOverlayRect);
+
+	SetRect(
+		&g_clearPopupRect,
+		centerX - kClearPopupWidth / 2,
+		centerY - kClearPopupHeight / 2,
+		centerX + kClearPopupWidth / 2,
+		centerY + kClearPopupHeight / 2);
+
+	const FLOAT popupLeft = static_cast<FLOAT>(g_clearPopupRect.left);
+	const FLOAT popupTop = static_cast<FLOAT>(g_clearPopupRect.top);
+	const FLOAT popupRight = static_cast<FLOAT>(g_clearPopupRect.right);
+	const FLOAT popupBottom = static_cast<FLOAT>(g_clearPopupRect.bottom);
+
+	g_popupVertices[0].position.x = popupLeft;
+	g_popupVertices[0].position.y = popupTop;
+	g_popupVertices[1].position.x = popupRight;
+	g_popupVertices[1].position.y = popupTop;
+	g_popupVertices[2].position.x = popupRight;
+	g_popupVertices[2].position.y = popupBottom;
+	g_popupVertices[3].position.x = popupLeft;
+	g_popupVertices[3].position.y = popupBottom;
+
+	const LONG buttonTop = centerY + kExitButtonTopOffsetFromCenter;
+
+	SetRect(
+		&g_exitButtonRect,
+		centerX - kExitButtonWidth / 2,
+		buttonTop,
+		centerX + kExitButtonWidth / 2,
+		buttonTop + kExitButtonHeight);
+
+	g_mazeExit.SetButtonBounds(g_exitButtonRect);
 }
 
 static VOID InitializeGameComponents()
@@ -157,7 +230,7 @@ static VOID InitializeGameComponents()
 	g_tiger.SetPosition(D3DXVECTOR3(55.0f, 5.0f, 65.0f));
 	g_tiger.SetLookAt(g_player.GetPosition());
 
-	SetRect(&g_exitButtonRect, 300, 450, 400, 500);
+	UpdateUiLayout();
 }
 
 static VOID ConfigureDefaultMaterial()
@@ -179,6 +252,79 @@ static VOID CreateFonts()
 	D3DXCreateFont(g_pd3dDevice, 30, 0, FW_NORMAL, 1, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Arial", &g_pExitFont);
 	D3DXCreateFont(g_pd3dDevice, 20, 0, FW_NORMAL, 1, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Arial", &g_pTestFont);
 	D3DXCreateFont(g_pd3dDevice, 25, 0, FW_NORMAL, 1, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Arial", &g_pFrameFont);
+}
+
+static VOID NotifyFontsLostDevice()
+{
+	LPD3DXFONT fonts[] =
+	{
+		g_pClearFont,
+		g_pSettingFont,
+		g_pExitFont,
+		g_pTestFont,
+		g_pFrameFont
+	};
+
+	for (LPD3DXFONT font : fonts)
+	{
+		if (font != NULL)
+		{
+			font->OnLostDevice();
+		}
+	}
+}
+
+static VOID NotifyFontsResetDevice()
+{
+	LPD3DXFONT fonts[] =
+	{
+		g_pClearFont,
+		g_pSettingFont,
+		g_pExitFont,
+		g_pTestFont,
+		g_pFrameFont
+	};
+
+	for (LPD3DXFONT font : fonts)
+	{
+		if (font != NULL)
+		{
+			font->OnResetDevice();
+		}
+	}
+}
+
+static HRESULT ResetD3dDevice()
+{
+	if (g_pd3dDevice == NULL ||
+		g_clientWidth == 0 ||
+		g_clientHeight == 0)
+	{
+		return E_FAIL;
+	}
+
+	g_presentationParameters.BackBufferWidth = g_clientWidth;
+	g_presentationParameters.BackBufferHeight = g_clientHeight;
+
+	if (g_areFontResourcesLost == FALSE)
+	{
+		NotifyFontsLostDevice();
+		g_areFontResourcesLost = TRUE;
+	}
+
+	const HRESULT resetResult = g_pd3dDevice->Reset(&g_presentationParameters);
+
+	if (FAILED(resetResult))
+		return resetResult;
+
+	NotifyFontsResetDevice();
+	g_areFontResourcesLost = FALSE;
+
+	ConfigureDeviceRenderStates(g_pd3dDevice);
+	ConfigureDefaultMaterial();
+
+	g_isDeviceResetPending = FALSE;
+	return S_OK;
 }
 
 static VOID LoadSceneTextures()
@@ -215,7 +361,7 @@ static VOID CreateMazeGeometry()
 
 	const UINT mazeVertexDataSize = sizeof(CustomVertex) * g_mazeWallCount * kWallBlockVertexCount;
 
-	g_pd3dDevice->CreateVertexBuffer(mazeVertexDataSize, 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &g_pMazeVB, NULL);
+	g_pd3dDevice->CreateVertexBuffer(mazeVertexDataSize, 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_MANAGED, &g_pMazeVB, NULL);
 	VOID* mazeVertexData = nullptr;
 	g_pMazeVB->Lock(0, mazeVertexDataSize, &mazeVertexData, 0);
 	memcpy(mazeVertexData, g_mazeWallVertices, mazeVertexDataSize);
@@ -265,13 +411,13 @@ static VOID CreateTileGeometry()
 		g_tileIndices[j++][2] = i * 4 + 3;
 	}
 	// 타일 정점 및 인덱스 버퍼 생성
-	g_pd3dDevice->CreateVertexBuffer(sizeof(g_tileVertices), 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &g_pTileVB, NULL);
+	g_pd3dDevice->CreateVertexBuffer(sizeof(g_tileVertices), 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_MANAGED, &g_pTileVB, NULL);
 	VOID* tileVertexData;
 	g_pTileVB->Lock(0, sizeof(g_tileVertices), (void**)&tileVertexData, 0);
 	memcpy(tileVertexData, g_tileVertices, sizeof(g_tileVertices));
 	g_pTileVB->Unlock();
 
-	g_pd3dDevice->CreateIndexBuffer(sizeof(g_tileIndices), 0, D3DFMT_INDEX16, D3DPOOL_DEFAULT, &g_pTileIB, NULL);
+	g_pd3dDevice->CreateIndexBuffer(sizeof(g_tileIndices), 0, D3DFMT_INDEX16, D3DPOOL_MANAGED, &g_pTileIB, NULL);
 	VOID* tileIndexData;
 	g_pTileIB->Lock(0, sizeof(g_tileIndices), (void**)&tileIndexData, 0);
 	memcpy(tileIndexData, g_tileIndices, sizeof(g_tileIndices));
@@ -346,7 +492,7 @@ static VOID CreateOuterWallGeometry()
 		g_outerWallVertices[3][i * 4 + 3].textureCoordinate = D3DXVECTOR2(0.0f, 1.0f);
 	}
 	// 외벽 정점 버퍼 생성
-	g_pd3dDevice->CreateVertexBuffer(sizeof(g_outerWallVertices), 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &g_pWallVB, NULL);
+	g_pd3dDevice->CreateVertexBuffer(sizeof(g_outerWallVertices), 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_MANAGED, &g_pWallVB, NULL);
 	VOID* wallVertexData;
 	g_pWallVB->Lock(0, sizeof(g_outerWallVertices), (void**)&wallVertexData, 0);
 	memcpy(wallVertexData, g_outerWallVertices, sizeof(g_outerWallVertices));
@@ -421,7 +567,7 @@ static VOID CreateUpperWallGeometry()
 		g_upperWallVertices[3][i * 4 + 3].textureCoordinate = D3DXVECTOR2(0.0f, 1.0f);
 	}
 	// 상단 벽 정점 버퍼 생성
-	g_pd3dDevice->CreateVertexBuffer(sizeof(g_upperWallVertices), 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &g_pWallVB2, NULL);
+	g_pd3dDevice->CreateVertexBuffer(sizeof(g_upperWallVertices), 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_MANAGED, &g_pWallVB2, NULL);
 	VOID* upperWallVertexData;
 	g_pWallVB2->Lock(0, sizeof(g_upperWallVertices), (void**)&upperWallVertexData, 0);
 	memcpy(upperWallVertexData, g_upperWallVertices, sizeof(g_upperWallVertices));
@@ -673,6 +819,7 @@ static VOID UpdateGame(FLOAT deltaTimeSeconds)
 
 static VOID RenderUi()
 {
+	const LONG clientWidth = static_cast<LONG>(g_clientWidth);
 	RECT textRect;
 	char textBuffer[500];
 
@@ -683,13 +830,31 @@ static VOID RenderUi()
 	{
 		g_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, g_popupVertices, sizeof(UiVertex));
 		wsprintf(textBuffer, "C L E A R");
-		SetRect(&textRect, 250, 200, 0, 0);
-		g_pClearFont->DrawTextA(NULL, textBuffer, -1, &textRect, DT_NOCLIP, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
+
+		textRect = g_clearPopupRect;
+		textRect.top += 50;
+		textRect.bottom = textRect.top + 60;
+
+		g_pClearFont->DrawTextA(
+			NULL,
+			textBuffer,
+			-1,
+			&textRect,
+			DT_CENTER | DT_TOP,
+			D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
 
 		g_mazeExit.RenderButton(g_pd3dDevice);
 		wsprintf(textBuffer, "e x i t");
-		SetRect(&textRect, 320, 460, 0, 0);
-		g_pExitFont->DrawTextA(NULL, textBuffer, -1, &textRect, DT_NOCLIP, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
+
+		textRect = g_exitButtonRect;
+
+		g_pExitFont->DrawTextA(
+			NULL,
+			textBuffer,
+			-1,
+			&textRect,
+			DT_CENTER | DT_VCENTER | DT_SINGLELINE,
+			D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
 	}
 
 	// 좌상단 UI
@@ -710,30 +875,47 @@ static VOID RenderUi()
 	{
 		g_settingsOverlay.Render(g_pd3dDevice);
 		wsprintf(textBuffer, "P A U S E");
-		SetRect(&textRect, 280, 200, 0, 0);
-		g_pSettingFont->DrawTextA(NULL, textBuffer, -1, &textRect, DT_NOCLIP, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
+
+		textRect = g_pauseOverlayRect;
+		textRect.top += 100;
+		textRect.bottom = textRect.top + 50;
+
+		g_pSettingFont->DrawTextA(
+			NULL,
+			textBuffer,
+			-1,
+			&textRect,
+			DT_CENTER | DT_TOP,
+			D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
 
 		g_mazeExit.RenderButton(g_pd3dDevice);
 		wsprintf(textBuffer, "e x i t");
-		SetRect(&textRect, 320, 460, 0, 0);
-		g_pExitFont->DrawTextA(NULL, textBuffer, -1, &textRect, DT_NOCLIP, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
+
+		textRect = g_exitButtonRect;
+
+		g_pExitFont->DrawTextA(
+			NULL,
+			textBuffer,
+			-1,
+			&textRect,
+			DT_CENTER | DT_VCENTER | DT_SINGLELINE,
+			D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
 	}
 
 	// 자유시점 표시
 	if (g_isNoClipEnabled)
 	{
 		wsprintf(textBuffer, "자유시점 ON");
-		// 텍스트 width 얻는 법: drawtext 시 DT_CALCRECT 설정하면 rect에 맞게 텍스트 크기만 계산
-		// 그걸 활용해서 조절된 rect에서 값을 가져와 width 구하기
+		// 텍스트 너비를 측정해 화면 상단 중앙에 배치한다.
 		SetRect(&textRect, 0, 0, 0, 0);
 		g_pFrameFont->DrawTextA(NULL, textBuffer, -1, &textRect, DT_CALCRECT, D3DCOLOR_ARGB(0, 0, 0, 0));
 		int width = textRect.right - textRect.left;
-		SetRect(&textRect, kWindowWidth / 2 - width / 2, 0, 0, 0);
+		SetRect(&textRect, clientWidth / 2 - width / 2, 0, 0, 0);
 		g_pFrameFont->DrawTextA(NULL, textBuffer, -1, &textRect, DT_NOCLIP, D3DCOLOR_XRGB(255, 0, 0));
 	}
 
 	// 성능 지표 표시
-	SetRect(&textRect, kWindowWidth - 220, 0, kWindowWidth - 20, 50);
+	SetRect(&textRect, clientWidth - 220, 0, clientWidth - 20, 50);
 	std::snprintf(
 		textBuffer,
 		sizeof(textBuffer),
@@ -799,8 +981,15 @@ static VOID ConfigureCamera()
 		g_pd3dDevice->SetTransform(D3DTS_VIEW, &viewMatrix);
 	}
 
+	FLOAT aspectRatio = 1.0f;
+
+	if (g_clientWidth > 0 && g_clientHeight > 0)
+	{
+		aspectRatio = static_cast<FLOAT>(g_clientWidth) / static_cast<FLOAT>(g_clientHeight);
+	}
+
 	D3DXMATRIX projectionMatrix;
-	D3DXMatrixPerspectiveFovLH(&projectionMatrix, D3DX_PI / 4, 1.0f, 0.1f, 1000.0f);
+	D3DXMatrixPerspectiveFovLH(&projectionMatrix, D3DX_PI / 4, aspectRatio, 0.1f, 1000.0f);
 	g_pd3dDevice->SetTransform(D3DTS_PROJECTION, &projectionMatrix);
 
 	// frustum plane을 계산할, view matrix와 projection matrix의 곱
@@ -975,8 +1164,37 @@ static LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		g_cursorDisplayCount = ShowCursor(FALSE);
 		break;
 
+	case WM_GETMINMAXINFO:
+	{
+		MINMAXINFO* minMaxInfo = reinterpret_cast<MINMAXINFO*>(lParam);
+
+		minMaxInfo->ptMinTrackSize.x = kMinimumWindowTrackWidth;
+		minMaxInfo->ptMinTrackSize.y = kMinimumWindowTrackHeight;
+
+		break;
+	}
+
 	case WM_MOVE:
 		UpdateCursorCenter(hWnd);
+		break;
+
+	case WM_SIZE:
+		if (wParam != SIZE_MINIMIZED)
+		{
+			g_clientWidth = LOWORD(lParam);
+			g_clientHeight = HIWORD(lParam);
+			UpdateUiLayout();
+
+			if (g_clientWidth > 0 &&
+				g_clientHeight > 0 &&
+				g_pd3dDevice != NULL)
+			{
+				// 장치 리셋은 메인 루프에서 처리한다.
+				g_isDeviceResetPending = TRUE;
+			}
+
+			UpdateCursorCenter(hWnd);
+		}
 		break;
 
 	case WM_LBUTTONDOWN:
@@ -1140,6 +1358,12 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 						deltaTimeSeconds = kMaxDeltaTimeSeconds;
 
 					previousFrameCounter = currentFrameCounter;
+
+					if (g_isDeviceResetPending == TRUE)
+					{
+						if (FAILED(ResetD3dDevice()))
+							continue;
+					}
 
 					if (!g_isPlaying || g_isPaused)
 					{

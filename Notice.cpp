@@ -27,7 +27,7 @@ VOID Notice::Initialize(D3DXVECTOR3 position)
 
 VOID Notice::CreateVertexBuffer(LPDIRECT3DDEVICE9 device)
 {
-	device->CreateVertexBuffer(sizeof(CustomVertex) * 4, 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &m_noticeVertexBuffer, NULL);
+	device->CreateVertexBuffer(sizeof(CustomVertex) * 4, 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_MANAGED, &m_noticeVertexBuffer, NULL);
 	VOID** noticeVertices;
 	m_noticeVertexBuffer->Lock(0, sizeof(CustomVertex) * 4, (void**)&noticeVertices, 0);
 	memcpy(noticeVertices, m_vertices, sizeof(CustomVertex) * 4);

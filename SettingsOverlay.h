@@ -13,6 +13,7 @@ private:
 	};
 
 public:
+	VOID SetBounds(const RECT& bounds);
 	VOID Render(LPDIRECT3DDEVICE9 device);
 };
 

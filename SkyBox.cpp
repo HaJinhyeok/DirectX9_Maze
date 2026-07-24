@@ -92,7 +92,7 @@ VOID SkyBox::LoadTextures(LPDIRECT3DDEVICE9 device)
 }
 VOID SkyBox::CreateVertexBuffer(LPDIRECT3DDEVICE9 device)
 {
-	device->CreateVertexBuffer(sizeof(m_boxVertices), 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &m_boxVertexBuffer, NULL);
+	device->CreateVertexBuffer(sizeof(m_boxVertices), 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_MANAGED, &m_boxVertexBuffer, NULL);
 	VOID** vertexData;
 	m_boxVertexBuffer->Lock(0, sizeof(m_boxVertices), (void**)&vertexData, 0);
 	memcpy(vertexData, m_boxVertices, sizeof(m_boxVertices));
