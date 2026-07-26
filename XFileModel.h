@@ -13,10 +13,11 @@ private:
 public:
     XFileModel();
     ~XFileModel();
+    VOID ReleaseResources();
 
     XFileModel(const XFileModel&) = delete;
     XFileModel& operator=(const XFileModel&) = delete;
 
-    int Load(LPDIRECT3DDEVICE9 device, char* xFilePath);
+    HRESULT Load(LPDIRECT3DDEVICE9 device, char* xFilePath);
     int Render(LPDIRECT3DDEVICE9 device);
 };

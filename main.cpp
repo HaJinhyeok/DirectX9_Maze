@@ -129,16 +129,28 @@ static VOID ConfigureDeviceRenderStates(LPDIRECT3DDEVICE9 device)
 
 static HRESULT InitializeD3d(HWND windowHandle)
 {
-	if (NULL == (g_pD3D = Direct3DCreate9(D3D_SDK_VERSION)))
+	if (windowHandle == nullptr)
+		return E_INVALIDARG;
+
+	SafeRelease(g_pd3dDevice);
+	SafeRelease(g_pD3D);
+
+	g_pD3D = Direct3DCreate9(D3D_SDK_VERSION);
+
+	if (g_pD3D == nullptr)
 		return E_FAIL;
 
 	D3DCAPS9 deviceCapabilities = {};
-	if (FAILED(g_pD3D->GetDeviceCaps(
+
+	const HRESULT capabilitiesResult = g_pD3D->GetDeviceCaps(
 		D3DADAPTER_DEFAULT,
 		D3DDEVTYPE_HAL,
-		&deviceCapabilities)))
+		&deviceCapabilities);
+
+	if (FAILED(capabilitiesResult))
 	{
-		return E_FAIL;
+		SafeRelease(g_pD3D);
+		return capabilitiesResult;
 	}
 
 	const DWORD vertexProcessingFlag =
@@ -154,14 +166,19 @@ static HRESULT InitializeD3d(HWND windowHandle)
 	g_presentationParameters.EnableAutoDepthStencil = TRUE;
 	g_presentationParameters.AutoDepthStencilFormat = D3DFMT_D16;
 
-	if (FAILED(g_pD3D->CreateDevice(
+	const HRESULT deviceCreationResult = g_pD3D->CreateDevice(
 		D3DADAPTER_DEFAULT,
 		D3DDEVTYPE_HAL,
 		windowHandle,
 		vertexProcessingFlag,
 		&g_presentationParameters,
-		&g_pd3dDevice)))
-		return E_FAIL;
+		&g_pd3dDevice);
+
+	if (FAILED(deviceCreationResult))
+	{
+		SafeRelease(g_pD3D);
+		return deviceCreationResult;
+	}
 
 	ConfigureDeviceRenderStates(g_pd3dDevice);
 
@@ -218,19 +235,32 @@ static VOID UpdateUiLayout()
 	g_mazeExit.SetButtonBounds(g_exitButtonRect);
 }
 
-static VOID InitializeGameComponents()
+static HRESULT InitializeGameComponents()
 {
 	InitializeInput();
 	g_fpsCounter.Initialize();
-	// skybox texture load
-	g_skyBox.LoadTextures(g_pd3dDevice);
-	g_skyBox.CreateVertexBuffer(g_pd3dDevice);
-	// tiger initialization
-	g_tiger.Load(g_pd3dDevice, g_tigerModelPath);
+
+	const HRESULT skyBoxTextureResult = g_skyBox.LoadTextures(g_pd3dDevice);
+
+	if (FAILED(skyBoxTextureResult))
+		return skyBoxTextureResult;
+
+	const HRESULT skyBoxBufferResult = g_skyBox.CreateVertexBuffer(g_pd3dDevice);
+
+	if (FAILED(skyBoxBufferResult))
+		return skyBoxBufferResult;
+
+	const HRESULT tigerLoadResult = g_tiger.Load(g_pd3dDevice, g_tigerModelPath);
+
+	if (FAILED(tigerLoadResult))
+		return tigerLoadResult;
+
 	g_tiger.SetPosition(D3DXVECTOR3(55.0f, 5.0f, 65.0f));
 	g_tiger.SetLookAt(g_player.GetPosition());
 
 	UpdateUiLayout();
+
+	return S_OK;
 }
 
 static VOID ConfigureDefaultMaterial()
@@ -244,14 +274,61 @@ static VOID ConfigureDefaultMaterial()
 	g_pd3dDevice->SetMaterial(&material);
 }
 
-static VOID CreateFonts()
+static HRESULT CreateFontResource(INT height, LPD3DXFONT* font)
 {
-	// font
-	D3DXCreateFont(g_pd3dDevice, 50, 0, FW_NORMAL, 1, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Arial", &g_pClearFont);
-	D3DXCreateFont(g_pd3dDevice, 40, 0, FW_NORMAL, 1, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Arial", &g_pSettingFont);
-	D3DXCreateFont(g_pd3dDevice, 30, 0, FW_NORMAL, 1, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Arial", &g_pExitFont);
-	D3DXCreateFont(g_pd3dDevice, 20, 0, FW_NORMAL, 1, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Arial", &g_pTestFont);
-	D3DXCreateFont(g_pd3dDevice, 25, 0, FW_NORMAL, 1, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Arial", &g_pFrameFont);
+	if (font == nullptr)
+		return E_INVALIDARG;
+
+	SafeRelease(*font);
+
+	return D3DXCreateFont(
+		g_pd3dDevice,
+		height,
+		0,
+		FW_NORMAL,
+		1,
+		FALSE,
+		DEFAULT_CHARSET,
+		OUT_DEFAULT_PRECIS,
+		DEFAULT_QUALITY,
+		DEFAULT_PITCH | FF_DONTCARE,
+		"Arial",
+		font);
+}
+
+static HRESULT CreateFonts()
+{
+	const HRESULT clearFontResult =
+		CreateFontResource(50, &g_pClearFont);
+
+	if (FAILED(clearFontResult))
+		return clearFontResult;
+
+	const HRESULT settingFontResult =
+		CreateFontResource(40, &g_pSettingFont);
+
+	if (FAILED(settingFontResult))
+		return settingFontResult;
+
+	const HRESULT exitFontResult =
+		CreateFontResource(30, &g_pExitFont);
+
+	if (FAILED(exitFontResult))
+		return exitFontResult;
+
+	const HRESULT testFontResult =
+		CreateFontResource(20, &g_pTestFont);
+
+	if (FAILED(testFontResult))
+		return testFontResult;
+
+	const HRESULT frameFontResult =
+		CreateFontResource(25, &g_pFrameFont);
+
+	if (FAILED(frameFontResult))
+		return frameFontResult;
+
+	return S_OK;
 }
 
 static VOID NotifyFontsLostDevice()
@@ -327,32 +404,129 @@ static HRESULT ResetD3dDevice()
 	return S_OK;
 }
 
-static VOID LoadSceneTextures()
+static HRESULT LoadTextureResource(const char* path, LPDIRECT3DTEXTURE9* texture)
 {
-	D3DXCreateTextureFromFile(g_pd3dDevice, kTileTexturePath, &g_pTileTexture);
-	D3DXCreateTextureFromFile(g_pd3dDevice, kWallTexturePath, &g_pWallTexture);
-	D3DXCreateTextureFromFile(g_pd3dDevice, kGrassTexturePath, &g_pGrassTexture);
-	D3DXCreateTextureFromFileEx(g_pd3dDevice, kNoticeTexturePath,
-		D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN,
-		D3DPOOL_MANAGED, D3DX_FILTER_TRIANGLE | D3DX_FILTER_MIRROR,
+	if (path == nullptr || texture == nullptr)
+		return E_INVALIDARG;
+
+	SafeRelease(*texture);
+
+	return D3DXCreateTextureFromFile(
+		g_pd3dDevice,
+		path,
+		texture);
+}
+
+static HRESULT LoadSceneTextures()
+{
+	HRESULT textureResult =
+		LoadTextureResource(kTileTexturePath, &g_pTileTexture);
+
+	if (FAILED(textureResult))
+		return textureResult;
+
+	textureResult =
+		LoadTextureResource(kWallTexturePath, &g_pWallTexture);
+
+	if (FAILED(textureResult))
+		return textureResult;
+
+	textureResult =
+		LoadTextureResource(kGrassTexturePath, &g_pGrassTexture);
+
+	if (FAILED(textureResult))
+		return textureResult;
+
+	SafeRelease(g_pNoticeTexture);
+
+	textureResult = D3DXCreateTextureFromFileEx(
+		g_pd3dDevice,
+		kNoticeTexturePath,
+		D3DX_DEFAULT,
+		D3DX_DEFAULT,
+		D3DX_DEFAULT,
+		0,
+		D3DFMT_UNKNOWN,
+		D3DPOOL_MANAGED,
+		D3DX_FILTER_TRIANGLE | D3DX_FILTER_MIRROR,
 		D3DX_FILTER_TRIANGLE | D3DX_FILTER_MIRROR,
 		kTextureColorKey,
-		NULL, NULL,
+		nullptr,
+		nullptr,
 		&g_pNoticeTexture);
-	D3DXCreateTextureFromFile(g_pd3dDevice, kExitTexturePath, &g_pExitTexture);
-	D3DXCreateCubeTextureFromFile(g_pd3dDevice, kSkyBoxTexturePath, &g_pSkyboxTexture);
+
+	if (FAILED(textureResult))
+		return textureResult;
+
+	textureResult =
+		LoadTextureResource(kExitTexturePath, &g_pExitTexture);
+
+	if (FAILED(textureResult))
+		return textureResult;
+
+	SafeRelease(g_pSkyboxTexture);
+
+	textureResult = D3DXCreateCubeTextureFromFile(
+		g_pd3dDevice,
+		kSkyBoxTexturePath,
+		&g_pSkyboxTexture);
+
+	if (FAILED(textureResult))
+		return textureResult;
+
+	return S_OK;
 }
 
-static VOID CreatePrimitiveMeshes()
+static HRESULT CreatePrimitiveMeshes()
 {
-	// 총알과 탑뷰 플레이어 표시에 사용할 구체 메시 생성
-	D3DXCreateSphere(g_pd3dDevice, kBulletRadius, 10, 10, &g_pBulletSphere, NULL);
-	D3DXCreateSphere(g_pd3dDevice, kPlayerRadius, 10, 10, &g_pPlayerSphere, NULL);
-	// 스카이박스 렌더링에 사용할 큐브 메시 생성
-	D3DXCreateBox(g_pd3dDevice, kSkyBoxSize, kSkyBoxSize, kSkyBoxSize, &g_pSkyboxCube, NULL);
+	SafeRelease(g_pBulletSphere);
+	SafeRelease(g_pPlayerSphere);
+	SafeRelease(g_pSkyboxCube);
+
+	const HRESULT bulletMeshResult = D3DXCreateSphere(
+		g_pd3dDevice,
+		kBulletRadius,
+		10,
+		10,
+		&g_pBulletSphere,
+		nullptr);
+
+	if (FAILED(bulletMeshResult))
+		return bulletMeshResult;
+
+	const HRESULT playerMeshResult = D3DXCreateSphere(
+		g_pd3dDevice,
+		kPlayerRadius,
+		10,
+		10,
+		&g_pPlayerSphere,
+		nullptr);
+
+	if (FAILED(playerMeshResult))
+	{
+		SafeRelease(g_pBulletSphere);
+		return playerMeshResult;
+	}
+
+	const HRESULT skyBoxMeshResult = D3DXCreateBox(
+		g_pd3dDevice,
+		kSkyBoxSize,
+		kSkyBoxSize,
+		kSkyBoxSize,
+		&g_pSkyboxCube,
+		nullptr);
+
+	if (FAILED(skyBoxMeshResult))
+	{
+		SafeRelease(g_pPlayerSphere);
+		SafeRelease(g_pBulletSphere);
+		return skyBoxMeshResult;
+	}
+
+	return S_OK;
 }
 
-static VOID CreateMazeGeometry()
+static HRESULT CreateMazeGeometry()
 {
 	int i;
 
@@ -361,28 +535,35 @@ static VOID CreateMazeGeometry()
 
 	const UINT mazeVertexDataSize = sizeof(CustomVertex) * g_mazeWallCount * kWallBlockVertexCount;
 
-	g_pd3dDevice->CreateVertexBuffer(mazeVertexDataSize, 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_MANAGED, &g_pMazeVB, NULL);
-	VOID* mazeVertexData = nullptr;
-	g_pMazeVB->Lock(0, mazeVertexDataSize, &mazeVertexData, 0);
-	memcpy(mazeVertexData, g_mazeWallVertices, mazeVertexDataSize);
-	g_pMazeVB->Unlock();
+	const HRESULT mazeBufferResult = CreateManagedVertexBuffer(
+		g_pd3dDevice,
+		g_mazeWallVertices,
+		mazeVertexDataSize,
+		D3DFVF_CUSTOMVERTEX,
+		&g_pMazeVB);
+
+	if (FAILED(mazeBufferResult))
+		return mazeBufferResult;
 
 	for (i = 0; i < g_notices[0].GetNoticeCount(); i++)
 	{
-		g_notices[i].CreateVertexBuffer(g_pd3dDevice);
+		const HRESULT noticeBufferResult = g_notices[i].CreateVertexBuffer(g_pd3dDevice);
+
+		if (FAILED(noticeBufferResult))
+			return noticeBufferResult;
 	}
 
-	g_mazeExit.CreateVertexBuffer(g_pd3dDevice);
+	return g_mazeExit.CreateVertexBuffer(g_pd3dDevice);
 }
 
-static VOID CreateTileGeometry()
+static HRESULT CreateTileGeometry()
 {
 	int i, j;
 	// 타일 정점 데이터 생성
 	for (i = 0; i < kMazeRowCount * kMazeColumnCount; i++)
 	{
-		FLOAT tileX = (FLOAT)((i % kMazeColumnCount - kMazeColumnCount / 2.0f) * kTileSize);
-		FLOAT tileZ = (FLOAT)((kMazeRowCount / 2.0f - i / kMazeColumnCount) * kTileSize);
+		const FLOAT tileX = (FLOAT)((i % kMazeColumnCount - kMazeColumnCount / 2.0f) * kTileSize);
+		const FLOAT tileZ = (FLOAT)((kMazeRowCount / 2.0f - i / kMazeColumnCount) * kTileSize);
 		// D3DFVF_NORMAL: 조명 계산에 사용할 타일의 위쪽 법선
 		for (j = 0; j < 4; j++)
 		{
@@ -410,21 +591,32 @@ static VOID CreateTileGeometry()
 		g_tileIndices[j][1] = i * 4 + 2;
 		g_tileIndices[j++][2] = i * 4 + 3;
 	}
-	// 타일 정점 및 인덱스 버퍼 생성
-	g_pd3dDevice->CreateVertexBuffer(sizeof(g_tileVertices), 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_MANAGED, &g_pTileVB, NULL);
-	VOID* tileVertexData;
-	g_pTileVB->Lock(0, sizeof(g_tileVertices), (void**)&tileVertexData, 0);
-	memcpy(tileVertexData, g_tileVertices, sizeof(g_tileVertices));
-	g_pTileVB->Unlock();
 
-	g_pd3dDevice->CreateIndexBuffer(sizeof(g_tileIndices), 0, D3DFMT_INDEX16, D3DPOOL_MANAGED, &g_pTileIB, NULL);
-	VOID* tileIndexData;
-	g_pTileIB->Lock(0, sizeof(g_tileIndices), (void**)&tileIndexData, 0);
-	memcpy(tileIndexData, g_tileIndices, sizeof(g_tileIndices));
-	g_pTileIB->Unlock();
+	// 타일 정점 및 인덱스 버퍼 생성
+	const HRESULT tileVertexBufferResult = CreateManagedVertexBuffer(
+		g_pd3dDevice,
+		g_tileVertices,
+		sizeof(g_tileVertices),
+		D3DFVF_CUSTOMVERTEX,
+		&g_pTileVB);
+
+	if (FAILED(tileVertexBufferResult))
+		return tileVertexBufferResult;
+
+	const HRESULT tileIndexBufferResult = CreateManagedIndexBuffer(
+		g_pd3dDevice,
+		g_tileIndices,
+		sizeof(g_tileIndices),
+		D3DFMT_INDEX16,
+		&g_pTileIB);
+
+	if (FAILED(tileIndexBufferResult))
+		return tileIndexBufferResult;
+
+	return S_OK;
 }
 
-static VOID CreateOuterWallGeometry()
+static HRESULT CreateOuterWallGeometry()
 {
 	int i, j;
 	// 위쪽 면
@@ -491,15 +683,16 @@ static VOID CreateOuterWallGeometry()
 		g_outerWallVertices[3][i * 4 + 2].textureCoordinate = D3DXVECTOR2(1.0f, 1.0f);
 		g_outerWallVertices[3][i * 4 + 3].textureCoordinate = D3DXVECTOR2(0.0f, 1.0f);
 	}
-	// 외벽 정점 버퍼 생성
-	g_pd3dDevice->CreateVertexBuffer(sizeof(g_outerWallVertices), 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_MANAGED, &g_pWallVB, NULL);
-	VOID* wallVertexData;
-	g_pWallVB->Lock(0, sizeof(g_outerWallVertices), (void**)&wallVertexData, 0);
-	memcpy(wallVertexData, g_outerWallVertices, sizeof(g_outerWallVertices));
-	g_pWallVB->Unlock();
+
+	return CreateManagedVertexBuffer(
+		g_pd3dDevice,
+		g_outerWallVertices,
+		sizeof(g_outerWallVertices),
+		D3DFVF_CUSTOMVERTEX,
+		&g_pWallVB);
 }
 
-static VOID CreateUpperWallGeometry()
+static HRESULT CreateUpperWallGeometry()
 {
 	int i, j;
 	// +Z 경계의 상단 면
@@ -566,26 +759,55 @@ static VOID CreateUpperWallGeometry()
 		g_upperWallVertices[3][i * 4 + 2].textureCoordinate = D3DXVECTOR2(1.0f, 1.0f);
 		g_upperWallVertices[3][i * 4 + 3].textureCoordinate = D3DXVECTOR2(0.0f, 1.0f);
 	}
-	// 상단 벽 정점 버퍼 생성
-	g_pd3dDevice->CreateVertexBuffer(sizeof(g_upperWallVertices), 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_MANAGED, &g_pWallVB2, NULL);
-	VOID* upperWallVertexData;
-	g_pWallVB2->Lock(0, sizeof(g_upperWallVertices), (void**)&upperWallVertexData, 0);
-	memcpy(upperWallVertexData, g_upperWallVertices, sizeof(g_upperWallVertices));
-	g_pWallVB2->Unlock();
+
+	return CreateManagedVertexBuffer(
+		g_pd3dDevice,
+		g_upperWallVertices,
+		sizeof(g_upperWallVertices),
+		D3DFVF_CUSTOMVERTEX,
+		&g_pWallVB2);
 }
 
-static VOID InitializeResources()
+static HRESULT InitializeResources()
 {
-	InitializeGameComponents();
-	ConfigureDefaultMaterial();
-	CreatePrimitiveMeshes();
-	CreateFonts();
-	LoadSceneTextures();
+	HRESULT initializationResult = InitializeGameComponents();
 
-	CreateMazeGeometry();
-	CreateTileGeometry();
-	CreateOuterWallGeometry();
-	CreateUpperWallGeometry();
+	if (FAILED(initializationResult))
+		return initializationResult;
+
+	ConfigureDefaultMaterial();
+
+	initializationResult = CreatePrimitiveMeshes();
+
+	if (FAILED(initializationResult))
+		return initializationResult;
+
+	initializationResult = CreateFonts();
+
+	if (FAILED(initializationResult))
+		return initializationResult;
+
+	initializationResult = LoadSceneTextures();
+
+	if (FAILED(initializationResult))
+		return initializationResult;
+
+	initializationResult = CreateMazeGeometry();
+
+	if (FAILED(initializationResult))
+		return initializationResult;
+
+	initializationResult = CreateTileGeometry();
+
+	if (FAILED(initializationResult))
+		return initializationResult;
+
+	initializationResult = CreateOuterWallGeometry();
+
+	if (FAILED(initializationResult))
+		return initializationResult;
+
+	return CreateUpperWallGeometry();
 }
 
 static VOID ReleasePrimitiveMeshes()
@@ -617,9 +839,9 @@ static VOID ReleaseSceneTextures()
 static VOID ReleaseGeometryBuffers()
 {
 	g_mazeExit.ReleaseVertexBuffer();
-	for (int i = 0; i < g_notices[0].GetNoticeCount(); i++)
+	for (Notice& notice : g_notices)
 	{
-		g_notices[i].ReleaseVertexBuffer();
+		notice.ReleaseVertexBuffer();
 	}
 	SafeRelease(g_pMazeVB);
 	SafeRelease(g_pWallVB2);
@@ -630,6 +852,9 @@ static VOID ReleaseGeometryBuffers()
 
 static VOID ReleaseResources()
 {
+	g_skyBox.ReleaseResources();
+	g_tiger.ReleaseResources();
+
 	ReleaseGeometryBuffers();
 	ReleaseSceneTextures();
 	ReleaseFonts();
@@ -1266,6 +1491,11 @@ static LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_DESTROY:
+		while (g_cursorDisplayCount < 0)
+		{
+			g_cursorDisplayCount = ShowCursor(TRUE);
+		}
+
 		ReleaseResources();
 		PostQuitMessage(0);
 		return 0;
@@ -1317,73 +1547,93 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 		NULL);
 
 	// Direct3D 초기화
-	if (SUCCEEDED(InitializeD3d(windowHandle)))
+	HRESULT initializationResult = InitializeD3d(windowHandle);
+
+	if (SUCCEEDED(initializationResult))
+		initializationResult = InitializeResources();
+
+	if (SUCCEEDED(initializationResult))
 	{
+		// 윈도우 출력
+		ShowWindow(windowHandle, SW_SHOWDEFAULT);
+		UpdateWindow(windowHandle);
+		// 메시지 루프
+		MSG msg;
+		ZeroMemory(&msg, sizeof(msg));
+
+		LARGE_INTEGER performanceFrequency;
+		LARGE_INTEGER previousFrameCounter;
+
+		QueryPerformanceFrequency(&performanceFrequency);
+		QueryPerformanceCounter(&previousFrameCounter);
+
+		while (msg.message != WM_QUIT)
 		{
-			InitializeResources();
-			// 윈도우 출력
-			ShowWindow(windowHandle, SW_SHOWDEFAULT);
-			UpdateWindow(windowHandle);
-			// 메시지 루프
-			MSG msg;
-			ZeroMemory(&msg, sizeof(msg));
-
-			LARGE_INTEGER performanceFrequency;
-			LARGE_INTEGER previousFrameCounter;
-
-			QueryPerformanceFrequency(&performanceFrequency);
-			QueryPerformanceCounter(&previousFrameCounter);
-
-			while (msg.message != WM_QUIT)
+			if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
 			{
-				if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+			else
+			{
+				LARGE_INTEGER currentFrameCounter;
+				QueryPerformanceCounter(&currentFrameCounter);
+
+				const LONGLONG elapsedCounts = currentFrameCounter.QuadPart - previousFrameCounter.QuadPart;
+
+				const FLOAT frameTimeSeconds = static_cast<FLOAT>(
+					static_cast<double>(elapsedCounts) /
+					static_cast<double>(performanceFrequency.QuadPart));
+
+				FLOAT deltaTimeSeconds = frameTimeSeconds;
+
+				if (deltaTimeSeconds > kMaxDeltaTimeSeconds)
+					deltaTimeSeconds = kMaxDeltaTimeSeconds;
+
+				previousFrameCounter = currentFrameCounter;
+
+				if (g_isDeviceResetPending == TRUE)
 				{
-					TranslateMessage(&msg);
-					DispatchMessage(&msg);
+					if (FAILED(ResetD3dDevice()))
+						continue;
+				}
+
+				if (!g_isPlaying || g_isPaused)
+				{
+					while (g_cursorDisplayCount < 0)
+						g_cursorDisplayCount = ShowCursor(TRUE);
 				}
 				else
 				{
-					LARGE_INTEGER currentFrameCounter;
-					QueryPerformanceCounter(&currentFrameCounter);
-
-					const LONGLONG elapsedCounts = currentFrameCounter.QuadPart - previousFrameCounter.QuadPart;
-
-					const FLOAT frameTimeSeconds = static_cast<FLOAT>(
-						static_cast<double>(elapsedCounts) /
-						static_cast<double>(performanceFrequency.QuadPart));
-
-					FLOAT deltaTimeSeconds = frameTimeSeconds;
-
-					if (deltaTimeSeconds > kMaxDeltaTimeSeconds)
-						deltaTimeSeconds = kMaxDeltaTimeSeconds;
-
-					previousFrameCounter = currentFrameCounter;
-
-					if (g_isDeviceResetPending == TRUE)
-					{
-						if (FAILED(ResetD3dDevice()))
-							continue;
-					}
-
-					if (!g_isPlaying || g_isPaused)
-					{
-						while (g_cursorDisplayCount < 0)
-							g_cursorDisplayCount = ShowCursor(TRUE);
-					}
-					else
-					{
-						while (g_cursorDisplayCount >= 0)
-							g_cursorDisplayCount = ShowCursor(FALSE);
-					}
-
-					// 입력 상태 갱신 -> 게임 갱신 -> 렌더링
-					UpdateInput();
-					UpdateGame(deltaTimeSeconds);
-					Render();
-					g_fpsCounter.Update(frameTimeSeconds);
+					while (g_cursorDisplayCount >= 0)
+						g_cursorDisplayCount = ShowCursor(FALSE);
 				}
+
+				// 입력 상태 갱신 -> 게임 갱신 -> 렌더링
+				UpdateInput();
+				UpdateGame(deltaTimeSeconds);
+				Render();
+				g_fpsCounter.Update(frameTimeSeconds);
 			}
 		}
+	}
+	else
+	{
+		while (g_cursorDisplayCount < 0)
+		{
+			g_cursorDisplayCount = ShowCursor(TRUE);
+		}
+
+		MessageBox(
+			windowHandle,
+			"게임 초기화에 실패했습니다.",
+			kProgramName,
+			MB_OK | MB_ICONERROR);
+
+		ReleaseResources();
+
+		if (windowHandle != NULL)
+			DestroyWindow(windowHandle);
 	}
 
 	// 등록된 클래스 소거

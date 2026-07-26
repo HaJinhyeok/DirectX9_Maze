@@ -13,9 +13,8 @@ private:
 public:
 	SkyBox();
 	~SkyBox();
-	VOID LoadTextures(LPDIRECT3DDEVICE9 device);
-	VOID CreateVertexBuffer(LPDIRECT3DDEVICE9 device);
+	VOID ReleaseResources();
+	HRESULT LoadTextures(LPDIRECT3DDEVICE9 device);
+	HRESULT CreateVertexBuffer(LPDIRECT3DDEVICE9 device);
 	VOID Render(LPDIRECT3DDEVICE9 device);
-	
 };
-

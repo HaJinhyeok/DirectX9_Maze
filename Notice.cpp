@@ -25,13 +25,15 @@ VOID Notice::Initialize(D3DXVECTOR3 position)
 	s_noticeCount++;
 }
 
-VOID Notice::CreateVertexBuffer(LPDIRECT3DDEVICE9 device)
+HRESULT Notice::CreateVertexBuffer(LPDIRECT3DDEVICE9 device)
 {
-	device->CreateVertexBuffer(sizeof(CustomVertex) * 4, 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_MANAGED, &m_noticeVertexBuffer, NULL);
-	VOID** noticeVertices;
-	m_noticeVertexBuffer->Lock(0, sizeof(CustomVertex) * 4, (void**)&noticeVertices, 0);
-	memcpy(noticeVertices, m_vertices, sizeof(CustomVertex) * 4);
-	m_noticeVertexBuffer->Unlock();
+	return CreateManagedVertexBuffer(
+		device,
+		m_vertices,
+		sizeof(m_vertices),
+		D3DFVF_CUSTOMVERTEX,
+		&m_noticeVertexBuffer
+	);
 }
 
 VOID Notice::UpdateFacing(D3DXVECTOR3 playerPosition)

@@ -30,7 +30,7 @@ private:
 
 public:
 	int Render(LPDIRECT3DDEVICE9 device);
-	int Load(LPDIRECT3DDEVICE9 device, char* xFilePath);
+	HRESULT Load(LPDIRECT3DDEVICE9 device, char* xFilePath);
 	VOID Move(const char(*map)[kMazeColumnCount + 1], FLOAT deltaTimeSeconds);
 	VOID Rotate(BOOL clockwise);
 
@@ -65,5 +65,6 @@ public:
 
 	Tiger(D3DXVECTOR3 position);
 	virtual ~Tiger();
+	VOID ReleaseResources();
 };
 

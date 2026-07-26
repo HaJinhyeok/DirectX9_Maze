@@ -10,6 +10,11 @@ XFileModel::XFileModel() : m_mesh(nullptr), m_materials(nullptr), m_textures(nul
 
 XFileModel::~XFileModel()
 {
+	ReleaseResources();
+}
+
+VOID XFileModel::ReleaseResources()
+{
 	SafeRelease(m_mesh);
 
 	if (m_textures != nullptr)
@@ -25,17 +30,45 @@ XFileModel::~XFileModel()
 
 	delete[] m_materials;
 	m_materials = nullptr;
+	m_materialCount = 0;
 }
 
-int XFileModel::Load(LPDIRECT3DDEVICE9 device, char* xFilePath)
+HRESULT XFileModel::Load(LPDIRECT3DDEVICE9 device, char* xFilePath)
 {
-	LPD3DXBUFFER materialBuffer;
-	if (FAILED(D3DXLoadMeshFromX(xFilePath, D3DXMESH_SYSTEMMEM, device, NULL,
-		&materialBuffer, NULL, &m_materialCount, &m_mesh)))
+	if (device == nullptr || xFilePath == nullptr)
+		return E_INVALIDARG;
+
+	ReleaseResources();
+
+	LPD3DXBUFFER materialBuffer = nullptr;
+
+	const HRESULT meshLoadResult = D3DXLoadMeshFromX(
+		xFilePath,
+		D3DXMESH_SYSTEMMEM,
+		device,
+		nullptr,
+		&materialBuffer,
+		nullptr,
+		&m_materialCount,
+		&m_mesh);
+
+	if (FAILED(meshLoadResult))
 	{
+		SafeRelease(materialBuffer);
+		ReleaseResources();
+
 		MessageBox(NULL, "X파일 로드 실패", "메쉬로드 실패", MB_OK);
+
+		return meshLoadResult;
+	}
+
+	if (materialBuffer == nullptr || m_materialCount == 0)
+	{
+		SafeRelease(materialBuffer);
+		ReleaseResources();
 		return E_FAIL;
 	}
+
 	// 텍스쳐 파일이 다른 폴더에 있을 경우를 위하여 텍스쳐 패스 위치 닫기
 	char texturePath[256];
 	// 현재 폴더의 경우
@@ -67,13 +100,30 @@ int XFileModel::Load(LPDIRECT3DDEVICE9 device, char* xFilePath)
 			lstrlen(d3dxMaterials[i].pTextureFilename) > 0)
 		{
 			// 텍스쳐 생성
-			if (FAILED(D3DXCreateTextureFromFile(device, d3dxMaterials[i].pTextureFilename, &m_textures[i])))
+			HRESULT textureLoadResult = D3DXCreateTextureFromFile(
+				device,
+				d3dxMaterials[i].pTextureFilename,
+				&m_textures[i]);
+
+			if (FAILED(textureLoadResult))
 			{
 				// 경로 + 텍스쳐 파일 이름 만들기
 				char fallbackTexturePath[256];
 				wsprintf(fallbackTexturePath, "%s%s", texturePath, d3dxMaterials[i].pTextureFilename);
-				m_textures[i] = NULL;
-				MessageBox(NULL, "Could not find texture map", "D3D_TEST.exe", MB_OK);
+
+				SafeRelease(m_textures[i]);
+
+				textureLoadResult = D3DXCreateTextureFromFile(
+					device,
+					fallbackTexturePath, &m_textures[i]);
+
+				if (FAILED(textureLoadResult))
+				{
+					SafeRelease(m_textures[i]);
+
+					// 텍스처가 없어도 재질 색상으로 렌더링할 수 있으므로 로딩은 계속한다.
+					MessageBox(NULL, "Could not find texture map", "D3D_MyFPS", MB_OK | MB_ICONWARNING);
+				}
 			}
 		}
 	}

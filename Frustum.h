@@ -12,4 +12,3 @@ public:
 	VOID Update(D3DXMATRIX* viewProjectionMatrix);
 	BOOL IntersectsSphere(D3DXVECTOR3* center, FLOAT radius);
 };
-

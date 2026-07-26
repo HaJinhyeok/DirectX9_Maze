@@ -21,7 +21,12 @@ Tiger::Tiger(D3DXVECTOR3 position)
 
 Tiger::~Tiger() = default;
 
-int Tiger::Load(LPDIRECT3DDEVICE9 device, char* xFilePath)
+VOID Tiger::ReleaseResources()
+{
+	m_model.ReleaseResources();
+}
+
+HRESULT Tiger::Load(LPDIRECT3DDEVICE9 device, char* xFilePath)
 {
 	return m_model.Load(device, xFilePath);
 }

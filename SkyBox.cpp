@@ -72,32 +72,64 @@ SkyBox::SkyBox()
 		}
 	}
 }
+
 SkyBox::~SkyBox()
+{
+	ReleaseResources();
+}
+
+VOID SkyBox::ReleaseResources()
 {
 	for (int i = 0; i < 6; i++)
 	{
 		SafeRelease(m_boxTextures[i]);
 	}
+
 	SafeRelease(m_boxVertexBuffer);
 }
-VOID SkyBox::LoadTextures(LPDIRECT3DDEVICE9 device)
+
+HRESULT SkyBox::LoadTextures(LPDIRECT3DDEVICE9 device)
 {
-	// 텍스처 배열 순서: 앞, 뒤, 왼쪽, 오른쪽, 위, 아래
-	D3DXCreateTextureFromFile(device, "Daylight Box_Pieces/Daylight Box_Front.bmp", &m_boxTextures[0]);
-	D3DXCreateTextureFromFile(device, "Daylight Box_Pieces/Daylight Box_Back.bmp", &m_boxTextures[1]);
-	D3DXCreateTextureFromFile(device, "Daylight Box_Pieces/Daylight Box_Left.bmp", &m_boxTextures[2]);
-	D3DXCreateTextureFromFile(device, "Daylight Box_Pieces/Daylight Box_Right.bmp", &m_boxTextures[3]);
-	D3DXCreateTextureFromFile(device, "Daylight Box_Pieces/Daylight Box_Top.bmp", &m_boxTextures[4]);
-	D3DXCreateTextureFromFile(device, "Daylight Box_Pieces/Daylight Box_Bottom.bmp", &m_boxTextures[5]);
+	const char* const texturePaths[] =
+	{
+		"Daylight Box_Pieces/Daylight Box_Front.bmp",
+		"Daylight Box_Pieces/Daylight Box_Back.bmp",
+		"Daylight Box_Pieces/Daylight Box_Left.bmp",
+		"Daylight Box_Pieces/Daylight Box_Right.bmp",
+		"Daylight Box_Pieces/Daylight Box_Top.bmp",
+		"Daylight Box_Pieces/Daylight Box_Bottom.bmp"
+	};
+
+	for (int i = 0; i < 6; i++)
+	{
+		SafeRelease(m_boxTextures[i]);
+
+		const HRESULT textureResult = D3DXCreateTextureFromFile(device, texturePaths[i], &m_boxTextures[i]);
+
+		if (FAILED(textureResult))
+		{
+			for (int releaseIndex = 0; releaseIndex < 6; releaseIndex++)
+			{
+				SafeRelease(m_boxTextures[releaseIndex]);
+			}
+
+			return textureResult;
+		}
+	}
+
+	return S_OK;
 }
-VOID SkyBox::CreateVertexBuffer(LPDIRECT3DDEVICE9 device)
+
+HRESULT SkyBox::CreateVertexBuffer(LPDIRECT3DDEVICE9 device)
 {
-	device->CreateVertexBuffer(sizeof(m_boxVertices), 0, D3DFVF_CUSTOMVERTEX, D3DPOOL_MANAGED, &m_boxVertexBuffer, NULL);
-	VOID** vertexData;
-	m_boxVertexBuffer->Lock(0, sizeof(m_boxVertices), (void**)&vertexData, 0);
-	memcpy(vertexData, m_boxVertices, sizeof(m_boxVertices));
-	m_boxVertexBuffer->Unlock();
+	return CreateManagedVertexBuffer(
+		device,
+		m_boxVertices,
+		sizeof(m_boxVertices),
+		D3DFVF_CUSTOMVERTEX,
+		&m_boxVertexBuffer);
 }
+
 VOID SkyBox::Render(LPDIRECT3DDEVICE9 device)
 {
 	device->SetStreamSource(0, m_boxVertexBuffer, 0, sizeof(CustomVertex));

@@ -16,7 +16,7 @@ public:
 	static WORD s_noticeCount;
 
 	VOID Initialize(D3DXVECTOR3 position);
-	VOID CreateVertexBuffer(LPDIRECT3DDEVICE9 device);
+	HRESULT CreateVertexBuffer(LPDIRECT3DDEVICE9 device);
 	VOID UpdateFacing(D3DXVECTOR3 playerPosition);
 	VOID Render(LPDIRECT3DDEVICE9 device);
 	VOID ReleaseVertexBuffer();
