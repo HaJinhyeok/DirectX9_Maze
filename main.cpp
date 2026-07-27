@@ -44,7 +44,20 @@ const static D3DXVECTOR3 g_topViewUp(0.0f, 0.0f, 1.0f);
 
 static char g_tigerModelPath[] = "Assets\\Models\\Tiger\\tiger.x";
 
-static BOOL g_isTopViewEnabled = FALSE;
+enum class TopViewMode
+{
+	Disabled,
+	NoticeHint,
+	CullingDebug
+};
+
+static TopViewMode g_topViewMode = TopViewMode::Disabled;
+
+static bool IsTopViewActive() noexcept
+{
+	return g_topViewMode != TopViewMode::Disabled;
+}
+
 static BOOL g_isNoClipEnabled = FALSE;
 static BOOL g_isPaused = FALSE;
 static BOOL g_didPlayerMove = FALSE;
@@ -908,14 +921,16 @@ static VOID HandleFeatureToggleInput()
 		}
 	}
 
-	// camera TopView on/off
-	if (IsKeyPressed('2') == TRUE)
+#ifdef _DEBUG
+	// 컬링 확인용 탑뷰
+	if (IsKeyPressed(VK_F2) == TRUE)
 	{
-		if (g_isTopViewEnabled == FALSE)
-			g_isTopViewEnabled = TRUE;
-		else
-			g_isTopViewEnabled = FALSE;
+		g_topViewMode =
+			g_topViewMode == TopViewMode::CullingDebug
+			? TopViewMode::Disabled
+			: TopViewMode::CullingDebug;
 	}
+#endif // _DEBUG
 
 	// player flashlight on/off
 	if (IsKeyPressed('3') == TRUE)
@@ -980,13 +995,22 @@ static VOID UpdateInteractionState()
 		g_mazeExit.UpdateFacing(g_player.GetPosition());
 	}
 
+	bool isNoticeInRange = false;
+
 	for (int i = 0; i < g_notices[0].GetNoticeCount(); i++)
 	{
 		if (g_notices[i].CanInteract(g_player.GetPosition(), g_isNoClipEnabled) == TRUE)
 		{
-			g_isTopViewEnabled = TRUE;
+			isNoticeInRange = true;
 			break;
 		}
+	}
+
+	if (g_topViewMode != TopViewMode::CullingDebug)
+	{
+		g_topViewMode = isNoticeInRange
+			? TopViewMode::NoticeHint
+			: TopViewMode::Disabled;
 	}
 
 	g_isPlaying = g_mazeExit.CanInteract(g_player.GetPosition(), g_isNoClipEnabled) ? FALSE : TRUE;
@@ -1007,6 +1031,9 @@ static VOID UpdateGame(FLOAT deltaTimeSeconds)
 	// wasd 또는 방향키 : 플레이어 앞뒤좌우 움직임
 	HandleMovementInput(deltaTimeSeconds);
 
+	// 추가 기능 : 1, 3, 4 및 Debug 기능
+	HandleFeatureToggleInput();
+
 	// Notice & Exit rotation
 	UpdateInteractionState();
 
@@ -1015,9 +1042,6 @@ static VOID UpdateGame(FLOAT deltaTimeSeconds)
 
 	// 스페이스
 	HandleJumpInput();
-
-	// 추가 기능 : 1, 2, 3, 4번
-	HandleFeatureToggleInput();
 }
 
 static VOID RenderUi()
@@ -1061,7 +1085,7 @@ static VOID RenderUi()
 	}
 
 	// 좌상단 UI
-	if (g_isTopViewEnabled == FALSE)
+	if (!IsTopViewActive())
 	{
 		g_pd3dDevice->SetTexture(0, NULL);
 		g_pd3dDevice->SetFVF(D3DFVF_UI_VERTEX);
@@ -1069,7 +1093,7 @@ static VOID RenderUi()
 
 		// 조작 안내 UI
 		SetRect(&textRect, 20, 20, 0, 0);
-		wsprintf(textBuffer, " 1: 낮밤 전환\n 2: 탑뷰 on/off\n 3: 손전등 on/off\n 4: 자유시점 on/off\n esc: 일시 정지");
+		wsprintf(textBuffer, " 1: 낮밤 전환\n 3: 손전등 on/off\n 4: 자유시점 on/off\n esc: 일시 정지");
 		g_pTestFont->DrawTextA(NULL, textBuffer, -1, &textRect, DT_NOCLIP, D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f));
 	}
 
@@ -1137,7 +1161,7 @@ static VOID RenderUi()
 static VOID ConfigureLighting()
 {
 	D3DLIGHT9* playerLight = g_player.GetLight();
-	// TODO: g_isTopViewEnabled == TRUE 이면 player의 spot light,
+	// TODO: IsTopViewActive() == true 이면 player의 spot light,
 	// FALSE 이면 하늘 시점에서 point light로 바꿔서 맵 전체가 어느 정도 보이게 하는 것도 좋을듯
 	g_pd3dDevice->SetLight(0, playerLight);
 	if (g_player.IsFlashlightOn() == TRUE)
@@ -1172,7 +1196,7 @@ static VOID ConfigureCamera()
 	D3DXVECTOR3 playerLookAt = g_player.GetLookAt();
 
 	// 1인칭 시점
-	if (g_isTopViewEnabled == FALSE)
+	if (!IsTopViewActive())
 	{
 		D3DXMatrixLookAtLH(&viewMatrix, &playerPosition, &playerLookAt, &kWorldUp);
 		g_pd3dDevice->SetTransform(D3DTS_VIEW, &viewMatrix);
@@ -1199,7 +1223,7 @@ static VOID ConfigureCamera()
 	D3DXMATRIX viewProjectionMatrix;
 
 	// 하늘에서 바라볼 때, 오브젝트의 LookAt matrix를 따로 계산해야함
-	if (g_isTopViewEnabled == TRUE)
+	if (IsTopViewActive())
 	{
 		D3DXMATRIX playerViewMatrix;
 		D3DXMatrixLookAtLH(&playerViewMatrix, &playerPosition, &playerLookAt, &kWorldUp);
@@ -1301,7 +1325,7 @@ static VOID RenderWorld()
 	g_player.RenderBullets(g_pd3dDevice, g_pBulletSphere);
 
 	// 탑뷰에서 플레이어 위치를 구체로 표시
-	if (g_isTopViewEnabled == TRUE)
+	if (IsTopViewActive())
 	{
 		D3DXMATRIX playerWorldMatrix;
 		D3DXMatrixTranslation(&playerWorldMatrix, playerPosition.x, playerPosition.y, playerPosition.z);
@@ -1415,7 +1439,7 @@ static LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	case WM_MOUSEMOVE:
 		GetCursorPos(&g_currentMousePosition);
-		if (!g_isTopViewEnabled && g_isPlaying && !g_isPaused)
+		if (!IsTopViewActive() && g_isPlaying && !g_isPaused)
 		{
 			if (g_currentMousePosition.x > g_cursorCenter.x)
 			{

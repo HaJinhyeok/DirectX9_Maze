@@ -1873,7 +1873,7 @@
 
 ### 시작
 
-- P4-02 추가 정리를 시작하기 전에 현재 구조만 조사했다.
+- P4-02 완료 후 Roadmap의 `P4-03`을 진행 중으로 변경했다.
 - 플레이 기능인 안내판 힌트와 개발 중 컬링 확인 기능이 `g_isTopViewEnabled` 하나를 공유하는 현재 흐름을 조사한다.
 
 ### 현재 구조 조사
@@ -1883,3 +1883,24 @@
 - 카메라, UI, 탑뷰 플레이어 표식과 마우스 회전 차단도 모두 같은 bool을 참조한다.
 - 탑뷰 활성화 이유를 `Disabled`, `NoticeHint`, `CullingDebug`로 구분하는 상태가 필요하다.
 - 개발용 전환은 Debug 빌드에서만 처리하고 조작 안내 UI에는 노출하지 않는 방향으로 진행한다.
+
+### 구현
+
+- `g_isTopViewEnabled` bool을 `Disabled`, `NoticeHint`, `CullingDebug`를 갖는 `TopViewMode`로 교체했다.
+- 카메라, UI, 플레이어 표식과 마우스 회전 조건은 `IsTopViewActive()`로 공통 조회한다.
+- Notice 범위 안에서는 `NoticeHint`, 범위를 벗어나면 `Disabled`로 갱신하되 `CullingDebug`는 접촉 상태와 무관하게 유지한다.
+- 개발용 탑뷰 전환을 Debug 빌드의 `F2`로 옮기고 인게임 조작 안내에서는 제거했다.
+- README에는 `F2`가 Debug 빌드 전용 컬링 확인 기능임을 명시했다.
+- 기능 입력을 상호작용 갱신보다 먼저 처리해 Debug 탑뷰를 끈 프레임에 Notice 상태가 즉시 반영되도록 했다.
+
+### 검증
+
+- 처음에는 `#ifdef DEBUG`를 사용해 Visual Studio Debug 구성에서도 F2 코드가 컴파일되지 않았다.
+- 프로젝트 설정에 정의된 실제 매크로인 `_DEBUG`로 수정한 뒤 F2 전환이 정상 동작함을 사용자가 확인했다.
+- `Debug|x86` 빌드가 경고 0개, 오류 0개로 성공했다.
+- 사용자가 Notice 진입 시 탑뷰 전환, 이탈 시 1인칭 복귀를 확인했다.
+- `CullingDebug` 상태가 Notice 이탈 후에도 유지되고, Notice 범위 안에서 F2를 끄면 `NoticeHint`로 전환된 뒤 이탈 시 해제됨을 확인했다.
+
+### 완료
+
+- 플레이 기능과 개발용 탑뷰가 활성화 이유에 따라 분리되고 Debug 입력이 Release 빌드에서 제외되어 P4-03을 완료로 변경했다.
