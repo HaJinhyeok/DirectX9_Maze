@@ -13,6 +13,14 @@ D3DXVECTOR3 CalculateMidPoint(D3DXVECTOR3 firstPoint, D3DXVECTOR3 secondPoint)
     return D3DXVECTOR3((firstPoint + secondPoint).x / 2, (firstPoint + secondPoint).y / 2, (firstPoint + secondPoint).z / 2);
 }
 
+D3DXVECTOR3 CalculateAabbHalfExtents(D3DXVECTOR3 firstPoint, D3DXVECTOR3 secondPoint)
+{
+    return D3DXVECTOR3(
+        fabsf(secondPoint.x - firstPoint.x) / 2.0f,
+        fabsf(secondPoint.y - firstPoint.y) / 2.0f,
+        fabsf(secondPoint.z - firstPoint.z) / 2.0f);
+}
+
 int GenerateMazeWalls(const char (*map)[kMazeColumnCount + 1], CustomVertex(*mazeVertices)[kWallBlockVertexCount])
 {
     int blockIndex = 0;

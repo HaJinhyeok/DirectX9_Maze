@@ -1222,8 +1222,8 @@ static VOID ConfigureCamera()
 	// frustum plane을 계산할, view matrix와 projection matrix의 곱
 	D3DXMATRIX viewProjectionMatrix;
 
-	// 하늘에서 바라볼 때, 오브젝트의 LookAt matrix를 따로 계산해야함
-	if (IsTopViewActive())
+	// 개발용 탑뷰에서는 플레이어 카메라의 컬링 결과를 표시한다.
+	if (g_topViewMode == TopViewMode::CullingDebug)
 	{
 		D3DXMATRIX playerViewMatrix;
 		D3DXMatrixLookAtLH(&playerViewMatrix, &playerPosition, &playerLookAt, &kWorldUp);
@@ -1248,6 +1248,7 @@ static VOID RenderWorld()
 	D3DXVECTOR3 playerPosition = g_player.GetPosition();
 	// frustum culling 시 타일 중심 좌표 표시용
 	D3DXVECTOR3 tileCenter;
+	D3DXVECTOR3 tileHalfExtents;
 
 	g_pd3dDevice->SetFVF(D3DFVF_CUSTOMVERTEX);
 
@@ -1258,11 +1259,16 @@ static VOID RenderWorld()
 	g_pd3dDevice->SetStreamSource(0, g_pTileVB, 0, sizeof(CustomVertex));
 	g_pd3dDevice->SetIndices(g_pTileIB);
 
-	// 타일: 중심을 감싸는 구로 프러스텀 컬링
+	// 바닥 타일 AABB 프러스텀 컬링
 	for (i = 0; i < kMazeRowCount * kMazeColumnCount; i++)
 	{
-		tileCenter = CalculateMidPoint(g_tileVertices[i * 4].position, g_tileVertices[i * 4 + 2].position);
-		if (g_frustum.IntersectsSphere(&tileCenter, kTileSize / 2 * kSqrt2) == TRUE)
+		const D3DXVECTOR3& firstPoint = g_tileVertices[i * 4].position;
+		const D3DXVECTOR3& oppositePoint = g_tileVertices[i * 4 + 2].position;
+
+		tileCenter = CalculateMidPoint(firstPoint, oppositePoint);
+		tileHalfExtents = CalculateAabbHalfExtents(firstPoint, oppositePoint);
+
+		if (g_frustum.IntersectsAabb(&tileCenter, &tileHalfExtents) == TRUE)
 		{
 			g_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, i * 4, 2);
 		}
@@ -1270,36 +1276,63 @@ static VOID RenderWorld()
 
 	// 외벽과 미로 벽
 	g_pd3dDevice->SetTexture(0, g_pWallTexture);
+
 	g_pd3dDevice->SetStreamSource(0, g_pWallVB, 0, sizeof(CustomVertex));
-	// 외벽 측면 컬링
+	// 외벽 측면 AABB 컬링
 	for (i = 0; i < kMazeRowCount * 4; i++)
 	{
-		tileCenter = CalculateMidPoint(g_outerWallVertices[i / kMazeRowCount][(i * 4) % (kMazeRowCount * 4)].position, g_outerWallVertices[i / kMazeRowCount][(i * 4) % (kMazeRowCount * 4) + 2].position);
-		if (g_frustum.IntersectsSphere(&tileCenter, kTileSize / 2 * kSqrt2) == TRUE)
+		const int sideIndex = i / kMazeRowCount;
+		const int vertexOffset = (i % kMazeRowCount) * kVerticesPerWallFace;
+
+		const D3DXVECTOR3& firstPoint = g_outerWallVertices[sideIndex][vertexOffset].position;
+		const D3DXVECTOR3& oppositePoint = g_outerWallVertices[sideIndex][vertexOffset + 2].position;
+
+
+		tileCenter = CalculateMidPoint(firstPoint, oppositePoint);
+		tileHalfExtents = CalculateAabbHalfExtents(firstPoint, oppositePoint);
+
+		if (g_frustum.IntersectsAabb(&tileCenter, &tileHalfExtents) == TRUE)
 		{
-			g_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, i * 4, 2);
+			g_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, i * kVerticesPerWallFace, 2);
 		}
 	}
-	// 외벽 상단 컬링
+
 	g_pd3dDevice->SetStreamSource(0, g_pWallVB2, 0, sizeof(CustomVertex));
+	// 외벽 상단 AABB 컬링
 	for (i = 0; i < kMazeRowCount * 4; i++)
 	{
-		tileCenter = CalculateMidPoint(g_upperWallVertices[i / kMazeRowCount][(i * 4) % (kMazeRowCount * 4)].position, g_upperWallVertices[i / kMazeRowCount][(i * 4) % (kMazeRowCount * 4) + 2].position);
-		if (g_frustum.IntersectsSphere(&tileCenter, kTileSize / 2 * kSqrt2) == TRUE)
+		const int sideIndex = i / kMazeRowCount;
+		const int vertexOffset = (i % kMazeRowCount) * kVerticesPerWallFace;
+
+		const D3DXVECTOR3& firstPoint = g_upperWallVertices[sideIndex][vertexOffset].position;
+		const D3DXVECTOR3& oppositePoint = g_upperWallVertices[sideIndex][vertexOffset + 2].position;
+
+		tileCenter = CalculateMidPoint(firstPoint, oppositePoint);
+		tileHalfExtents = CalculateAabbHalfExtents(firstPoint, oppositePoint);
+
+		if (g_frustum.IntersectsAabb(&tileCenter, &tileHalfExtents) == TRUE)
 		{
-			g_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, i * 4, 2);
+			g_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, i * kVerticesPerWallFace, 2);
 		}
 	}
-	// 미로 내부 벽 컬링
+
 	g_pd3dDevice->SetStreamSource(0, g_pMazeVB, 0, sizeof(CustomVertex));
+	// 미로 내부 벽 AABB 컬링
 	for (i = 0; i < g_mazeWallCount; i++)
 	{
 		for (j = 0; j < kWallBlockFaceCount; j++)
 		{
-			tileCenter = CalculateMidPoint(g_mazeWallVertices[i][j * kVerticesPerWallFace].position, g_mazeWallVertices[i][j * kVerticesPerWallFace + 2].position);
-			if (g_frustum.IntersectsSphere(&tileCenter, kTileSize / 2 * kSqrt2) == TRUE)
+			const int vertexOffset = j * kVerticesPerWallFace;
+
+			const D3DXVECTOR3& firstPoint = g_mazeWallVertices[i][vertexOffset].position;
+			const D3DXVECTOR3& oppositePoint = g_mazeWallVertices[i][vertexOffset + 2].position;
+
+			tileCenter = CalculateMidPoint(firstPoint, oppositePoint);
+			tileHalfExtents = CalculateAabbHalfExtents(firstPoint, oppositePoint);
+
+			if (g_frustum.IntersectsAabb(&tileCenter, &tileHalfExtents) == TRUE)
 			{
-				g_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, i * kWallBlockVertexCount + j * kVerticesPerWallFace, 2);
+				g_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, i * kWallBlockVertexCount + vertexOffset, 2);
 			}
 		}
 	}

@@ -32,19 +32,30 @@ VOID Frustum::Update(D3DXMATRIX* viewProjectionMatrix)
 	D3DXPlaneFromPoints(&m_planes[3], &m_vertices[0], &m_vertices[3], &m_vertices[2]); // 하
 	D3DXPlaneFromPoints(&m_planes[4], &m_vertices[0], &m_vertices[1], &m_vertices[5]); // 근
 	D3DXPlaneFromPoints(&m_planes[5], &m_vertices[2], &m_vertices[7], &m_vertices[6]); // 원
+
+	for (int i = 0; i < 6; i++)
+	{
+		D3DXPlaneNormalize(&m_planes[i], &m_planes[i]);
+	}
 }
 
-BOOL Frustum::IntersectsSphere(D3DXVECTOR3* center, FLOAT radius)
+BOOL Frustum::IntersectsAabb(const D3DXVECTOR3* center, const D3DXVECTOR3* halfExtents) const
 {
-	FLOAT planeDistance;
-	int i;
-	for (i = 0; i < 6; i++)
+	if (center == nullptr || halfExtents == nullptr)
+		return FALSE;
+
+	for (int i = 0; i < 6; i++)
 	{
-		planeDistance = 0.0f;
-		planeDistance += m_planes[i].a * center->x + m_planes[i].b * center->y + m_planes[i].c * center->z + m_planes[i].d;
-		planeDistance /= sqrtf(m_planes[i].a * m_planes[i].a + m_planes[i].b * m_planes[i].b + m_planes[i].c * m_planes[i].c);
-		if (planeDistance < -radius)
+		const FLOAT centerDistance = D3DXPlaneDotCoord(&m_planes[i], center);
+
+		const FLOAT projectedRadius =
+			fabsf(m_planes[i].a) * halfExtents->x +
+			fabsf(m_planes[i].b) * halfExtents->y +
+			fabsf(m_planes[i].c) * halfExtents->z;
+
+		if (centerDistance < -projectedRadius)
 			return FALSE;
 	}
+
 	return TRUE;
 }

@@ -8,6 +8,7 @@ constexpr int kWallBlockFaceCount = 5;
 constexpr int kWallBlockVertexCount = kVerticesPerWallFace * kWallBlockFaceCount;
 
 D3DXVECTOR3 CalculateMidPoint(D3DXVECTOR3 firstPoint, D3DXVECTOR3 secondPoint);
+D3DXVECTOR3 CalculateAabbHalfExtents(D3DXVECTOR3 firstPoint, D3DXVECTOR3 secondPoint);
 int GenerateMazeWalls(
 	const char (*map)[kMazeColumnCount + 1],
 	CustomVertex(*mazeVertices)[kWallBlockVertexCount]);

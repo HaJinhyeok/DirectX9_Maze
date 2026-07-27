@@ -10,5 +10,5 @@ private:
 public:
 	Frustum();
 	VOID Update(D3DXMATRIX* viewProjectionMatrix);
-	BOOL IntersectsSphere(D3DXVECTOR3* center, FLOAT radius);
+	BOOL IntersectsAabb(const D3DXVECTOR3* center, const D3DXVECTOR3* halfExtents) const;
 };
