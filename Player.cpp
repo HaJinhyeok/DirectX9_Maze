@@ -77,19 +77,12 @@ BOOL Player::Move(MoveDirection direction, const MazeDefinition& maze, BOOL isNo
 
 	movementScale /= CalculateLength(movementDirection);
 
+	// 목표 위치 계산 -> 미로 충돌 보정 -> Y축 보정 -> 실제 이동량 계산 -> 월드 행렬 이동
 	D3DXVECTOR3 targetPosition = currentPosition + movementDirection * movementScale;
-
 
 	if (!isNoClipEnabled)
 	{
-		targetPosition = ResolvePlayerMazeCollision(maze, currentPosition, targetPosition, movementDirection);
-	}
-	// LookAt은 Position이 이동한 만큼만 더하거나 빼주면 됨
-	m_lookAt.x += targetPosition.x - currentPosition.x;
-	m_lookAt.z += targetPosition.z - currentPosition.z;
-	if (isNoClipEnabled)
-	{
-		m_lookAt.y += targetPosition.y - currentPosition.y;
+		targetPosition = ResolvePlayerMazeCollision(maze, currentPosition, targetPosition);
 	}
 
 	if (!isNoClipEnabled)
@@ -97,13 +90,38 @@ BOOL Player::Move(MoveDirection direction, const MazeDefinition& maze, BOOL isNo
 		targetPosition.y = kTileSize / 2;
 	}
 
+	const D3DXVECTOR3 actualMovement = targetPosition - currentPosition;
+
+	const BOOL didMove =
+		CalculateLength(actualMovement) > kEpsilon
+		? TRUE
+		: FALSE;
+
+	// LookAt은 Position이 이동한 만큼만 더하거나 빼주면 됨
+	m_lookAt.x += actualMovement.x;
+	m_lookAt.z += actualMovement.z;
+
+	if (isNoClipEnabled)
+	{
+		m_lookAt.y += actualMovement.y;
+	}
+
 	// world matrix도 translate해주기
 	D3DXMATRIX translationMatrix;
-	D3DXMatrixTranslation(&translationMatrix, targetPosition.x - currentPosition.x, targetPosition.y - currentPosition.y, targetPosition.z - currentPosition.z);
-	D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
+	D3DXMatrixTranslation(
+		&translationMatrix,
+		actualMovement.x,
+		actualMovement.y,
+		actualMovement.z);
+
+	D3DXMatrixMultiply(
+		&m_worldMatrix,
+		&m_worldMatrix,
+		&translationMatrix);
 
 	m_flashlight.Position = GetPosition();
-	return TRUE;
+
+	return didMove;
 }
 
 VOID Player::Rotate(BOOL isCounterClockwise, FLOAT deltaTimeSeconds)

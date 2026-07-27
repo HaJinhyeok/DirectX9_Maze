@@ -858,24 +858,42 @@ static VOID ReleaseResources()
 
 static VOID HandleMovementInput(FLOAT deltaTimeSeconds)
 {
+	g_didPlayerMove = FALSE;
+
 	if (IsKeyDown('A') || IsKeyDown(VK_LEFT))
 	{
-		g_didPlayerMove = g_player.Move(MoveDirection::Left, kDefaultMaze, g_isNoClipEnabled, deltaTimeSeconds);
+		g_didPlayerMove = g_player.Move(
+			MoveDirection::Left,
+			kDefaultMaze,
+			g_isNoClipEnabled,
+			deltaTimeSeconds) || g_didPlayerMove;
 	}
 
 	if (IsKeyDown('D') || IsKeyDown(VK_RIGHT))
 	{
-		g_didPlayerMove = g_player.Move(MoveDirection::Right, kDefaultMaze, g_isNoClipEnabled, deltaTimeSeconds);
+		g_didPlayerMove = g_player.Move(
+			MoveDirection::Right,
+			kDefaultMaze,
+			g_isNoClipEnabled,
+			deltaTimeSeconds) || g_didPlayerMove;
 	}
 
 	if (IsKeyDown('W') || IsKeyDown(VK_UP))
 	{
-		g_didPlayerMove = g_player.Move(MoveDirection::Forward, kDefaultMaze, g_isNoClipEnabled, deltaTimeSeconds);
+		g_didPlayerMove = g_player.Move(
+			MoveDirection::Forward,
+			kDefaultMaze,
+			g_isNoClipEnabled,
+			deltaTimeSeconds) || g_didPlayerMove;
 	}
 
 	if (IsKeyDown('S') || IsKeyDown(VK_DOWN))
 	{
-		g_didPlayerMove = g_player.Move(MoveDirection::Backward, kDefaultMaze, g_isNoClipEnabled, deltaTimeSeconds);
+		g_didPlayerMove = g_player.Move(
+			MoveDirection::Backward,
+			kDefaultMaze,
+			g_isNoClipEnabled,
+			deltaTimeSeconds) || g_didPlayerMove;
 	}
 }
 
