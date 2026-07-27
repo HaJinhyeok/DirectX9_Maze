@@ -1,11 +1,11 @@
 ﻿#include "MazeGenerator.h"
 
-static D3DXVECTOR3 CalculateMazeCellCenter(int row, int column)
+D3DXVECTOR3 CalculateMazeCellCenter(const MazeDefinition& maze, int row, int column)
 {
     return D3DXVECTOR3(
-        (-kMazeColumnCount / 2 + column + 0.5f) * kTileSize,
+        (-maze.GetWidth() / 2.0f + column + 0.5f) * kTileSize,
         kTileSize / 2,
-        (kMazeRowCount / 2 - row - 0.5f) * kTileSize);
+        (maze.GetHeight() / 2.0f - row - 0.5f) * kTileSize);
 }
 
 D3DXVECTOR3 CalculateMidPoint(D3DXVECTOR3 firstPoint, D3DXVECTOR3 secondPoint)
@@ -21,44 +21,51 @@ D3DXVECTOR3 CalculateAabbHalfExtents(D3DXVECTOR3 firstPoint, D3DXVECTOR3 secondP
         fabsf(secondPoint.z - firstPoint.z) / 2.0f);
 }
 
-int GenerateMazeWalls(const char (*map)[kMazeColumnCount + 1], CustomVertex(*mazeVertices)[kWallBlockVertexCount])
+std::vector<MazeWallBlockVertices> GenerateMazeWalls(const MazeDefinition& maze)
 {
-    int blockIndex = 0;
-    for (int row = 0; row < kMazeRowCount; row++)
+    std::vector<MazeWallBlockVertices> mazeWalls;
+
+    mazeWalls.reserve(static_cast<std::size_t>(maze.GetWidth()) * maze.GetHeight());
+
+    for (int row = 0; row < maze.GetHeight(); row++)
     {
-        for (int column = 0; column < kMazeColumnCount; column++)
+        for (int column = 0; column < maze.GetWidth(); column++)
         {
-            const D3DXVECTOR3 cellCenter = CalculateMazeCellCenter(row, column);
-            if (map[row][column] == '*')
+            if (maze.GetCell(row, column) != '*')
             {
-                GenerateWallBlock(mazeVertices[blockIndex++], cellCenter);
+                continue;
             }
+
+            const D3DXVECTOR3 cellCenter = CalculateMazeCellCenter(maze, row, column);
+
+            mazeWalls.emplace_back();
+            GenerateWallBlock(mazeWalls.back().data(), cellCenter);
         }
     }
 
-    return blockIndex;
+    return mazeWalls;
 }
 
-VOID InitializeMazeEntities(const char (*map)[kMazeColumnCount + 1], vector<Notice>* notices, Exit* exit)
+VOID InitializeMazeEntities(const MazeDefinition& maze, vector<Notice>* notices, Exit* exit)
 {
-    for (int row = 0; row < kMazeRowCount; row++)
+    for (const MazeCellPosition& noticePosition : maze.notices)
     {
-        for (int column = 0; column < kMazeColumnCount; column++)
-        {
-            const D3DXVECTOR3 cellCenter = CalculateMazeCellCenter(row, column);
-            if (map[row][column] == '@')
-            {
-                Notice notice;
-                notice.Initialize(cellCenter);
-                notices->push_back(notice);
-            }
-            // 탈출구는 모든 맵마다 단 하나만 존재
-            else if (map[row][column] == 'X')
-            {
-                exit->Initialize(cellCenter);
-            }
-        }
+        Notice notice;
+
+        notice.Initialize(
+            CalculateMazeCellCenter(
+                maze,
+                noticePosition.row,
+                noticePosition.column));
+
+        notices->push_back(notice);
     }
+
+    exit->Initialize(
+        CalculateMazeCellCenter(
+            maze,
+            maze.exit.row,
+            maze.exit.column));
 }
 
 VOID GenerateWallBlock(CustomVertex* blockVertices, D3DXVECTOR3 position)

@@ -1,7 +1,10 @@
 ﻿#pragma once
+
 #include <d3dx9.h>
+
 #include "main.h"
 #include "XFileModel.h"
+#include "MazeDefinition.h"
 
 constexpr float kTigerMoveDistance = 0.2f;
 constexpr float kTigerScale = 7.0f;
@@ -12,8 +15,6 @@ class Tiger
 private:
 	XFileModel m_model;
 
-	// x 파일 객체의 위치와 바라보는 방향
-	D3DXVECTOR3 m_position;
 	D3DXVECTOR3 m_lookAt;
 	D3DXMATRIX m_worldMatrix;
 	// x 파일 객체(호랑이)는 일단 맵에 한 마리만 존재하도록 설정
@@ -31,33 +32,44 @@ private:
 public:
 	int Render(LPDIRECT3DDEVICE9 device);
 	HRESULT Load(LPDIRECT3DDEVICE9 device, char* xFilePath);
-	VOID Move(const char(*map)[kMazeColumnCount + 1], FLOAT deltaTimeSeconds);
+	VOID Move(const MazeDefinition& maze, FLOAT deltaTimeSeconds);
 	VOID Rotate(BOOL clockwise);
 
-	VOID SetPosition(D3DXVECTOR3 position)
+	VOID SetPosition(const D3DXVECTOR3& position)
 	{
-		m_position = position;
+		m_worldMatrix._41 = position.x;
+		m_worldMatrix._42 = position.y;
+		m_worldMatrix._43 = position.z;
 	}
+
 	VOID SetLookAt(D3DXVECTOR3 lookAt)
 	{
 		m_lookAt = lookAt;
 	}
+
 	VOID SetAlive(BOOL isAlive)
 	{
 		m_isAlive = isAlive;
 	}
-	D3DXVECTOR3 GetPosition()
+
+	D3DXVECTOR3 GetPosition() const
 	{
-		return m_position;
+		return D3DXVECTOR3(
+			m_worldMatrix._41,
+			m_worldMatrix._42,
+			m_worldMatrix._43);
 	}
+
 	D3DXVECTOR3 GetLookAt()
 	{
 		return m_lookAt;
 	}
+
 	BOOL IsAlive()
 	{
 		return m_isAlive;
 	}
+
 	D3DXMATRIX& GetWorldMatrix()
 	{
 		return m_worldMatrix;

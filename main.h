@@ -41,8 +41,6 @@ constexpr float kPlayerMoveSpeed = 30.0f;                       // 초당 이동
 constexpr float kPlayerRotationSpeed = D3DX_PI / 2.0f;          // 초당 90도 회전
 constexpr float kMouseHorizontalRotationSensitivity = 0.001f;   // 좌우 1pixel 당 회전각
 constexpr float kMouseVerticalRotationSensitivity = 0.001f;     // 상하 1pixel 당 회전각
-constexpr int kMazeColumnCount = 12;                            // 미로의 가로 칸 수
-constexpr int kMazeRowCount = 14;                               // 미로의 세로 칸 수
 constexpr float kTileSize = 10.0f;
 constexpr float kSkyBoxSize = 500.0f;
 constexpr float kMaxDeltaTimeSeconds = 0.1f;
@@ -95,7 +93,6 @@ enum class MoveDirection : WORD
 };
 
 extern const D3DXVECTOR3 kWorldUp;
-extern const D3DXVECTOR3 kPlayerStartPosition;
 
 // tile culling 수정: 정사각형 중심으로부터 거리가 변의 길이의 절반 이하(d <= kTileSize / 2) culling 해주어야 함.
 // 추가할 기능: 플레이어 시점이 qe가 아닌 마우스 움직임에 따라 변하면 좋을 듯? ==> 창모드에서는 뭔가뭔가임 창 밖에서 마우스 움직임 제어는 어케

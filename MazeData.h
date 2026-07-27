@@ -1,5 +1,5 @@
 #pragma once
 
-#include "main.h"
+#include "MazeDefinition.h"
 
-extern const char kMazeMap[kMazeRowCount][kMazeColumnCount + 1];
+extern const MazeDefinition kDefaultMaze;

@@ -3,6 +3,7 @@
 #include <d3dx9math.h>
 
 #include "main.h"
+#include "MazeDefinition.h"
 
 class Player
 {
@@ -23,40 +24,53 @@ private:
 public:
 	Player();
 
-	VOID SetPosition(D3DXVECTOR3 position)
+	VOID SetPosition(const D3DXVECTOR3& position)
 	{
+		const D3DXVECTOR3 offset = position - GetPosition();
+
 		m_worldMatrix._41 = position.x;
 		m_worldMatrix._42 = position.y;
 		m_worldMatrix._43 = position.z;
+
+		m_lookAt += offset;
+		m_flashlight.Position = position;
 	}
+
 	VOID SetLookAt(D3DXVECTOR3 lookAt)
 	{
 		m_lookAt = lookAt;
 	}
+
 	VOID SetWorldMatrix(D3DXMATRIX worldMatrix)
 	{
 		m_worldMatrix = worldMatrix;
 	}
+
 	VOID SetFlashlight(BOOL isEnabled)
 	{
 		m_isFlashlightOn = isEnabled;
 	}
+
 	D3DXVECTOR3 GetPosition()
 	{
 		return D3DXVECTOR3(m_worldMatrix._41, m_worldMatrix._42, m_worldMatrix._43);
 	}
+
 	D3DXVECTOR3 GetLookAt()
 	{
 		return m_lookAt;
 	}
+
 	D3DXMATRIX GetWorldMatrix()
 	{
 		return m_worldMatrix;
 	}
+
 	BOOL IsFlashlightOn()
 	{
 		return m_isFlashlightOn;
 	}
+
 	D3DLIGHT9* GetLight()
 	{
 		return &m_flashlight;
@@ -64,9 +78,10 @@ public:
 
 	BOOL Move(
 		MoveDirection direction,
-		const char (*map)[kMazeColumnCount + 1],
+		const MazeDefinition& maze,
 		BOOL isNoClipEnabled,
 		FLOAT deltaTimeSeconds);
+
 	VOID Rotate(BOOL isCounterClockwise, FLOAT deltaTimeSeconds);
 	VOID Rotate(BOOL isCounterClockwise, BOOL isVertical, FLOAT angle);
 	VOID Jump();

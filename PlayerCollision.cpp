@@ -13,13 +13,16 @@ namespace
 		FLOAT maxZ;
 	};
 
-	MazeCellBounds CalculateMazeCellBounds(int row, int column)
+	MazeCellBounds CalculateMazeCellBounds(const MazeDefinition& maze, int row, int column)
 	{
+		const float halfWidth = maze.GetWidth() / 2.0f;
+		const float halfHeight = maze.GetHeight() / 2.0f;
+
 		MazeCellBounds bounds;
-		bounds.minX = (column - kMazeColumnCount / 2) * kTileSize;
-		bounds.minZ = (kMazeRowCount / 2 - row - 1) * kTileSize;
-		bounds.maxX = (column + 1 - kMazeColumnCount / 2) * kTileSize;
-		bounds.maxZ = (kMazeRowCount / 2 - row) * kTileSize;
+		bounds.minX = (column - halfWidth) * kTileSize;
+		bounds.minZ = (halfHeight - row - 1) * kTileSize;
+		bounds.maxX = (column + 1 - halfWidth) * kTileSize;
+		bounds.maxZ = (halfHeight - row) * kTileSize;
 
 		return bounds;
 	}
@@ -32,26 +35,23 @@ namespace
 			wallBounds.maxZ >= targetPosition.z - kPlayerRadius;
 	}
 
-	bool IsWall(const char (*map)[kMazeColumnCount + 1], int row, int column)
+	bool IsWall(const MazeDefinition& maze, int row, int column)
 	{
-		if (row < 0 || row >= kMazeRowCount ||
-			column < 0 || column >= kMazeColumnCount)
-		{
-			return false;
-		}
-
-		return map[row][column] == '*';
+		return maze.IsInside(row, column) && maze.GetCell(row, column) == '*';
 	}
 }
 
 D3DXVECTOR3 ResolvePlayerMazeCollision(
-	const char (*map)[kMazeColumnCount + 1],
+	const MazeDefinition& maze,
 	const D3DXVECTOR3& currentPosition,
 	D3DXVECTOR3 targetPosition,
 	const D3DXVECTOR3& movementDirection)
 {
-	const int column = static_cast<int>(floorf(currentPosition.x / kTileSize)) + kMazeColumnCount / 2;
-	const int row = kMazeRowCount / 2 - static_cast<int>(floorf(currentPosition.z / kTileSize)) - 1;
+	const int mazeWidth = maze.GetWidth();
+	const int mazeHeight = maze.GetHeight();
+
+	const int column = static_cast<int>(floorf(currentPosition.x / kTileSize + mazeWidth / 2.0f));
+	const int row = static_cast<int>(ceilf(mazeHeight / 2.0f - currentPosition.z / kTileSize)) - 1;
 
 	// x축 음의 방향으로 이동일 경우
 	if (movementDirection.x < 0)
@@ -60,20 +60,21 @@ D3DXVECTOR3 ResolvePlayerMazeCollision(
 		{
 			const int wallRow = row - 1 + offset;
 			const int wallColumn = column - 1;
+
 			if (column == 0)
 			{
-				if (targetPosition.x - kPlayerRadius <= -kMazeColumnCount / 2 * kTileSize)
+				if (targetPosition.x - kPlayerRadius <= -mazeWidth / 2.0f * kTileSize)
 				{
-					targetPosition.x = -kMazeColumnCount / 2 * kTileSize + kPlayerRadius;
+					targetPosition.x = -mazeWidth / 2.0f * kTileSize + kPlayerRadius;
 				}
 			}
-			else if (IsWall(map, wallRow, wallColumn))
+			else if (IsWall(maze, wallRow, wallColumn))
 			{
-				const MazeCellBounds wallBounds = CalculateMazeCellBounds(wallRow, wallColumn);
+				const MazeCellBounds wallBounds = CalculateMazeCellBounds(maze, wallRow, wallColumn);
 
 				if (OverlapsPlayerBounds(wallBounds, targetPosition))
 				{
-					if (IsWall(map, row, wallColumn))
+					if (IsWall(maze, row, wallColumn))
 						targetPosition.x = wallBounds.maxX + kPlayerRadius + kCollisionSeparation;
 					break;
 				}
@@ -87,19 +88,19 @@ D3DXVECTOR3 ResolvePlayerMazeCollision(
 		{
 			const int wallRow = row - 1 + offset;
 			const int wallColumn = column + 1;
-			if (column == kMazeColumnCount - 1)
+			if (column == mazeWidth - 1)
 			{
-				if (targetPosition.x + kPlayerRadius >= kMazeColumnCount / 2 * kTileSize)
+				if (targetPosition.x + kPlayerRadius >= mazeWidth / 2.0f * kTileSize)
 				{
-					targetPosition.x = kMazeColumnCount / 2 * kTileSize - kPlayerRadius;
+					targetPosition.x = mazeWidth / 2.0f * kTileSize - kPlayerRadius;
 				}
 			}
-			else if (IsWall(map, wallRow, wallColumn))
+			else if (IsWall(maze, wallRow, wallColumn))
 			{
-				const MazeCellBounds wallBounds = CalculateMazeCellBounds(wallRow, wallColumn);
+				const MazeCellBounds wallBounds = CalculateMazeCellBounds(maze, wallRow, wallColumn);
 				if (OverlapsPlayerBounds(wallBounds, targetPosition))
 				{
-					if (IsWall(map, row, wallColumn))
+					if (IsWall(maze, row, wallColumn))
 						targetPosition.x = wallBounds.minX - kPlayerRadius - kCollisionSeparation;
 					break;
 				}
@@ -114,16 +115,16 @@ D3DXVECTOR3 ResolvePlayerMazeCollision(
 		{
 			const int wallRow = row + 1;
 			const int wallColumn = column - 1 + offset;
-			if (row == kMazeRowCount - 1)
+			if (row == mazeHeight - 1)
 			{
-				if (targetPosition.z - kPlayerRadius <= -kMazeRowCount / 2 * kTileSize)
+				if (targetPosition.z - kPlayerRadius <= -mazeHeight / 2.0f * kTileSize)
 				{
-					targetPosition.z = -kMazeRowCount / 2 * kTileSize + kPlayerRadius;
+					targetPosition.z = -mazeHeight / 2.0f * kTileSize + kPlayerRadius;
 				}
 			}
-			else if (IsWall(map, wallRow, wallColumn))
+			else if (IsWall(maze, wallRow, wallColumn))
 			{
-				const MazeCellBounds wallBounds = CalculateMazeCellBounds(wallRow, wallColumn);
+				const MazeCellBounds wallBounds = CalculateMazeCellBounds(maze, wallRow, wallColumn);
 				if (OverlapsPlayerBounds(wallBounds, targetPosition))
 				{
 					targetPosition.z = wallBounds.maxZ + kPlayerRadius + kCollisionSeparation;
@@ -141,14 +142,14 @@ D3DXVECTOR3 ResolvePlayerMazeCollision(
 			const int wallColumn = column - 1 + offset;
 			if (row == 0)
 			{
-				if (targetPosition.z + kPlayerRadius >= kMazeRowCount / 2 * kTileSize)
+				if (targetPosition.z + kPlayerRadius >= mazeHeight / 2.0f * kTileSize)
 				{
-					targetPosition.z = kMazeRowCount / 2 * kTileSize - kPlayerRadius;
+					targetPosition.z = mazeHeight / 2.0f * kTileSize - kPlayerRadius;
 				}
 			}
-			else if (IsWall(map, wallRow, wallColumn))
+			else if (IsWall(maze, wallRow, wallColumn))
 			{
-				const MazeCellBounds wallBounds = CalculateMazeCellBounds(wallRow, wallColumn);
+				const MazeCellBounds wallBounds = CalculateMazeCellBounds(maze, wallRow, wallColumn);
 				if (OverlapsPlayerBounds(wallBounds, targetPosition))
 				{
 					targetPosition.z = wallBounds.minZ - kPlayerRadius - kCollisionSeparation;

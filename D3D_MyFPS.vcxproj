@@ -171,6 +171,7 @@
     </ClInclude>
     <ClInclude Include="Frustum.h" />
     <ClInclude Include="MazeData.h" />
+    <ClInclude Include="MazeDefinition.h" />
     <ClInclude Include="Notice.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="PlayerCollision.h" />
