@@ -23,12 +23,12 @@ constexpr D3DCOLOR kButtonPressedColor = D3DCOLOR_XRGB(64, 64, 64);
 constexpr char kProgramName[] = "DirectX9_Maze";
 
 // texture file names
-constexpr char kTileTexturePath[] = "tex_tile.bmp";
-constexpr char kGrassTexturePath[] = "tex_grass.jpg";
-constexpr char kWallTexturePath[] = "tex_wall.jpg";
-constexpr char kNoticeTexturePath[] = "tex_question.png";
-constexpr char kExitTexturePath[] = "tex_exit.png";
-constexpr char kSkyBoxTexturePath[] = "SkyBox1.dds";
+constexpr char kBulletTexturePath[] = "Assets\\Textures\\Gameplay\\tex_bullet.bmp";
+constexpr char kPlayerMarkerTexturePath[] = "Assets\\Textures\\Gameplay\\tex_player_marker.bmp";
+constexpr char kGrassTexturePath[] = "Assets\\Textures\\Environment\\tex_grass.jpg";
+constexpr char kWallTexturePath[] = "Assets\\Textures\\Environment\\tex_wall.jpg";
+constexpr char kNoticeTexturePath[] = "Assets\\Textures\\UI\\tex_question.png";
+constexpr char kExitTexturePath[] = "Assets\\Textures\\UI\\tex_exit.png";
 
 // constant values
 constexpr int kWindowWidth = 700;

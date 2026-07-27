@@ -42,7 +42,7 @@ static UiVertex g_popupVertices[4] =
 const static D3DXVECTOR3 g_topViewEye(0.0f, 200.0f, 0.0f);
 const static D3DXVECTOR3 g_topViewUp(0.0f, 0.0f, 1.0f);
 
-static char g_tigerModelPath[] = "tiger.x";
+static char g_tigerModelPath[] = "Assets\\Models\\Tiger\\tiger.x";
 
 static BOOL g_isTopViewEnabled = FALSE;
 static BOOL g_isNoClipEnabled = FALSE;
@@ -90,12 +90,12 @@ static LPDIRECT3DINDEXBUFFER9 g_pTileIB = NULL;
 static LPDIRECT3DVERTEXBUFFER9 g_pWallVB = NULL;
 static LPDIRECT3DVERTEXBUFFER9 g_pWallVB2 = NULL;
 static LPDIRECT3DVERTEXBUFFER9 g_pMazeVB = NULL;
-static LPDIRECT3DTEXTURE9 g_pTileTexture = NULL;
+static LPDIRECT3DTEXTURE9 g_pBulletTexture = NULL;
+static LPDIRECT3DTEXTURE9 g_pPlayerMarkerTexture = NULL;
 static LPDIRECT3DTEXTURE9 g_pWallTexture = NULL;
 static LPDIRECT3DTEXTURE9 g_pGrassTexture = NULL;
 static LPDIRECT3DTEXTURE9 g_pNoticeTexture = NULL;
 static LPDIRECT3DTEXTURE9 g_pExitTexture = NULL;
-static LPDIRECT3DCUBETEXTURE9 g_pSkyboxTexture = NULL;
 static LPD3DXFONT g_pClearFont = NULL;
 static LPD3DXFONT g_pSettingFont = NULL;
 static LPD3DXFONT g_pExitFont = NULL;
@@ -103,7 +103,6 @@ static LPD3DXFONT g_pFrameFont = NULL;
 static LPD3DXFONT g_pTestFont = NULL;
 static LPD3DXMESH g_pPlayerSphere = NULL;
 static LPD3DXMESH g_pBulletSphere = NULL;
-static LPD3DXMESH g_pSkyboxCube = NULL;
 
 static Player g_player;
 static vector<Notice> g_notices;
@@ -420,7 +419,13 @@ static HRESULT LoadTextureResource(const char* path, LPDIRECT3DTEXTURE9* texture
 static HRESULT LoadSceneTextures()
 {
 	HRESULT textureResult =
-		LoadTextureResource(kTileTexturePath, &g_pTileTexture);
+		LoadTextureResource(kBulletTexturePath, &g_pBulletTexture);
+
+	if (FAILED(textureResult))
+		return textureResult;
+
+	textureResult =
+		LoadTextureResource(kPlayerMarkerTexturePath, &g_pPlayerMarkerTexture);
 
 	if (FAILED(textureResult))
 		return textureResult;
@@ -464,16 +469,6 @@ static HRESULT LoadSceneTextures()
 	if (FAILED(textureResult))
 		return textureResult;
 
-	SafeRelease(g_pSkyboxTexture);
-
-	textureResult = D3DXCreateCubeTextureFromFile(
-		g_pd3dDevice,
-		kSkyBoxTexturePath,
-		&g_pSkyboxTexture);
-
-	if (FAILED(textureResult))
-		return textureResult;
-
 	return S_OK;
 }
 
@@ -481,7 +476,6 @@ static HRESULT CreatePrimitiveMeshes()
 {
 	SafeRelease(g_pBulletSphere);
 	SafeRelease(g_pPlayerSphere);
-	SafeRelease(g_pSkyboxCube);
 
 	const HRESULT bulletMeshResult = D3DXCreateSphere(
 		g_pd3dDevice,
@@ -506,21 +500,6 @@ static HRESULT CreatePrimitiveMeshes()
 	{
 		SafeRelease(g_pBulletSphere);
 		return playerMeshResult;
-	}
-
-	const HRESULT skyBoxMeshResult = D3DXCreateBox(
-		g_pd3dDevice,
-		kSkyBoxSize,
-		kSkyBoxSize,
-		kSkyBoxSize,
-		&g_pSkyboxCube,
-		nullptr);
-
-	if (FAILED(skyBoxMeshResult))
-	{
-		SafeRelease(g_pPlayerSphere);
-		SafeRelease(g_pBulletSphere);
-		return skyBoxMeshResult;
 	}
 
 	return S_OK;
@@ -812,7 +791,6 @@ static HRESULT InitializeResources()
 
 static VOID ReleasePrimitiveMeshes()
 {
-	SafeRelease(g_pSkyboxCube);
 	SafeRelease(g_pBulletSphere);
 	SafeRelease(g_pPlayerSphere);
 }
@@ -828,12 +806,12 @@ static VOID ReleaseFonts()
 
 static VOID ReleaseSceneTextures()
 {
-	SafeRelease(g_pSkyboxTexture);
 	SafeRelease(g_pExitTexture);
 	SafeRelease(g_pNoticeTexture);
 	SafeRelease(g_pGrassTexture);
 	SafeRelease(g_pWallTexture);
-	SafeRelease(g_pTileTexture);
+	SafeRelease(g_pPlayerMarkerTexture);
+	SafeRelease(g_pBulletTexture);
 }
 
 static VOID ReleaseGeometryBuffers()
@@ -1319,7 +1297,7 @@ static VOID RenderWorld()
 	g_mazeExit.Render(g_pd3dDevice);
 
 	// 총알
-	g_pd3dDevice->SetTexture(0, g_pTileTexture);
+	g_pd3dDevice->SetTexture(0, g_pBulletTexture);
 	g_player.RenderBullets(g_pd3dDevice, g_pBulletSphere);
 
 	// 탑뷰에서 플레이어 위치를 구체로 표시
@@ -1328,7 +1306,7 @@ static VOID RenderWorld()
 		D3DXMATRIX playerWorldMatrix;
 		D3DXMatrixTranslation(&playerWorldMatrix, playerPosition.x, playerPosition.y, playerPosition.z);
 		g_pd3dDevice->SetTransform(D3DTS_WORLD, &playerWorldMatrix);
-		g_pd3dDevice->SetTexture(0, g_pTileTexture);
+		g_pd3dDevice->SetTexture(0, g_pPlayerMarkerTexture);
 		g_pPlayerSphere->DrawSubset(0);
 	}
 

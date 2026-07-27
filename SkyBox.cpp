@@ -92,12 +92,12 @@ HRESULT SkyBox::LoadTextures(LPDIRECT3DDEVICE9 device)
 {
 	const char* const texturePaths[] =
 	{
-		"Daylight Box_Pieces/Daylight Box_Front.bmp",
-		"Daylight Box_Pieces/Daylight Box_Back.bmp",
-		"Daylight Box_Pieces/Daylight Box_Left.bmp",
-		"Daylight Box_Pieces/Daylight Box_Right.bmp",
-		"Daylight Box_Pieces/Daylight Box_Top.bmp",
-		"Daylight Box_Pieces/Daylight Box_Bottom.bmp"
+		"Assets\\Textures\\Skybox\\Daylight\\Daylight Box_Front.bmp",
+		"Assets\\Textures\\Skybox\\Daylight\\Daylight Box_Back.bmp",
+		"Assets\\Textures\\Skybox\\Daylight\\Daylight Box_Left.bmp",
+		"Assets\\Textures\\Skybox\\Daylight\\Daylight Box_Right.bmp",
+		"Assets\\Textures\\Skybox\\Daylight\\Daylight Box_Top.bmp",
+		"Assets\\Textures\\Skybox\\Daylight\\Daylight Box_Bottom.bmp"
 	};
 
 	for (int i = 0; i < 6; i++)

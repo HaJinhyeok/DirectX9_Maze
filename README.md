@@ -47,6 +47,7 @@ DirectX9 기반 1인칭 미로 탐색 게임입니다. 취업 준비 기간에 �
 | `SkyBox.*` | 스카이박스 텍스처와 렌더링 |
 | `Notice.*`, `Exit.*` | 안내문과 출구 오브젝트 |
 | `Tiger.*` | X 파일 모델 로딩, 재질·텍스처 처리와 호랑이 이동 |
+| `Assets/Models`, `Assets/Textures` | 런타임 모델과 용도별 텍스처 |
 | `Input.*` | 키 입력 상태 관리 |
 | `FpsCounter.*` | 메인 루프의 delta time을 이용한 FPS 계산 |
 | `ComUtils.h` | COM 포인터의 null 안전한 공통 해제 |
@@ -107,6 +108,7 @@ Visual Studio 2022 Community 기본 설치 경로를 사용하는 경우, 저장
 - UTF-8 소스 변환 후 한글 문자열 출력 정상 확인
 - 필수 텍스처 누락 시 초기화 실패 안내 후 크래시 없이 종료됨을 확인
 - 수동 검증 절차: [`docs/SMOKE_TEST.md`](docs/SMOKE_TEST.md)
+- 외부 에셋 출처와 공개 상태: [`docs/ASSET_LICENSES.md`](docs/ASSET_LICENSES.md)
 
 ## 구현하며 다룬 문제
 
@@ -126,4 +128,4 @@ Visual Studio 2022 Community 기본 설치 경로를 사용하는 경우, 저장
 - 플레이어 충돌 로직은 경계 검사를 추가했지만 함수가 길고 방향별 코드가 반복됩니다.
 - 현재는 `Debug|x86`만 검증되었으며 `x64`와 `Release` 구성은 별도 정리가 필요합니다.
 
-장기 개선 방향과 진행 상태는 [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)와 [`docs/ROADMAP.md`](docs/ROADMAP.md)를 참고하세요. 프로젝트별 C++ 네이밍 기준은 [`docs/CODING_CONVENTIONS.md`](docs/CODING_CONVENTIONS.md), 작업 중 정리한 개념과 선택 이유는 [`docs/LEARNING_NOTES.md`](docs/LEARNING_NOTES.md)에 기록되어 있습니다.
+장기 개선 방향과 진행 상태는 [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)와 [`docs/ROADMAP.md`](docs/ROADMAP.md)를 참고하세요. 프로젝트별 C++ 네이밍 기준은 [`docs/CODING_CONVENTIONS.md`](docs/CODING_CONVENTIONS.md), 작업 중 정리한 개념과 선택 이유는 [`docs/LEARNING_NOTES.md`](docs/LEARNING_NOTES.md), 외부 에셋의 출처와 공개 판단은 [`docs/ASSET_LICENSES.md`](docs/ASSET_LICENSES.md)에 기록되어 있습니다.
