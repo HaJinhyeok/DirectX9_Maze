@@ -283,3 +283,21 @@ VOID Player::RenderBullets(LPDIRECT3DDEVICE9 device, LPD3DXMESH sphere)
 		sphere->DrawSubset(0);
 	}
 }
+
+VOID Player::ResetForLevel(const D3DXVECTOR3& position)
+{
+	D3DXMatrixTranslation(
+		&m_worldMatrix,
+		position.x,
+		position.y,
+		position.z);
+
+	m_lookAt = position;
+	m_lookAt.z += kLookAtDistance;
+
+	m_bullets.clear();
+
+	m_isFlashlightOn = TRUE;
+	m_flashlight.Position = position;
+	m_flashlight.Direction = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
+}

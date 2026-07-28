@@ -7,6 +7,7 @@
 #include "Tiger.h"
 #include "ComUtils.h"
 #include "MazeLoader.h"
+#include "LevelCatalog.h"
 
 const D3DXVECTOR3 kWorldUp(0.0f, 1.0f, 0.0f);
 
@@ -20,7 +21,7 @@ constexpr LONG kExitButtonTopOffsetFromCenter = 100;
 constexpr LONG kMinimumWindowTrackWidth = 600;
 constexpr LONG kMinimumWindowTrackHeight = 600;
 constexpr int kTileVertexCount = 4;
-constexpr char kDefaultMazePath[] = "Assets\\Data\\Levels\\Level01.txt";
+constexpr char kLevelCatalogPath[] = "Assets\\Data\\Levels\\LevelList.txt";
 
 using WallFaceVertices = std::array<CustomVertex, kVerticesPerWallFace>;
 
@@ -124,6 +125,8 @@ static FpsCounter g_fpsCounter;
 static Tiger g_tiger(D3DXVECTOR3(0.0f, kTileSize / 2.0f, 0.0f));
 static SkyBox g_skyBox;
 static MazeDefinition g_maze;
+static std::vector<std::string> g_levelPaths;
+static size_t g_currentLevelIndex = 0;
 static std::string g_initializationErrorMessage;
 
 static VOID ConfigureDeviceRenderStates(LPDIRECT3DDEVICE9 device)
@@ -248,11 +251,27 @@ static VOID UpdateUiLayout()
 	g_mazeExit.SetButtonBounds(g_exitButtonRect);
 }
 
-static HRESULT InitializeMaze()
+static bool HasNextLevel() noexcept
+{
+	return !g_levelPaths.empty() &&
+		g_currentLevelIndex < g_levelPaths.size() - 1;
+}
+
+static HRESULT LoadLevelMaze(size_t levelIndex)
 {
 	g_initializationErrorMessage.clear();
 
-	const MazeLoadResult loadResult = LoadMazeFromFile(kDefaultMazePath);
+	if (levelIndex >= g_levelPaths.size())
+	{
+		g_initializationErrorMessage =
+			"Level index out of range: " +
+			std::to_string(levelIndex);
+
+		return E_INVALIDARG;
+	}
+
+	const MazeLoadResult loadResult =
+		LoadMazeFromFile(g_levelPaths[levelIndex]);
 
 	if (!loadResult.isSuccessful)
 	{
@@ -262,13 +281,81 @@ static HRESULT InitializeMaze()
 	}
 
 	g_maze = loadResult.maze;
+	g_currentLevelIndex = levelIndex;
 
 	return S_OK;
 }
 
+static HRESULT InitializeMaze()
+{
+	g_initializationErrorMessage.clear();
+
+	const LevelCatalogLoadResult catalogResult = LoadLevelCatalogFromFile(kLevelCatalogPath);
+
+	if (!catalogResult.isSuccessful)
+	{
+		g_initializationErrorMessage = catalogResult.errorMessage;
+
+		return E_FAIL;
+	}
+
+	g_levelPaths = catalogResult.levelPaths;
+
+	return LoadLevelMaze(0);
+}
+
+static VOID ResetLevelEntities()
+{
+	const MazeCellPosition& playerStart = g_maze.playerStart;
+
+	const D3DXVECTOR3 playerStartPosition =
+		CalculateMazeCellCenter(
+			g_maze,
+			playerStart.row,
+			playerStart.column);
+
+	g_player.ResetForLevel(playerStartPosition);
+
+	const MazeCellPosition& tigerStart = g_maze.tigerStart;
+
+	const D3DXVECTOR3 tigerStartPosition =
+		CalculateMazeCellCenter(
+			g_maze,
+			tigerStart.row,
+			tigerStart.column);
+
+	g_tiger.ResetForLevel(
+		tigerStartPosition,
+		g_player.GetPosition());
+}
+
+static VOID ResetLevelPlayState()
+{
+	g_isNoClipEnabled = FALSE;
+	g_isPaused = FALSE;
+	g_didPlayerMove = FALSE;
+	g_isPlaying = TRUE;
+	g_isMouseButtonDown = FALSE;
+	g_topViewMode = TopViewMode::Disabled;
+
+	g_mazeExit.ReleaseButton();
+	InitializeInput();
+}
+
+static VOID UpdateBillboardFacing()
+{
+	const D3DXVECTOR3 playerPosition = g_player.GetPosition();
+
+	for (Notice& notice : g_notices)
+	{
+		notice.UpdateFacing(playerPosition);
+	}
+
+	g_mazeExit.UpdateFacing(playerPosition);
+}
+
 static HRESULT InitializeGameComponents()
 {
-	InitializeInput();
 	g_fpsCounter.Initialize();
 
 	const HRESULT skyBoxTextureResult = g_skyBox.LoadTextures(g_pd3dDevice);
@@ -286,28 +373,8 @@ static HRESULT InitializeGameComponents()
 	if (FAILED(tigerLoadResult))
 		return tigerLoadResult;
 
-	const MazeCellPosition& playerStart = g_maze.playerStart;
-
-	const D3DXVECTOR3 playerStartPosition =
-		CalculateMazeCellCenter(
-			g_maze,
-			playerStart.row,
-			playerStart.column);
-
-	g_player.SetPosition(playerStartPosition);
-
-	const MazeCellPosition& tigerStart = g_maze.tigerStart;
-
-
-	const D3DXVECTOR3 tigerStartPosition =
-		CalculateMazeCellCenter(
-			g_maze,
-			tigerStart.row,
-			tigerStart.column);
-
-	g_tiger.SetPosition(tigerStartPosition);
-	g_tiger.SetLookAt(g_player.GetPosition());
-
+	ResetLevelEntities();
+	ResetLevelPlayState();
 	UpdateUiLayout();
 
 	return S_OK;
@@ -783,6 +850,26 @@ static HRESULT CreateUpperWallGeometry()
 		&g_pWallVB2);
 }
 
+static HRESULT CreateLevelGeometry()
+{
+	HRESULT creationResult = CreateMazeGeometry();
+
+	if (FAILED(creationResult))
+		return creationResult;
+
+	creationResult = CreateTileGeometry();
+
+	if (FAILED(creationResult))
+		return creationResult;
+
+	creationResult = CreateOuterWallGeometry();
+
+	if (FAILED(creationResult))
+		return creationResult;
+
+	return CreateUpperWallGeometry();
+}
+
 static HRESULT InitializeResources()
 {
 	HRESULT initializationResult = InitializeMaze();
@@ -812,22 +899,14 @@ static HRESULT InitializeResources()
 	if (FAILED(initializationResult))
 		return initializationResult;
 
-	initializationResult = CreateMazeGeometry();
+	initializationResult = CreateLevelGeometry();
 
 	if (FAILED(initializationResult))
 		return initializationResult;
 
-	initializationResult = CreateTileGeometry();
+	UpdateBillboardFacing();
 
-	if (FAILED(initializationResult))
-		return initializationResult;
-
-	initializationResult = CreateOuterWallGeometry();
-
-	if (FAILED(initializationResult))
-		return initializationResult;
-
-	return CreateUpperWallGeometry();
+	return S_OK;
 }
 
 static VOID ReleasePrimitiveMeshes()
@@ -858,14 +937,52 @@ static VOID ReleaseSceneTextures()
 static VOID ReleaseGeometryBuffers()
 {
 	g_mazeExit.ReleaseVertexBuffer();
+
 	for (Notice& notice : g_notices)
 	{
 		notice.ReleaseVertexBuffer();
 	}
+
+	g_notices.clear();
+
 	SafeRelease(g_pMazeVB);
 	SafeRelease(g_pWallVB2);
 	SafeRelease(g_pWallVB);
 	SafeRelease(g_pTileVB);
+
+	g_mazeWallVertices.clear();
+	g_upperWallVertices.clear();
+	g_outerWallVertices.clear();
+	g_tileVertices.clear();
+}
+
+static HRESULT TransitionToLevel(size_t levelIndex)
+{
+	const HRESULT loadResult = LoadLevelMaze(levelIndex);
+
+	if (FAILED(loadResult))
+		return loadResult;
+
+	ReleaseGeometryBuffers();
+
+	const HRESULT geometryResult = CreateLevelGeometry();
+
+	if (FAILED(geometryResult))
+	{
+		ReleaseGeometryBuffers();
+
+		g_initializationErrorMessage =
+			"Failed to create geometry for level: " +
+			g_levelPaths[levelIndex];
+
+		return geometryResult;
+	}
+
+	ResetLevelEntities();
+	ResetLevelPlayState();
+	UpdateBillboardFacing();
+
+	return S_OK;
 }
 
 static VOID ReleaseResources()
@@ -999,6 +1116,8 @@ static VOID HandleFeatureToggleInput()
 			// 자유시점 종료 시, 저장해뒀던 player 정보 복구
 			g_player.SetWorldMatrix(g_savedPlayerWorldMatrix);
 			g_player.SetLookAt(g_savedPlayerLookAt);
+
+			g_didPlayerMove = TRUE;
 		}
 		else
 		{
@@ -1032,19 +1151,14 @@ static VOID UpdateInteractionState()
 {
 	if (g_didPlayerMove)
 	{
-		for (int i = 0; i < g_notices[0].GetNoticeCount(); i++)
-		{
-			g_notices[i].UpdateFacing(g_player.GetPosition());
-		}
-
-		g_mazeExit.UpdateFacing(g_player.GetPosition());
+		UpdateBillboardFacing();
 	}
 
 	bool isNoticeInRange = false;
 
-	for (int i = 0; i < g_notices[0].GetNoticeCount(); i++)
+	for (Notice& notice : g_notices)
 	{
-		if (g_notices[i].CanInteract(g_player.GetPosition(), g_isNoClipEnabled) == TRUE)
+		if (notice.CanInteract(g_player.GetPosition(), g_isNoClipEnabled) == TRUE)
 		{
 			isNoticeInRange = true;
 			break;
@@ -1116,7 +1230,9 @@ static VOID RenderUi()
 			D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
 
 		g_mazeExit.RenderButton(g_pd3dDevice);
-		wsprintf(textBuffer, "e x i t");
+		wsprintf(
+			textBuffer,
+			HasNextLevel() ? "N E X T" : "e x i t");
 
 		textRect = g_exitButtonRect;
 
@@ -1380,11 +1496,11 @@ static VOID RenderWorld()
 	// 안내문
 	g_pd3dDevice->SetTexture(0, g_pNoticeTexture);
 	D3DXMATRIX noticeWorldMatrix;
-	for (i = 0; i < g_notices[0].GetNoticeCount(); i++)
+	for (Notice& notice : g_notices)
 	{
-		noticeWorldMatrix = g_notices[i].GetWorldMatrix();
+		noticeWorldMatrix = notice.GetWorldMatrix();
 		g_pd3dDevice->SetTransform(D3DTS_WORLD, &noticeWorldMatrix);
-		g_notices[i].Render(g_pd3dDevice);
+		notice.Render(g_pd3dDevice);
 	}
 
 	// 출구
@@ -1555,9 +1671,31 @@ static LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			g_player.FireBullet(&g_mousePosition);
 		}
 
-		if (!g_isPlaying || g_isPaused)
+		if (PtInRect(&g_exitButtonRect, g_mousePosition))
 		{
-			if (PtInRect(&g_exitButtonRect, g_mousePosition))
+			if (!g_isPlaying)
+			{
+				if (HasNextLevel())
+				{
+					const HRESULT transitionResult = TransitionToLevel(g_currentLevelIndex + 1);
+
+					if (FAILED(transitionResult))
+					{
+						MessageBoxA(
+							hWnd,
+							g_initializationErrorMessage.c_str(),
+							"Level Transition Failed",
+							MB_OK | MB_ICONERROR);
+
+						PostMessage(hWnd, WM_CLOSE, 0, 0);
+					}
+				}
+				else
+				{
+					PostMessage(hWnd, WM_CLOSE, 0, 0);
+				}
+			}
+			else if (g_isPaused)
 			{
 				PostMessage(hWnd, WM_CLOSE, 0, 0);
 			}

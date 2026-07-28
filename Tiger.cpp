@@ -13,21 +13,7 @@ namespace
 
 Tiger::Tiger(D3DXVECTOR3 position)
 {
-	// scale 먼저 하고 translation
-	D3DXMatrixScaling(&m_worldMatrix, kTigerScale, kTigerScale, kTigerScale * 2.0f / 3.0f);
-	D3DXMATRIX translationMatrix;
-	D3DXMatrixTranslation(&translationMatrix, position.x, position.y, position.z);
-	D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
-	m_isAlive = TRUE;
-	m_isRotating = FALSE;
-	m_isClockwise = TRUE;
-	for (int i = 0; i < 4; i++)
-	{
-		m_isWallOpen[i] = TRUE;
-	}
-	m_rotationAmount = 0;
-	m_rotationCount = 0;
-	m_accumulatedTimeSeconds = 0.0f;
+	ResetForLevel(position, position + D3DXVECTOR3(0.0f, 0.0f, -1.0f));
 }
 
 Tiger::~Tiger() = default;
@@ -515,4 +501,40 @@ VOID Tiger::Rotate(BOOL clockwise)
 	// 다시 제자리로 이동
 	D3DXMatrixTranslation(&translationMatrix, currentPosition.x, currentPosition.y, currentPosition.z);
 	D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
+}
+
+VOID Tiger::ResetForLevel(const D3DXVECTOR3& position, const D3DXVECTOR3& lookAt)
+{
+	// scale 먼저 하고 translation
+	D3DXMatrixScaling(
+		&m_worldMatrix,
+		kTigerScale,
+		kTigerScale,
+		kTigerScale * 2.0f / 3.0f);
+
+	D3DXMATRIX translationMatrix;
+	D3DXMatrixTranslation(
+		&translationMatrix,
+		position.x,
+		position.y,
+		position.z);
+
+	D3DXMatrixMultiply(
+		&m_worldMatrix,
+		&m_worldMatrix,
+		&translationMatrix);
+
+	m_lookAt = lookAt;
+	m_isAlive = TRUE;
+	m_isRotating = FALSE;
+	m_isClockwise = TRUE;
+
+	for (int i = 0; i < 4; i++)
+	{
+		m_isWallOpen[i] = TRUE;
+	}
+
+	m_rotationAmount = 0;
+	m_rotationCount = 0;
+	m_accumulatedTimeSeconds = 0.0f;
 }

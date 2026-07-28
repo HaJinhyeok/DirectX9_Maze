@@ -78,5 +78,6 @@ public:
 	Tiger(D3DXVECTOR3 position);
 	virtual ~Tiger();
 	VOID ReleaseResources();
+	VOID ResetForLevel(const D3DXVECTOR3& position, const D3DXVECTOR3& lookAt);
 };
 

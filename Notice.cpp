@@ -1,8 +1,6 @@
 ﻿#include "Notice.h"
 #include "ComUtils.h"
 
-WORD Notice::s_noticeCount = 0;
-
 VOID Notice::Initialize(D3DXVECTOR3 position)
 {
 	D3DXMatrixIdentity(&m_worldMatrix);
@@ -22,7 +20,6 @@ VOID Notice::Initialize(D3DXVECTOR3 position)
 	m_vertices[3].position = D3DXVECTOR3(m_position.x - kTileSize / 4, m_position.y - kTileSize / 4, m_position.z);
 
 	m_lookAt = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
-	s_noticeCount++;
 }
 
 HRESULT Notice::CreateVertexBuffer(LPDIRECT3DDEVICE9 device)
@@ -38,39 +35,68 @@ HRESULT Notice::CreateVertexBuffer(LPDIRECT3DDEVICE9 device)
 
 VOID Notice::UpdateFacing(D3DXVECTOR3 playerPosition)
 {
-	D3DXVECTOR3 crossProduct, targetDirection = playerPosition - m_position;
-	D3DXMATRIX rotationMatrix, translationMatrix;
+	const D3DXVECTOR3 baseFacing(0.0f, 0.0f, -1.0f);
+	D3DXVECTOR3 targetDirection = playerPosition - m_position;
 	targetDirection.y = 0.0f;
-	// player가 움직이지 않았으면 회전x
-	if (m_lookAt == targetDirection) return;
 
-	FLOAT angle, cosine, targetLength, currentLength;
-	// 원점으로 옮기기
-	D3DXMatrixTranslation(&translationMatrix, -m_position.x, -m_position.y, -m_position.z);
-	D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
-	// Calculate angle between current LookAt and goal LookAt, using dot product
-	targetLength = sqrtf(targetDirection.x * targetDirection.x + targetDirection.z * targetDirection.z);
-	currentLength = sqrtf(m_lookAt.x * m_lookAt.x + m_lookAt.z * m_lookAt.z);
-	cosine = D3DXVec3Dot(&targetDirection, &m_lookAt) / (targetLength * currentLength);
+	const FLOAT targetLength = sqrtf(
+		targetDirection.x * targetDirection.x +
+		targetDirection.z * targetDirection.z);
+
+	if (targetLength <= kEpsilon)
+		return;
+
+	if (m_lookAt == targetDirection)
+		return;
+
+	FLOAT cosine = D3DXVec3Dot(&targetDirection, &baseFacing) / targetLength;
 	cosine = min(1.0f, max(-1.0f, cosine));
-	angle = acosf(cosine);
-	D3DXVec3Cross(&crossProduct, &m_lookAt, &targetDirection);
-	// Update LookAt vector
+
+	const FLOAT angle = acosf(cosine);
+
+	D3DXVECTOR3 crossProduct;
+	D3DXVec3Cross(
+		&crossProduct,
+		&baseFacing,
+		&targetDirection);
+
+	D3DXMATRIX translationMatrix;
+	D3DXMATRIX rotationMatrix;
+
+	D3DXMatrixIdentity(&m_worldMatrix);
+
+	D3DXMatrixTranslation(
+		&translationMatrix,
+		-m_position.x,
+		-m_position.y,
+		-m_position.z);
+
+	D3DXMatrixMultiply(
+		&m_worldMatrix,
+		&m_worldMatrix,
+		&translationMatrix);
+
+	D3DXMatrixRotationY(
+		&rotationMatrix,
+		crossProduct.y > 0.0f ? angle : -angle);
+
+	D3DXMatrixMultiply(
+		&m_worldMatrix,
+		&m_worldMatrix,
+		&rotationMatrix);
+
+	D3DXMatrixTranslation(
+		&translationMatrix,
+		m_position.x,
+		m_position.y,
+		m_position.z);
+
+	D3DXMatrixMultiply(
+		&m_worldMatrix,
+		&m_worldMatrix,
+		&translationMatrix);
+
 	m_lookAt = targetDirection;
-	// If the result of cross product heads to +y, +angle
-	if (crossProduct.y > 0)
-	{
-		D3DXMatrixRotationY(&rotationMatrix, angle);
-	}
-	// If the result of cross product heads to -y, -angle
-	else
-	{
-		D3DXMatrixRotationY(&rotationMatrix, -angle);
-	}
-	D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &rotationMatrix);
-	// 제자리로 복귀
-	D3DXMatrixTranslation(&translationMatrix, m_position.x, m_position.y, m_position.z);
-	D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
 }
 
 VOID Notice::Render(LPDIRECT3DDEVICE9 device)

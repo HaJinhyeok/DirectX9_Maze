@@ -3,8 +3,6 @@
 VOID Exit::Initialize(D3DXVECTOR3 position)
 {
 	Notice::Initialize(position);
-	// Exit는 notice count하지 않는다.
-	Notice::s_noticeCount--;
 	Notice::m_isNotice = FALSE;
 }
 

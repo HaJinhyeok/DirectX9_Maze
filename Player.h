@@ -88,5 +88,6 @@ public:
 	VOID FireBullet(LPPOINT cursorPosition);
 	VOID UpdateBullets(FLOAT deltaTimeSeconds);
 	VOID RenderBullets(LPDIRECT3DDEVICE9 device, LPD3DXMESH sphere);
+	VOID ResetForLevel(const D3DXVECTOR3& position);
 };
 

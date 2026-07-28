@@ -123,6 +123,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\LevelCatalog.cpp" />
     <ClCompile Include="..\MazeCoordinates.cpp" />
     <ClCompile Include="..\MazeLoader.cpp" />
     <ClCompile Include="MazeLoaderTests.cpp" />

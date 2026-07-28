@@ -1,5 +1,6 @@
 #include "../MazeLoader.h"
 #include "../MazeCoordinates.h"
+#include "../LevelCatalog.h"
 
 #include <cstdio>
 #include <fstream>
@@ -9,10 +10,11 @@
 namespace
 {
 	constexpr char kTestMazePath[] = "MazeLoaderTestInput.txt";
+	constexpr char kTestLevelCatalogPath[] = "LevelCatalogTestInput.txt";
 
-	bool WriteTestMazeFile(const std::string& contents)
+	bool WriteTestFile(const std::string& filePath, const std::string& contents)
 	{
-		std::ofstream outputFile(kTestMazePath, std::ios::trunc);
+		std::ofstream outputFile(filePath, std::ios::trunc);
 
 		if (!outputFile.is_open())
 			return false;
@@ -24,7 +26,7 @@ namespace
 
 	MazeLoadResult LoadMazeFromText(const std::string& contents)
 	{
-		if (!WriteTestMazeFile(contents))
+		if (!WriteTestFile(kTestMazePath, contents))
 		{
 			MazeLoadResult result;
 			result.errorMessage = "Failed to create test maze file.";
@@ -35,6 +37,23 @@ namespace
 		MazeLoadResult result = LoadMazeFromFile(kTestMazePath);
 
 		std::remove(kTestMazePath);
+
+		return result;
+	}
+
+	LevelCatalogLoadResult LoadLevelCatalogFromText(const std::string& contents)
+	{
+		if (!WriteTestFile(kTestLevelCatalogPath, contents))
+		{
+			LevelCatalogLoadResult result;
+			result.errorMessage = "Failed to create test level catalog file.";
+
+			return result;
+		}
+
+		LevelCatalogLoadResult result = LoadLevelCatalogFromFile(kTestLevelCatalogPath);
+
+		std::remove(kTestLevelCatalogPath);
 
 		return result;
 	}
@@ -78,6 +97,52 @@ namespace
 	bool Contains(const std::string& text, const std::string& expectedText)
 	{
 		return text.find(expectedText) != std::string::npos;
+	}
+
+	bool TestLoadsValidLevelCatalog()
+	{
+		const LevelCatalogLoadResult result =
+			LoadLevelCatalogFromText(
+				"# Levels\n"
+				"\n"
+				"  Level01.txt  \n"
+				"Level02.txt\n");
+
+		if (!result.isSuccessful)
+		{
+			std::cerr << result.errorMessage << '\n';
+			return false;
+		}
+
+		return result.levelPaths.size() == 2 &&
+			result.levelPaths[0] == "Level01.txt" &&
+			result.levelPaths[1] == "Level02.txt";
+	}
+
+	bool TestRejectsEmptyLevelCatalog()
+	{
+		const LevelCatalogLoadResult result =
+			LoadLevelCatalogFromText(
+				"# No registered levels\n"
+				"\n"
+				"\t\n");
+
+		return !result.isSuccessful &&
+			Contains(result.errorMessage, "Level catalog is empty");
+	}
+
+	bool TestRejectsDuplicateLevelPath()
+	{
+		const LevelCatalogLoadResult result =
+			LoadLevelCatalogFromText(
+				"Level01.txt\n"
+				"Level02.txt\n"
+				"Level01.txt\n");
+
+		return !result.isSuccessful &&
+			Contains(result.errorMessage, "Duplicate level path") &&
+			Contains(result.errorMessage, "line 3") &&
+			Contains(result.errorMessage, "Level01.txt");
 	}
 
 	bool TestRejectsInvalidCharacter()
@@ -254,8 +319,23 @@ int main()
 			"TestCalculatesMazeCellCenters",
 			TestCalculatesMazeCellCenters);
 
+	failedTestCount +=
+		RunTest(
+			"TestLoadsValidLevelCatalog",
+			TestLoadsValidLevelCatalog);
+
+	failedTestCount +=
+		RunTest(
+			"TestRejectsEmptyLevelCatalog",
+			TestRejectsEmptyLevelCatalog);
+
+	failedTestCount +=
+		RunTest(
+			"TestRejectsDuplicateLevelPath",
+			TestRejectsDuplicateLevelPath);
+
 	std::cout
-		<< "Tests: 8, Failed: "
+		<< "Tests: 11, Failed: "
 		<< failedTestCount
 		<< '\n';
 

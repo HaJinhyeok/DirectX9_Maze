@@ -23,3 +23,19 @@
 - 좌표는 왼쪽 위가 `(row: 0, column: 0)`이다.
 
 로더는 마커 좌표를 `MazeDefinition`에 저장한 뒤 해당 셀을 통로인 `.`으로 정규화한다.
+
+## 레벨 목록
+
+`LevelList.txt`는 게임에서 사용할 레벨 파일 경로를 진행 순서대로 관리한다.
+
+```text
+# Levels are loaded in this order.
+Assets\Data\Levels\Level01.txt
+Assets\Data\Levels\Level02.txt
+```
+
+- 한 줄에는 하나의 레벨 파일 경로만 작성한다.
+- 빈 줄과 `#`으로 시작하는 주석은 무시한다.
+- 경로 앞뒤 공백은 제거한다.
+- 같은 경로를 중복해서 등록할 수 없다.
+- 첫 번째 경로가 게임 시작 레벨이며 클리어할 때 다음 경로로 전환한다.

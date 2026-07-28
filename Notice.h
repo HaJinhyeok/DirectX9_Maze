@@ -13,7 +13,6 @@ private:
 
 public:
 	BOOL m_isNotice = TRUE;
-	static WORD s_noticeCount;
 
 	VOID Initialize(D3DXVECTOR3 position);
 	HRESULT CreateVertexBuffer(LPDIRECT3DDEVICE9 device);
@@ -22,14 +21,12 @@ public:
 	VOID ReleaseVertexBuffer();
 
 	BOOL CanInteract(D3DXVECTOR3 playerPosition, BOOL isNoClipEnabled);
+
 	BOOL IsNotice()
 	{
 		return m_isNotice;
 	}
-	WORD GetNoticeCount()
-	{
-		return s_noticeCount;
-	}
+
 	D3DXMATRIX GetWorldMatrix()
 	{
 		return m_worldMatrix;
