@@ -1,11 +1,12 @@
 ﻿#include "MazeGenerator.h"
+#include "MazeCoordinates.h"
 
 D3DXVECTOR3 CalculateMazeCellCenter(const MazeDefinition& maze, int row, int column)
 {
-    return D3DXVECTOR3(
-        (-maze.GetWidth() / 2.0f + column + 0.5f) * kTileSize,
-        kTileSize / 2,
-        (maze.GetHeight() / 2.0f - row - 0.5f) * kTileSize);
+    const MazeWorldPosition position =
+        CalculateMazeCellCenterPosition(maze, row, column, kTileSize);
+
+    return D3DXVECTOR3(position.x, position.y, position.z);
 }
 
 D3DXVECTOR3 CalculateMidPoint(D3DXVECTOR3 firstPoint, D3DXVECTOR3 secondPoint)

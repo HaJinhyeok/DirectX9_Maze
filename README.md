@@ -43,6 +43,7 @@ DirectX9 기반 1인칭 미로 탐색 게임입니다. 취업 준비 기간에 �
 | `main.cpp`, `main.h` | Direct3D 초기화, 메인 루프, 렌더링, 전역 게임 상태 |
 | `Player.*` | 플레이어 이동, 회전, 충돌, 총알, 손전등 |
 | `MazeGenerator.*` | 맵 데이터 기반 벽 버텍스 생성 |
+| `MazeLoader.*`, `MazeDefinition.h` | 외부 레벨 파일 검증과 런타임 미로 데이터 |
 | `Frustum.*` | 프러스텀 평면 계산과 컬링 판정 |
 | `SkyBox.*` | 스카이박스 텍스처와 렌더링 |
 | `Notice.*`, `Exit.*` | 안내문과 출구 오브젝트 |
@@ -51,6 +52,8 @@ DirectX9 기반 1인칭 미로 탐색 게임입니다. 취업 준비 기간에 �
 | `Input.*` | 키 입력 상태 관리 |
 | `FpsCounter.*` | 메인 루프의 delta time을 이용한 FPS 계산 |
 | `ComUtils.h` | COM 포인터의 null 안전한 공통 해제 |
+| `D3D_MyFPS.Tests` | Direct3D 실행 없이 순수 로직을 검증하는 콘솔 테스트 |
+| `Assets/Data/Levels` | 문자 기반 미로 레벨과 작성 규칙 |
 
 ## 개발 환경
 
@@ -94,6 +97,14 @@ Visual Studio 2022 Community 기본 설치 경로를 사용하는 경우, 저장
 .\Debug\DirectX9_Maze.exe
 ```
 
+미로 로더 자동 테스트는 같은 위치에서 다음 명령으로 실행합니다.
+
+```powershell
+.\Debug\D3D_MyFPS.Tests.exe
+```
+
+모든 테스트가 통과하면 종료 코드 `0`, 하나라도 실패하면 종료 코드 `1`을 반환합니다.
+
 ### 구성 제약
 
 - 현재 빌드와 실행이 확인된 구성은 `Debug|x86`입니다.
@@ -107,6 +118,7 @@ Visual Studio 2022 Community 기본 설치 경로를 사용하는 경우, 저장
 - Windows 환경에서 게임 실행 정상 확인
 - UTF-8 소스 변환 후 한글 문자열 출력 정상 확인
 - 필수 텍스처 누락 시 초기화 실패 안내 후 크래시 없이 종료됨을 확인
+- 미로 로더와 셀 좌표 변환 자동 테스트 8개 통과
 - 수동 검증 절차: [`docs/SMOKE_TEST.md`](docs/SMOKE_TEST.md)
 - 외부 에셋 출처와 공개 상태: [`docs/ASSET_LICENSES.md`](docs/ASSET_LICENSES.md)
 
