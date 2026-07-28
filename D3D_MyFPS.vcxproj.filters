@@ -51,10 +51,10 @@
     <ClCompile Include="XFileModel.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="MazeData.cpp">
+    <ClCompile Include="PlayerCollision.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="PlayerCollision.cpp">
+    <ClCompile Include="MazeLoader.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -98,13 +98,13 @@
     <ClInclude Include="XFileModel.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="MazeData.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="PlayerCollision.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="MazeDefinition.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MazeLoader.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

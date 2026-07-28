@@ -151,7 +151,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Frustum.cpp" />
-    <ClCompile Include="MazeData.cpp" />
+    <ClCompile Include="MazeLoader.cpp" />
     <ClCompile Include="Notice.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="PlayerCollision.cpp" />
@@ -170,8 +170,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Frustum.h" />
-    <ClInclude Include="MazeData.h" />
     <ClInclude Include="MazeDefinition.h" />
+    <ClInclude Include="MazeLoader.h" />
     <ClInclude Include="Notice.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="PlayerCollision.h" />

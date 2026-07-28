@@ -6,7 +6,7 @@
 #include "SkyBox.h"
 #include "Tiger.h"
 #include "ComUtils.h"
-#include "MazeData.h"
+#include "MazeLoader.h"
 
 const D3DXVECTOR3 kWorldUp(0.0f, 1.0f, 0.0f);
 
@@ -20,6 +20,7 @@ constexpr LONG kExitButtonTopOffsetFromCenter = 100;
 constexpr LONG kMinimumWindowTrackWidth = 600;
 constexpr LONG kMinimumWindowTrackHeight = 600;
 constexpr int kTileVertexCount = 4;
+constexpr char kDefaultMazePath[] = "Assets\\Data\\Levels\\Level01.txt";
 
 using WallFaceVertices = std::array<CustomVertex, kVerticesPerWallFace>;
 
@@ -122,6 +123,8 @@ static SettingsOverlay g_settingsOverlay;
 static FpsCounter g_fpsCounter;
 static Tiger g_tiger(D3DXVECTOR3(0.0f, kTileSize / 2.0f, 0.0f));
 static SkyBox g_skyBox;
+static MazeDefinition g_maze;
+static std::string g_initializationErrorMessage;
 
 static VOID ConfigureDeviceRenderStates(LPDIRECT3DDEVICE9 device)
 {
@@ -245,6 +248,24 @@ static VOID UpdateUiLayout()
 	g_mazeExit.SetButtonBounds(g_exitButtonRect);
 }
 
+static HRESULT InitializeMaze()
+{
+	g_initializationErrorMessage.clear();
+
+	const MazeLoadResult loadResult = LoadMazeFromFile(kDefaultMazePath);
+
+	if (!loadResult.isSuccessful)
+	{
+		g_initializationErrorMessage = loadResult.errorMessage;
+
+		return E_FAIL;
+	}
+
+	g_maze = loadResult.maze;
+
+	return S_OK;
+}
+
 static HRESULT InitializeGameComponents()
 {
 	InitializeInput();
@@ -265,22 +286,22 @@ static HRESULT InitializeGameComponents()
 	if (FAILED(tigerLoadResult))
 		return tigerLoadResult;
 
-	const MazeCellPosition& playerStart = kDefaultMaze.playerStart;
+	const MazeCellPosition& playerStart = g_maze.playerStart;
 
 	const D3DXVECTOR3 playerStartPosition =
 		CalculateMazeCellCenter(
-			kDefaultMaze,
+			g_maze,
 			playerStart.row,
 			playerStart.column);
 
 	g_player.SetPosition(playerStartPosition);
 
-	const MazeCellPosition& tigerStart = kDefaultMaze.tigerStart;
+	const MazeCellPosition& tigerStart = g_maze.tigerStart;
 
 
 	const D3DXVECTOR3 tigerStartPosition =
 		CalculateMazeCellCenter(
-			kDefaultMaze,
+			g_maze,
 			tigerStart.row,
 			tigerStart.column);
 
@@ -539,9 +560,9 @@ static HRESULT CreateMazeGeometry()
 {
 	int i;
 
-	g_mazeWallVertices = GenerateMazeWalls(kDefaultMaze);
+	g_mazeWallVertices = GenerateMazeWalls(g_maze);
 
-	InitializeMazeEntities(kDefaultMaze, &g_notices, &g_mazeExit);
+	InitializeMazeEntities(g_maze, &g_notices, &g_mazeExit);
 
 	const UINT mazeVertexDataSize = static_cast<UINT>(sizeof(MazeWallBlockVertices) * g_mazeWallVertices.size());
 
@@ -570,8 +591,8 @@ static HRESULT CreateTileGeometry()
 {
 	int i, j;
 
-	const int mazeWidth = kDefaultMaze.GetWidth();
-	const int mazeHeight = kDefaultMaze.GetHeight();
+	const int mazeWidth = g_maze.GetWidth();
+	const int mazeHeight = g_maze.GetHeight();
 	const int tileCount = mazeWidth * mazeHeight;
 
 	g_tileVertices.resize(static_cast<std::size_t>(tileCount) * kTileVertexCount);
@@ -642,8 +663,8 @@ static void AppendWallFace(
 
 static HRESULT CreateOuterWallGeometry()
 {
-	const int width = kDefaultMaze.GetWidth();
-	const int height = kDefaultMaze.GetHeight();
+	const int width = g_maze.GetWidth();
+	const int height = g_maze.GetHeight();
 	const float halfWidth = width / 2.0f;
 	const float halfHeight = height / 2.0f;
 
@@ -703,8 +724,8 @@ static HRESULT CreateOuterWallGeometry()
 
 static HRESULT CreateUpperWallGeometry()
 {
-	const int width = kDefaultMaze.GetWidth();
-	const int height = kDefaultMaze.GetHeight();
+	const int width = g_maze.GetWidth();
+	const int height = g_maze.GetHeight();
 	const float halfWidth = width / 2.0f;
 	const float halfHeight = height / 2.0f;
 	const D3DXVECTOR3 upwardNormal(0.0f, 1.0f, 0.0f);
@@ -764,7 +785,12 @@ static HRESULT CreateUpperWallGeometry()
 
 static HRESULT InitializeResources()
 {
-	HRESULT initializationResult = InitializeGameComponents();
+	HRESULT initializationResult = InitializeMaze();
+
+	if (FAILED(initializationResult))
+		return initializationResult;
+
+	initializationResult = InitializeGameComponents();
 
 	if (FAILED(initializationResult))
 		return initializationResult;
@@ -864,7 +890,7 @@ static VOID HandleMovementInput(FLOAT deltaTimeSeconds)
 	{
 		g_didPlayerMove = g_player.Move(
 			MoveDirection::Left,
-			kDefaultMaze,
+			g_maze,
 			g_isNoClipEnabled,
 			deltaTimeSeconds) || g_didPlayerMove;
 	}
@@ -873,7 +899,7 @@ static VOID HandleMovementInput(FLOAT deltaTimeSeconds)
 	{
 		g_didPlayerMove = g_player.Move(
 			MoveDirection::Right,
-			kDefaultMaze,
+			g_maze,
 			g_isNoClipEnabled,
 			deltaTimeSeconds) || g_didPlayerMove;
 	}
@@ -882,7 +908,7 @@ static VOID HandleMovementInput(FLOAT deltaTimeSeconds)
 	{
 		g_didPlayerMove = g_player.Move(
 			MoveDirection::Forward,
-			kDefaultMaze,
+			g_maze,
 			g_isNoClipEnabled,
 			deltaTimeSeconds) || g_didPlayerMove;
 	}
@@ -891,7 +917,7 @@ static VOID HandleMovementInput(FLOAT deltaTimeSeconds)
 	{
 		g_didPlayerMove = g_player.Move(
 			MoveDirection::Backward,
-			kDefaultMaze,
+			g_maze,
 			g_isNoClipEnabled,
 			deltaTimeSeconds) || g_didPlayerMove;
 	}
@@ -999,7 +1025,7 @@ static VOID UpdateDynamicObjects(FLOAT deltaTimeSeconds)
 	// 총알 움직임 계산
 	g_player.UpdateBullets(deltaTimeSeconds);
 	// 호랑이 움직임 계산
-	g_tiger.Move(kDefaultMaze, deltaTimeSeconds);
+	g_tiger.Move(g_maze, deltaTimeSeconds);
 }
 
 static VOID UpdateInteractionState()
@@ -1673,9 +1699,13 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 			g_cursorDisplayCount = ShowCursor(TRUE);
 		}
 
+		const char* initializationErrorMessage = g_initializationErrorMessage.empty()
+			? "게임 초기화에 실패했습니다."
+			: g_initializationErrorMessage.c_str();
+
 		MessageBox(
 			windowHandle,
-			"게임 초기화에 실패했습니다.",
+			initializationErrorMessage,
 			kProgramName,
 			MB_OK | MB_ICONERROR);
 
