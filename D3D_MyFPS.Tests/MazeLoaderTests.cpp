@@ -1,7 +1,9 @@
 #include "../MazeLoader.h"
 #include "../MazeCoordinates.h"
 #include "../LevelCatalog.h"
+#include "../BulletCollision.h"
 
+#include <cmath>
 #include <cstdio>
 #include <fstream>
 #include <iostream>
@@ -97,6 +99,96 @@ namespace
 	bool Contains(const std::string& text, const std::string& expectedText)
 	{
 		return text.find(expectedText) != std::string::npos;
+	}
+
+	bool NearlyEqual(
+		float first,
+		float second,
+		float tolerance = 0.0001f)
+	{
+		return std::fabs(first - second) <= tolerance;
+	}
+
+	bool TestSweepsBulletThroughWall()
+	{
+		MazeDefinition maze;
+		maze.cells =
+		{
+			"...",
+			".*.",
+			"..."
+		};
+
+		const MazeWorldPosition startPosition = { -12.0f, 5.0f, 0.0f };
+		const MazeWorldPosition endPosition = { 12.0f, 5.0f, 0.0f };
+
+		const BulletSweepResult result =
+			SweepBulletAgainstMaze(
+				maze,
+				startPosition,
+				endPosition,
+				0.5f,
+				10.0f);
+
+		return result.didHitWall &&
+			NearlyEqual(result.hitTime, 6.5f / 24.0f) &&
+			NearlyEqual(result.hitPosition.x, -5.5f) &&
+			NearlyEqual(result.hitPosition.y, 5.0f) &&
+			NearlyEqual(result.hitPosition.z, 0.0f);
+	}
+
+	bool TestDoesNotHitWallOutsideBulletPath()
+	{
+		MazeDefinition maze;
+		maze.cells =
+		{
+			"...",
+			".*.",
+			"..."
+		};
+
+		const MazeWorldPosition startPosition = { -12.0f, 5.0f, -10.0f };
+		const MazeWorldPosition endPosition = { 12.0f, 5.0f, -10.0f };
+
+		const BulletSweepResult result =
+			SweepBulletAgainstMaze(
+				maze,
+				startPosition,
+				endPosition,
+				0.5f,
+				10.0f);
+
+		return !result.didHitWall &&
+			NearlyEqual(result.hitTime, 1.0f) &&
+			NearlyEqual(result.hitPosition.x, endPosition.x) &&
+			NearlyEqual(result.hitPosition.y, endPosition.y) &&
+			NearlyEqual(result.hitPosition.z, endPosition.z);
+	}
+
+	bool TestSweepsBulletIntoOuterWall()
+	{
+		MazeDefinition maze;
+		maze.cells =
+		{
+			"...",
+			"...",
+			"..."
+		};
+
+		const MazeWorldPosition startPosition = { 0.0f, 5.0f, 0.0f };
+		const MazeWorldPosition endPosition = { 30.0f, 5.0f, 0.0f };
+
+		const BulletSweepResult result =
+			SweepBulletAgainstMaze(
+				maze,
+				startPosition,
+				endPosition,
+				0.5f,
+				10.0f);
+
+		return result.didHitWall &&
+			NearlyEqual(result.hitTime, 14.5f / 30.0f) &&
+			NearlyEqual(result.hitPosition.x, 14.5f);
 	}
 
 	bool TestLoadsValidLevelCatalog()
@@ -334,8 +426,23 @@ int main()
 			"TestRejectsDuplicateLevelPath",
 			TestRejectsDuplicateLevelPath);
 
+	failedTestCount +=
+		RunTest(
+			"TestSweepsBulletThroughWall",
+			TestSweepsBulletThroughWall);
+
+	failedTestCount +=
+		RunTest(
+			"TestDoesNotHitWallOutsideBulletPath",
+			TestDoesNotHitWallOutsideBulletPath);
+
+	failedTestCount +=
+		RunTest(
+			"TestSweepsBulletIntoOuterWall",
+			TestSweepsBulletIntoOuterWall);
+
 	std::cout
-		<< "Tests: 11, Failed: "
+		<< "Tests: 14, Failed: "
 		<< failedTestCount
 		<< '\n';
 

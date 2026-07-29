@@ -1,5 +1,6 @@
 ﻿#include "Player.h"
 #include "PlayerCollision.h"
+#include "BulletCollision.h"
 
 namespace
 {
@@ -33,6 +34,16 @@ namespace
 		}
 
 		return D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+	}
+
+	MazeWorldPosition ToMazeWorldPosition(const D3DXVECTOR3& position) noexcept
+	{
+		return
+		{
+			position.x,
+			position.y,
+			position.z
+		};
 	}
 }
 
@@ -243,24 +254,41 @@ VOID Player::FireBullet(LPPOINT cursorPosition)
 	m_bullets.push_back(bullet);
 }
 
-VOID Player::UpdateBullets(FLOAT deltaTimeSeconds)
+VOID Player::UpdateBullets(const MazeDefinition& maze, FLOAT deltaTimeSeconds)
 {
-	// 매 프레임마다 호출해서 총알의 이동 및 충돌 후 제거 연산 수행 (x)
-	// 프레임마다 호출하면 프레임 낮은 똥컴에서는 총알 속도가 느려지는 말도 안 되는 상황 발생한다.
-	// 프레임이 아닌, 실제 시간을 기준으로 이동시켜야함
-	// 발사된 총알이 없을 시 건너뜀
 	if (m_bullets.empty())
 		return;
 
 	for (auto iter = m_bullets.begin(); iter != m_bullets.end();)
 	{
-		FLOAT travelDistance = m_bulletVelocity * deltaTimeSeconds;
+		const FLOAT directionLength = CalculateLength(iter->direction);
 
-		travelDistance /= CalculateLength(iter->direction);
-		iter->position += travelDistance * iter->direction;
+		if (directionLength <= kEpsilon)
+		{
+			iter = m_bullets.erase(iter);
+			continue;
+		}
 
-		// 벽 또는 장애물과 충돌 검사
-		// 일단은 플레이어로부터 100만큼 떨어지면 제거되게
+		const FLOAT movementScale = m_bulletVelocity * deltaTimeSeconds / directionLength;
+		const D3DXVECTOR3 startPosition = iter->position;
+		const D3DXVECTOR3 endPosition = startPosition + iter->direction * movementScale;
+
+		const BulletSweepResult sweepResult =
+			SweepBulletAgainstMaze(
+				maze,
+				ToMazeWorldPosition(startPosition),
+				ToMazeWorldPosition(endPosition),
+				kBulletRadius,
+				kTileSize);
+
+		if (sweepResult.didHitWall)
+		{
+			iter = m_bullets.erase(iter);
+			continue;
+		}
+
+		iter->position = endPosition;
+
 		if (CalculateLength(iter->position - GetPosition()) >= 100.0f)
 		{
 			iter = m_bullets.erase(iter);

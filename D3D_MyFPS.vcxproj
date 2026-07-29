@@ -146,6 +146,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BulletCollision.cpp" />
     <ClCompile Include="Exit.cpp" />
     <ClCompile Include="FpsCounter.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
@@ -166,6 +167,7 @@
     <ClCompile Include="XFileModel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BulletCollision.h" />
     <ClInclude Include="ComUtils.h" />
     <ClInclude Include="Exit.h" />
     <ClInclude Include="FpsCounter.h">

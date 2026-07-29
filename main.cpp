@@ -1142,7 +1142,7 @@ static VOID UpdateDynamicObjects(FLOAT deltaTimeSeconds)
 		return;
 
 	// 총알 움직임 계산
-	g_player.UpdateBullets(deltaTimeSeconds);
+	g_player.UpdateBullets(g_maze, deltaTimeSeconds);
 	// 호랑이 움직임 계산
 	g_tiger.Move(g_maze, deltaTimeSeconds);
 }
