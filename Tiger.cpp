@@ -30,11 +30,21 @@ HRESULT Tiger::Load(LPDIRECT3DDEVICE9 device, char* xFilePath)
 
 int Tiger::Render(LPDIRECT3DDEVICE9 device)
 {
+	if (!IsAlive())
+	{
+		return 0;
+	}
+
 	return m_model.Render(device);
 }
 
 VOID Tiger::Move(const MazeDefinition& maze, FLOAT deltaTimeSeconds)
 {
+	if (!IsAlive())
+	{
+		return;
+	}
+
 	m_accumulatedTimeSeconds += deltaTimeSeconds;
 
 	while (m_accumulatedTimeSeconds >= kTigerUpdateIntervalSeconds)
@@ -525,7 +535,7 @@ VOID Tiger::ResetForLevel(const D3DXVECTOR3& position, const D3DXVECTOR3& lookAt
 		&translationMatrix);
 
 	m_lookAt = lookAt;
-	m_isAlive = TRUE;
+	m_health = kTigerMaxHealth;
 	m_isRotating = FALSE;
 	m_isClockwise = TRUE;
 
@@ -537,4 +547,42 @@ VOID Tiger::ResetForLevel(const D3DXVECTOR3& position, const D3DXVECTOR3& lookAt
 	m_rotationAmount = 0;
 	m_rotationCount = 0;
 	m_accumulatedTimeSeconds = 0.0f;
+}
+
+void Tiger::TakeDamage(int damage) noexcept
+{
+	if (damage <= 0 || !IsAlive())
+	{
+		return;
+	}
+
+	m_health -= damage;
+
+	if (m_health < 0)
+	{
+		m_health = 0;
+	}
+}
+
+int Tiger::GetHealth() const noexcept
+{
+	return m_health;
+}
+
+bool Tiger::IsAlive() const noexcept
+{
+	return m_health > 0;
+}
+
+CollisionSphere Tiger::GetCollisionSphere() const noexcept
+{
+	return
+	{
+		{
+			m_worldMatrix._41,
+			m_worldMatrix._42,
+			m_worldMatrix._43
+		},
+		kTigerCollisionRadius
+	};
 }

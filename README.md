@@ -21,7 +21,8 @@ DirectX9 기반 1인칭 미로 탐색 게임입니다. 취업 준비 기간에 �
 - 탑뷰/자유시점 디버그 뷰
 - 프러스텀 컬링
 - X 파일 기반 호랑이 모델 로딩과 간단한 미로 이동 AI
-- 총알 발사, 시간 기반 이동과 벽 연속 충돌 처리
+- 총알 발사, 시간 기반 이동과 벽·적 연속 충돌 처리
+- 적 HP·사망 처리와 플레이어 접촉 게임 오버·재시작
 
 ## 조작법
 
@@ -47,10 +48,11 @@ DirectX9 기반 1인칭 미로 탐색 게임입니다. 취업 준비 기간에 �
 | `MazeLoader.*`, `MazeDefinition.h` | 외부 레벨 파일 검증과 런타임 미로 데이터 |
 | `LevelCatalog.*` | 외부 레벨 목록의 순서와 경로 검증 |
 | `BulletCollision.*` | 투사체 이동 선분과 내부·외곽 벽의 연속 충돌 판정 |
+| `CombatCollision.*` | 구체 겹침과 이동 구체의 최초 충돌 시각 계산 |
 | `Frustum.*` | 프러스텀 평면 계산과 컬링 판정 |
 | `SkyBox.*` | 스카이박스 텍스처와 렌더링 |
 | `Notice.*`, `Exit.*` | 안내문과 출구 오브젝트 |
-| `Tiger.*` | X 파일 모델 로딩, 재질·텍스처 처리와 호랑이 이동 |
+| `Tiger.*` | X 파일 모델 로딩, 이동, 충돌 경계, HP와 사망 상태 |
 | `Assets/Models`, `Assets/Textures` | 런타임 모델과 용도별 텍스처 |
 | `Input.*` | 키 입력 상태 관리 |
 | `FpsCounter.*` | 메인 루프의 delta time을 이용한 FPS 계산 |
@@ -121,8 +123,9 @@ Visual Studio 2022 Community 기본 설치 경로를 사용하는 경우, 저장
 - Windows 환경에서 게임 실행 정상 확인
 - UTF-8 소스 변환 후 한글 문자열 출력 정상 확인
 - 필수 텍스처 누락 시 초기화 실패 안내 후 크래시 없이 종료됨을 확인
-- 미로 로더, 레벨 목록, 셀 좌표 변환과 투사체 연속 충돌 자동 테스트 14개 통과
+- 미로 로더, 레벨 목록, 셀 좌표 변환과 투사체·구체 연속 충돌 자동 테스트 19개 통과
 - 서로 다른 크기의 `Level01`과 `Level02` 전환 및 상태·리소스 재설정 확인
+- 적 피격·사망, 플레이어 접촉 게임 오버와 현재 레벨 재시작 확인
 - 수동 검증 절차: [`docs/SMOKE_TEST.md`](docs/SMOKE_TEST.md)
 - 외부 에셋 출처와 공개 상태: [`docs/ASSET_LICENSES.md`](docs/ASSET_LICENSES.md)
 
@@ -144,7 +147,7 @@ Visual Studio 2022 Community 기본 설치 경로를 사용하는 경우, 저장
 - `main.cpp`에 초기화, 입력, 업데이트, 렌더링, UI, 게임 규칙이 많이 모여 있습니다.
 - 전역 상태와 리소스 소유 객체가 여러 모듈에 걸쳐 있어 전체 수명 주기를 파악하기 어렵습니다.
 - UI 좌표와 일부 게임 설정 값이 `main.cpp`에 하드코딩되어 있습니다.
-- 자동 테스트는 미로 로더, 레벨 목록, 좌표 변환과 투사체 벽 충돌에 한정되며 Direct3D 리소스 전환과 플레이 동작은 수동 검증에 의존합니다.
+- 자동 테스트는 미로 로더, 레벨 목록, 좌표 변환과 순수 충돌 계산에 한정되며 Direct3D 리소스 전환, 적 상태와 플레이 동작은 수동 검증에 의존합니다.
 - 현재는 `Debug|x86`만 검증되었으며 `x64`와 `Release` 구성은 별도 정리가 필요합니다.
 
 장기 개선 방향과 진행 상태는 [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)와 [`docs/ROADMAP.md`](docs/ROADMAP.md)를 참고하세요. 프로젝트별 C++ 네이밍 기준은 [`docs/CODING_CONVENTIONS.md`](docs/CODING_CONVENTIONS.md), 작업 중 정리한 개념과 선택 이유는 [`docs/LEARNING_NOTES.md`](docs/LEARNING_NOTES.md), 외부 에셋의 출처와 공개 판단은 [`docs/ASSET_LICENSES.md`](docs/ASSET_LICENSES.md)에 기록되어 있습니다.

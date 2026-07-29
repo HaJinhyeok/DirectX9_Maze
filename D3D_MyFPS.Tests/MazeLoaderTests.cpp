@@ -2,6 +2,7 @@
 #include "../MazeCoordinates.h"
 #include "../LevelCatalog.h"
 #include "../BulletCollision.h"
+#include "../CombatCollision.h"
 
 #include <cmath>
 #include <cstdio>
@@ -107,6 +108,112 @@ namespace
 		float tolerance = 0.0001f)
 	{
 		return std::fabs(first - second) <= tolerance;
+	}
+
+	bool TestDetectsOverlappingSpheres()
+	{
+		const CollisionSphere first =
+		{
+			{ 0.0f, 0.0f, 0.0f },
+			1.0f
+		};
+
+		const CollisionSphere second =
+		{
+			{ 1.5f, 0.0f, 0.0f },
+			1.0f
+		};
+
+		return DoSpheresOverlap(first, second);
+	}
+
+	bool TestRejectsSeparatedSpheres()
+	{
+		const CollisionSphere first =
+		{
+			{ 0.0f, 0.0f, 0.0f },
+			1.0f
+		};
+
+		const CollisionSphere second =
+		{
+			{ 2.1f, 0.0f, 0.0f },
+			1.0f
+		};
+
+		return !DoSpheresOverlap(first, second);
+	}
+
+	bool TestSweepsSphereIntoTarget()
+	{
+		const MazeWorldPosition startPosition = { -5.0f, 0.0f, 0.0f };
+		const MazeWorldPosition endPosition = { 5.0f, 0.0f, 0.0f };
+
+		const CollisionSphere target =
+		{
+			{ 0.0f, 0.0f, 0.0f },
+			1.0f
+		};
+
+		const SphereSweepResult result =
+			SweepSphereAgainstSphere(
+				startPosition,
+				endPosition,
+				0.5f,
+				target);
+
+		return result.didHit &&
+			NearlyEqual(result.hitTime, 0.35f) &&
+			NearlyEqual(result.hitPosition.x, -1.5f) &&
+			NearlyEqual(result.hitPosition.y, 0.0f) &&
+			NearlyEqual(result.hitPosition.z, 0.0f);
+	}
+
+	bool TestDoesNotSweepSphereOutsideTarget()
+	{
+		const MazeWorldPosition startPosition = { -5.0f, 2.0f, 0.0f };
+		const MazeWorldPosition endPosition = { 5.0f, 2.0f, 0.0f };
+
+		const CollisionSphere target =
+		{
+			{ 0.0f, 0.0f, 0.0f },
+			1.0f
+		};
+
+		const SphereSweepResult result =
+			SweepSphereAgainstSphere(
+				startPosition,
+				endPosition,
+				0.5f,
+				target);
+
+		return !result.didHit &&
+			NearlyEqual(result.hitTime, 1.0f);
+	}
+
+	bool TestReportsInitialSphereOverlap()
+	{
+		const MazeWorldPosition startPosition = { 0.5f, 0.0f, 0.0f };
+		const MazeWorldPosition endPosition = { 5.0f, 0.0f, 0.0f };
+
+		const CollisionSphere target =
+		{
+			{ 0.0f, 0.0f, 0.0f },
+			1.0f
+		};
+
+		const SphereSweepResult result =
+			SweepSphereAgainstSphere(
+				startPosition,
+				endPosition,
+				0.5f,
+				target);
+
+		return result.didHit &&
+			NearlyEqual(result.hitTime, 0.0f) &&
+			NearlyEqual(result.hitPosition.x, startPosition.x) &&
+			NearlyEqual(result.hitPosition.y, startPosition.y) &&
+			NearlyEqual(result.hitPosition.z, startPosition.z);
 	}
 
 	bool TestSweepsBulletThroughWall()
@@ -441,8 +548,33 @@ int main()
 			"TestSweepsBulletIntoOuterWall",
 			TestSweepsBulletIntoOuterWall);
 
+	failedTestCount +=
+		RunTest(
+			"TestDetectsOverlappingSpheres",
+			TestDetectsOverlappingSpheres);
+
+	failedTestCount +=
+		RunTest(
+			"TestRejectsSeparatedSpheres",
+			TestRejectsSeparatedSpheres);
+
+	failedTestCount +=
+		RunTest(
+			"TestSweepsSphereIntoTarget",
+			TestSweepsSphereIntoTarget);
+
+	failedTestCount +=
+		RunTest(
+			"TestDoesNotSweepSphereOutsideTarget",
+			TestDoesNotSweepSphereOutsideTarget);
+
+	failedTestCount +=
+		RunTest(
+			"TestReportsInitialSphereOverlap",
+			TestReportsInitialSphereOverlap);
+
 	std::cout
-		<< "Tests: 14, Failed: "
+		<< "Tests: 19, Failed: "
 		<< failedTestCount
 		<< '\n';
 

@@ -5,10 +5,13 @@
 #include "main.h"
 #include "XFileModel.h"
 #include "MazeDefinition.h"
+#include "CombatCollision.h"
 
 constexpr float kTigerMoveDistance = 0.2f;
 constexpr float kTigerScale = 7.0f;
 constexpr float kTigerUpdateIntervalSeconds = 0.01f;
+constexpr int kTigerMaxHealth = 3;
+constexpr float kTigerCollisionRadius = 3.5f;
 
 class Tiger
 {
@@ -17,10 +20,7 @@ private:
 
 	D3DXVECTOR3 m_lookAt;
 	D3DXMATRIX m_worldMatrix;
-	// x 파일 객체(호랑이)는 일단 맵에 한 마리만 존재하도록 설정
-	// 그 한 마리 호랑이가 살아있는지 아닌지 판별
-	// 총알로 호랑이 맞춰서 잡으면, 그 시점으로부터 일정 시간 후 호랑이 다시 랜덤 위치에서 리젠되도록 설정
-	BOOL m_isAlive;
+	int m_health;
 	BOOL m_isRotating; // 현재 호랑이가 방향전환 중인지 확인
 	BOOL m_isClockwise;
 	BOOL m_isWallOpen[4]; // 현재 호랑이 위치 기준 앞, 뒤, 좌, 우로 진행 가능한지 확인
@@ -47,11 +47,6 @@ public:
 		m_lookAt = lookAt;
 	}
 
-	VOID SetAlive(BOOL isAlive)
-	{
-		m_isAlive = isAlive;
-	}
-
 	D3DXVECTOR3 GetPosition() const
 	{
 		return D3DXVECTOR3(
@@ -65,11 +60,6 @@ public:
 		return m_lookAt;
 	}
 
-	BOOL IsAlive()
-	{
-		return m_isAlive;
-	}
-
 	D3DXMATRIX& GetWorldMatrix()
 	{
 		return m_worldMatrix;
@@ -79,5 +69,10 @@ public:
 	virtual ~Tiger();
 	VOID ReleaseResources();
 	VOID ResetForLevel(const D3DXVECTOR3& position, const D3DXVECTOR3& lookAt);
+
+	void TakeDamage(int damage) noexcept;
+	int GetHealth() const noexcept;
+	bool IsAlive() const noexcept;
+	CollisionSphere GetCollisionSphere() const noexcept;
 };
 

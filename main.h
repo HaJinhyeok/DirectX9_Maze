@@ -37,6 +37,7 @@ constexpr float kEpsilon = 0.001f;
 constexpr float kLookAtDistance = 5.0f;
 constexpr float kPlayerRadius = 2.0f;
 constexpr float kBulletRadius = 0.4f;
+constexpr int kBulletDamage = 1;
 constexpr float kPlayerMoveSpeed = 30.0f;                       // 초당 이동 거리
 constexpr float kPlayerRotationSpeed = D3DX_PI / 2.0f;          // 초당 90도 회전
 constexpr float kMouseHorizontalRotationSensitivity = 0.001f;   // 좌우 1pixel 당 회전각

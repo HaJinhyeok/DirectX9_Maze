@@ -1,6 +1,8 @@
 ﻿#include "Player.h"
 #include "PlayerCollision.h"
 #include "BulletCollision.h"
+#include "Tiger.h"
+#include "CombatCollision.h"
 
 namespace
 {
@@ -78,6 +80,19 @@ Player::Player()
 	m_flashlight.Falloff = 2.0f;
 	m_flashlight.Phi = D3DXToRadian(60.0f);
 	m_flashlight.Theta = D3DXToRadian(30.0f);
+}
+
+CollisionSphere Player::GetCollisionSphere() const noexcept
+{
+	return
+	{
+		{
+			m_worldMatrix._41,
+			m_worldMatrix._42,
+			m_worldMatrix._43
+		},
+		kPlayerRadius
+	};
 }
 
 BOOL Player::Move(MoveDirection direction, const MazeDefinition& maze, BOOL isNoClipEnabled, FLOAT deltaTimeSeconds)
@@ -254,7 +269,7 @@ VOID Player::FireBullet(LPPOINT cursorPosition)
 	m_bullets.push_back(bullet);
 }
 
-VOID Player::UpdateBullets(const MazeDefinition& maze, FLOAT deltaTimeSeconds)
+VOID Player::UpdateBullets(const MazeDefinition& maze, Tiger& tiger, FLOAT deltaTimeSeconds)
 {
 	if (m_bullets.empty())
 		return;
@@ -273,15 +288,42 @@ VOID Player::UpdateBullets(const MazeDefinition& maze, FLOAT deltaTimeSeconds)
 		const D3DXVECTOR3 startPosition = iter->position;
 		const D3DXVECTOR3 endPosition = startPosition + iter->direction * movementScale;
 
-		const BulletSweepResult sweepResult =
+		const MazeWorldPosition startWorldPosition = ToMazeWorldPosition(startPosition);
+		const MazeWorldPosition endWorldPosition = ToMazeWorldPosition(endPosition);
+
+		const BulletSweepResult wallSweepResult =
 			SweepBulletAgainstMaze(
 				maze,
-				ToMazeWorldPosition(startPosition),
-				ToMazeWorldPosition(endPosition),
+				startWorldPosition,
+				endWorldPosition,
 				kBulletRadius,
 				kTileSize);
 
-		if (sweepResult.didHitWall)
+		SphereSweepResult tigerSweepResult;
+
+		if (tiger.IsAlive())
+		{
+			tigerSweepResult =
+				SweepSphereAgainstSphere(
+					startWorldPosition,
+					endWorldPosition,
+					kBulletRadius,
+					tiger.GetCollisionSphere());
+		}
+
+		const bool didHitTigerFirst =
+			tigerSweepResult.didHit &&
+			(!wallSweepResult.didHitWall ||
+				tigerSweepResult.hitTime < wallSweepResult.hitTime);
+
+		if (didHitTigerFirst)
+		{
+			tiger.TakeDamage(kBulletDamage);
+			iter = m_bullets.erase(iter);
+			continue;
+		}
+
+		if (wallSweepResult.didHitWall)
 		{
 			iter = m_bullets.erase(iter);
 			continue;

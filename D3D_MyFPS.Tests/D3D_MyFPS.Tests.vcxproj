@@ -124,6 +124,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\BulletCollision.cpp" />
+    <ClCompile Include="..\CombatCollision.cpp" />
     <ClCompile Include="..\LevelCatalog.cpp" />
     <ClCompile Include="..\MazeCoordinates.cpp" />
     <ClCompile Include="..\MazeLoader.cpp" />

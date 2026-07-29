@@ -4,6 +4,9 @@
 
 #include "main.h"
 #include "MazeDefinition.h"
+#include "CombatCollision.h"
+
+class Tiger;
 
 class Player
 {
@@ -76,6 +79,8 @@ public:
 		return &m_flashlight;
 	}
 
+	CollisionSphere GetCollisionSphere() const noexcept;
+
 	BOOL Move(
 		MoveDirection direction,
 		const MazeDefinition& maze,
@@ -86,7 +91,7 @@ public:
 	VOID Rotate(BOOL isCounterClockwise, BOOL isVertical, FLOAT angle);
 	VOID Jump();
 	VOID FireBullet(LPPOINT cursorPosition);
-	VOID UpdateBullets(const MazeDefinition& maze, FLOAT deltaTimeSeconds);
+	VOID UpdateBullets(const MazeDefinition& maze, Tiger& tiger, FLOAT deltaTimeSeconds);
 	VOID RenderBullets(LPDIRECT3DDEVICE9 device, LPD3DXMESH sphere);
 	VOID ResetForLevel(const D3DXVECTOR3& position);
 };

@@ -8,6 +8,7 @@
 #include "ComUtils.h"
 #include "MazeLoader.h"
 #include "LevelCatalog.h"
+#include "CombatCollision.h"
 
 const D3DXVECTOR3 kWorldUp(0.0f, 1.0f, 0.0f);
 
@@ -18,6 +19,8 @@ constexpr LONG kClearPopupHeight = 400;
 constexpr LONG kExitButtonWidth = 100;
 constexpr LONG kExitButtonHeight = 50;
 constexpr LONG kExitButtonTopOffsetFromCenter = 100;
+constexpr LONG kPopupButtonHorizontalPadding = 20;
+constexpr LONG kPopupButtonVerticalPadding = 10;
 constexpr LONG kMinimumWindowTrackWidth = 600;
 constexpr LONG kMinimumWindowTrackHeight = 600;
 constexpr int kTileVertexCount = 4;
@@ -62,10 +65,23 @@ static bool IsTopViewActive() noexcept
 	return g_topViewMode != TopViewMode::Disabled;
 }
 
+enum class GameState
+{
+	Playing,
+	Cleared,
+	GameOver
+};
+
+static GameState g_gameState = GameState::Playing;
+
+static bool IsGameplayActive() noexcept
+{
+	return g_gameState == GameState::Playing;
+}
+
 static BOOL g_isNoClipEnabled = FALSE;
 static BOOL g_isPaused = FALSE;
 static BOOL g_didPlayerMove = FALSE;
-static BOOL g_isPlaying = TRUE;
 static BOOL g_isMouseButtonDown = FALSE;
 static BOOL g_isDaytime = FALSE;
 static SHORT g_cursorDisplayCount = 1;
@@ -331,10 +347,10 @@ static VOID ResetLevelEntities()
 
 static VOID ResetLevelPlayState()
 {
+	g_gameState = GameState::Playing;
 	g_isNoClipEnabled = FALSE;
 	g_isPaused = FALSE;
 	g_didPlayerMove = FALSE;
-	g_isPlaying = TRUE;
 	g_isMouseButtonDown = FALSE;
 	g_topViewMode = TopViewMode::Disabled;
 
@@ -352,6 +368,17 @@ static VOID UpdateBillboardFacing()
 	}
 
 	g_mazeExit.UpdateFacing(playerPosition);
+}
+
+static VOID RestartCurrentLevel()
+{
+	ResetLevelEntities();
+	ResetLevelPlayState();
+	UpdateBillboardFacing();
+
+	SetCursorPos(
+		g_cursorCenter.x,
+		g_cursorCenter.y);
 }
 
 static HRESULT InitializeGameComponents()
@@ -1138,13 +1165,28 @@ static VOID HandleJumpInput()
 
 static VOID UpdateDynamicObjects(FLOAT deltaTimeSeconds)
 {
-	if (!g_isPlaying)
+	if (!IsGameplayActive())
 		return;
 
 	// 총알 움직임 계산
-	g_player.UpdateBullets(g_maze, deltaTimeSeconds);
+	g_player.UpdateBullets(g_maze, g_tiger, deltaTimeSeconds);
 	// 호랑이 움직임 계산
 	g_tiger.Move(g_maze, deltaTimeSeconds);
+}
+
+static VOID UpdateCombatState()
+{
+	if (g_isNoClipEnabled == TRUE || !g_tiger.IsAlive())
+	{
+		return;
+	}
+
+	if (DoSpheresOverlap(
+		g_player.GetCollisionSphere(),
+		g_tiger.GetCollisionSphere()))
+	{
+		g_gameState = GameState::GameOver;
+	}
 }
 
 static VOID UpdateInteractionState()
@@ -1172,11 +1214,22 @@ static VOID UpdateInteractionState()
 			: TopViewMode::Disabled;
 	}
 
-	g_isPlaying = g_mazeExit.CanInteract(g_player.GetPosition(), g_isNoClipEnabled) ? FALSE : TRUE;
+	if (g_gameState == GameState::Playing &&
+		g_mazeExit.CanInteract(
+			g_player.GetPosition(),
+			g_isNoClipEnabled))
+	{
+		g_gameState = GameState::Cleared;
+	}
 }
 
 static VOID UpdateGame(FLOAT deltaTimeSeconds)
 {
+	if (!IsGameplayActive())
+	{
+		return;
+	}
+
 	// ESC
 	HandlePauseInput();
 
@@ -1189,6 +1242,13 @@ static VOID UpdateGame(FLOAT deltaTimeSeconds)
 
 	// wasd 또는 방향키 : 플레이어 앞뒤좌우 움직임
 	HandleMovementInput(deltaTimeSeconds);
+
+	UpdateCombatState();
+
+	if (!IsGameplayActive())
+	{
+		return;
+	}
 
 	// 추가 기능 : 1, 3, 4 및 Debug 기능
 	HandleFeatureToggleInput();
@@ -1203,6 +1263,94 @@ static VOID UpdateGame(FLOAT deltaTimeSeconds)
 	HandleJumpInput();
 }
 
+static VOID UpdatePopupButtonLayout(const char* buttonLabel)
+{
+	RECT measuredTextRect{};
+
+	g_pExitFont->DrawTextA(
+		NULL,
+		buttonLabel,
+		-1,
+		&measuredTextRect,
+		DT_CALCRECT | DT_SINGLELINE,
+		D3DCOLOR_ARGB(0, 0, 0, 0));
+
+	LONG buttonWidth =
+		measuredTextRect.right -
+		measuredTextRect.left +
+		kPopupButtonHorizontalPadding * 2;
+
+	LONG buttonHeight =
+		measuredTextRect.bottom -
+		measuredTextRect.top +
+		kPopupButtonVerticalPadding * 2;
+
+	if (buttonWidth < kExitButtonWidth)
+	{
+		buttonWidth = kExitButtonWidth;
+	}
+
+	if (buttonHeight < kExitButtonHeight)
+	{
+		buttonHeight = kExitButtonHeight;
+	}
+
+	const LONG centerX = static_cast<LONG>(g_clientWidth) / 2;
+	const LONG buttonTop =
+		static_cast<LONG>(g_clientHeight) / 2 +
+		kExitButtonTopOffsetFromCenter;
+
+	SetRect(
+		&g_exitButtonRect,
+		centerX - buttonWidth / 2,
+		buttonTop,
+		centerX + buttonWidth / 2,
+		buttonTop + buttonHeight);
+
+	g_mazeExit.SetButtonBounds(g_exitButtonRect);
+}
+
+static VOID RenderPopupButton(const char* buttonLabel)
+{
+	UpdatePopupButtonLayout(buttonLabel);
+	g_mazeExit.RenderButton(g_pd3dDevice);
+
+	RECT textRect = g_exitButtonRect;
+
+	g_pExitFont->DrawTextA(
+		NULL,
+		buttonLabel,
+		-1,
+		&textRect,
+		DT_CENTER | DT_VCENTER | DT_SINGLELINE,
+		D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
+}
+
+static VOID RenderGameStatePopup(const char* title, const char* buttonLabel)
+{
+	g_pd3dDevice->SetTexture(0, NULL);
+	g_pd3dDevice->SetFVF(D3DFVF_UI_VERTEX);
+	g_pd3dDevice->DrawPrimitiveUP(
+		D3DPT_TRIANGLEFAN,
+		2,
+		g_popupVertices,
+		sizeof(UiVertex));
+
+	RECT textRect = g_clearPopupRect;
+	textRect.top += 50;
+	textRect.bottom = textRect.top + 60;
+
+	g_pClearFont->DrawTextA(
+		NULL,
+		title,
+		-1,
+		&textRect,
+		DT_CENTER | DT_TOP,
+		D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
+
+	RenderPopupButton(buttonLabel);
+}
+
 static VOID RenderUi()
 {
 	const LONG clientWidth = static_cast<LONG>(g_clientWidth);
@@ -1212,37 +1360,17 @@ static VOID RenderUi()
 	g_pd3dDevice->SetTexture(0, NULL);
 	g_pd3dDevice->SetFVF(D3DFVF_UI_VERTEX);
 	// 탈출구 UI
-	if (!g_isPlaying)
+	if (g_gameState == GameState::Cleared)
 	{
-		g_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, g_popupVertices, sizeof(UiVertex));
-		wsprintf(textBuffer, "C L E A R");
-
-		textRect = g_clearPopupRect;
-		textRect.top += 50;
-		textRect.bottom = textRect.top + 60;
-
-		g_pClearFont->DrawTextA(
-			NULL,
-			textBuffer,
-			-1,
-			&textRect,
-			DT_CENTER | DT_TOP,
-			D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
-
-		g_mazeExit.RenderButton(g_pd3dDevice);
-		wsprintf(
-			textBuffer,
+		RenderGameStatePopup(
+			"C L E A R",
 			HasNextLevel() ? "N E X T" : "e x i t");
-
-		textRect = g_exitButtonRect;
-
-		g_pExitFont->DrawTextA(
-			NULL,
-			textBuffer,
-			-1,
-			&textRect,
-			DT_CENTER | DT_VCENTER | DT_SINGLELINE,
-			D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
+	}
+	else if (g_gameState == GameState::GameOver)
+	{
+		RenderGameStatePopup(
+			"G A M E  O V E R",
+			"R E T R Y");
 	}
 
 	// 좌상단 UI
@@ -1276,18 +1404,7 @@ static VOID RenderUi()
 			DT_CENTER | DT_TOP,
 			D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
 
-		g_mazeExit.RenderButton(g_pd3dDevice);
-		wsprintf(textBuffer, "e x i t");
-
-		textRect = g_exitButtonRect;
-
-		g_pExitFont->DrawTextA(
-			NULL,
-			textBuffer,
-			-1,
-			&textRect,
-			DT_CENTER | DT_VCENTER | DT_SINGLELINE,
-			D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
+		RenderPopupButton("e x i t");
 	}
 
 	// 자유시점 표시
@@ -1617,7 +1734,7 @@ static LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		g_mousePosition.x = LOWORD(lParam);
 		g_mousePosition.y = HIWORD(lParam);
 		g_isMouseButtonDown = TRUE;
-		if (!g_isPlaying || g_isPaused)
+		if (!IsGameplayActive() || g_isPaused)
 		{
 			if (PtInRect(&g_exitButtonRect, g_mousePosition))
 			{
@@ -1628,7 +1745,7 @@ static LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	case WM_MOUSEMOVE:
 		GetCursorPos(&g_currentMousePosition);
-		if (!IsTopViewActive() && g_isPlaying && !g_isPaused)
+		if (!IsTopViewActive() && IsGameplayActive() && !g_isPaused)
 		{
 			if (g_currentMousePosition.x > g_cursorCenter.x)
 			{
@@ -1648,7 +1765,7 @@ static LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				g_player.Rotate(FALSE, TRUE, (g_cursorCenter.y - g_currentMousePosition.y) * kMouseVerticalRotationSensitivity);
 			}
 		}
-		if (!g_isPlaying || g_isPaused)
+		if (!IsGameplayActive() || g_isPaused)
 		{
 			if (PtInRect(&g_exitButtonRect, g_mousePosition) && g_isMouseButtonDown)
 				g_mazeExit.PressButton();
@@ -1656,7 +1773,7 @@ static LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		else
 			g_mazeExit.ReleaseButton();
 		// 게임 중엔 화면 정중앙으로 다시 세팅
-		if (g_isPlaying && !g_isPaused)
+		if (IsGameplayActive() && !g_isPaused)
 			SetCursorPos(g_cursorCenter.x, g_cursorCenter.y);
 		break;
 
@@ -1666,14 +1783,14 @@ static LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		g_isMouseButtonDown = FALSE;
 		g_mazeExit.ReleaseButton();
 
-		if (g_isPlaying && !g_isPaused)
+		if (IsGameplayActive() && !g_isPaused)
 		{
 			g_player.FireBullet(&g_mousePosition);
 		}
 
 		if (PtInRect(&g_exitButtonRect, g_mousePosition))
 		{
-			if (!g_isPlaying)
+			if (g_gameState == GameState::Cleared)
 			{
 				if (HasNextLevel())
 				{
@@ -1694,6 +1811,10 @@ static LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				{
 					PostMessage(hWnd, WM_CLOSE, 0, 0);
 				}
+			}
+			else if (g_gameState == GameState::GameOver)
+			{
+				RestartCurrentLevel();
 			}
 			else if (g_isPaused)
 			{
@@ -1811,7 +1932,7 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 						continue;
 				}
 
-				if (!g_isPlaying || g_isPaused)
+				if (!IsGameplayActive() || g_isPaused)
 				{
 					while (g_cursorDisplayCount < 0)
 						g_cursorDisplayCount = ShowCursor(TRUE);
