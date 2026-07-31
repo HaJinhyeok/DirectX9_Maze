@@ -269,7 +269,7 @@ VOID Player::FireBullet(LPPOINT cursorPosition)
 	m_bullets.push_back(bullet);
 }
 
-VOID Player::UpdateBullets(const MazeDefinition& maze, Tiger& tiger, FLOAT deltaTimeSeconds)
+VOID Player::UpdateBullets(const MazeDefinition& maze, TigerCollection& tigers, FLOAT deltaTimeSeconds)
 {
 	if (m_bullets.empty())
 		return;
@@ -299,26 +299,40 @@ VOID Player::UpdateBullets(const MazeDefinition& maze, Tiger& tiger, FLOAT delta
 				kBulletRadius,
 				kTileSize);
 
+		Tiger* hitTiger = nullptr;
 		SphereSweepResult tigerSweepResult;
 
-		if (tiger.IsAlive())
+		for (const auto& tiger : tigers)
 		{
-			tigerSweepResult =
+			if (!tiger->IsAlive())
+				continue;
+
+			const SphereSweepResult currentSweepResult =
 				SweepSphereAgainstSphere(
 					startWorldPosition,
 					endWorldPosition,
 					kBulletRadius,
-					tiger.GetCollisionSphere());
+					tiger->GetCollisionSphere());
+
+			if (!currentSweepResult.didHit)
+				continue;
+
+			if (!tigerSweepResult.didHit ||
+				currentSweepResult.hitTime < tigerSweepResult.hitTime)
+			{
+				tigerSweepResult = currentSweepResult;
+				hitTiger = tiger.get();
+			}
 		}
 
 		const bool didHitTigerFirst =
-			tigerSweepResult.didHit &&
+			hitTiger != nullptr &&
 			(!wallSweepResult.didHitWall ||
 				tigerSweepResult.hitTime < wallSweepResult.hitTime);
 
 		if (didHitTigerFirst)
 		{
-			tiger.TakeDamage(kBulletDamage);
+			hitTiger->TakeDamage(kBulletDamage);
 			iter = m_bullets.erase(iter);
 			continue;
 		}

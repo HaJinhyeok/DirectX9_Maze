@@ -9,6 +9,7 @@
 #include "MazeLoader.h"
 #include "LevelCatalog.h"
 #include "CombatCollision.h"
+#include "EnemySpawn.h"
 
 const D3DXVECTOR3 kWorldUp(0.0f, 1.0f, 0.0f);
 
@@ -138,10 +139,11 @@ static vector<Notice> g_notices;
 static Exit g_mazeExit;
 static SettingsOverlay g_settingsOverlay;
 static FpsCounter g_fpsCounter;
-static Tiger g_tiger(D3DXVECTOR3(0.0f, kTileSize / 2.0f, 0.0f));
+static TigerCollection g_tigers;
 static SkyBox g_skyBox;
 static MazeDefinition g_maze;
-static std::vector<std::string> g_levelPaths;
+static std::vector<MazeCellPosition> g_enemySpawnPositions;
+static std::vector<LevelCatalogEntry> g_levels;
 static size_t g_currentLevelIndex = 0;
 static std::string g_initializationErrorMessage;
 
@@ -269,15 +271,15 @@ static VOID UpdateUiLayout()
 
 static bool HasNextLevel() noexcept
 {
-	return !g_levelPaths.empty() &&
-		g_currentLevelIndex < g_levelPaths.size() - 1;
+	return !g_levels.empty() &&
+		g_currentLevelIndex < g_levels.size() - 1;
 }
 
 static HRESULT LoadLevelMaze(size_t levelIndex)
 {
 	g_initializationErrorMessage.clear();
 
-	if (levelIndex >= g_levelPaths.size())
+	if (levelIndex >= g_levels.size())
 	{
 		g_initializationErrorMessage =
 			"Level index out of range: " +
@@ -286,8 +288,10 @@ static HRESULT LoadLevelMaze(size_t levelIndex)
 		return E_INVALIDARG;
 	}
 
+	const LevelCatalogEntry& level = g_levels[levelIndex];
+
 	const MazeLoadResult loadResult =
-		LoadMazeFromFile(g_levelPaths[levelIndex]);
+		LoadMazeFromFile(level.path);
 
 	if (!loadResult.isSuccessful)
 	{
@@ -296,7 +300,25 @@ static HRESULT LoadLevelMaze(size_t levelIndex)
 		return E_FAIL;
 	}
 
+	const EnemySpawnResult spawnResult =
+		GenerateEnemySpawnPositions(
+			loadResult.maze,
+			level.enemyCount,
+			level.enemySpawnSeed);
+
+	if (!spawnResult.isSuccessful)
+	{
+		g_initializationErrorMessage =
+			"Failed to generate enemy spawns for level: " +
+			level.path +
+			", " +
+			spawnResult.errorMessage;
+
+		return E_FAIL;
+	}
+
 	g_maze = loadResult.maze;
+	g_enemySpawnPositions = spawnResult.positions;
 	g_currentLevelIndex = levelIndex;
 
 	return S_OK;
@@ -315,9 +337,45 @@ static HRESULT InitializeMaze()
 		return E_FAIL;
 	}
 
-	g_levelPaths = catalogResult.levelPaths;
+	g_levels = catalogResult.levels;
 
 	return LoadLevelMaze(0);
+}
+
+static HRESULT CreateTigersForCurrentLevel()
+{
+	g_tigers.clear();
+
+	for (const MazeCellPosition& spawnPosition : g_enemySpawnPositions)
+	{
+		const D3DXVECTOR3 worldPosition =
+			CalculateMazeCellCenter(
+				g_maze,
+				spawnPosition.row,
+				spawnPosition.column);
+
+		auto tiger = std::make_unique<Tiger>(worldPosition);
+
+		const HRESULT loadResult =
+			tiger->Load(
+				g_pd3dDevice,
+				g_tigerModelPath);
+
+		if (FAILED(loadResult))
+		{
+			g_tigers.clear();
+
+			g_initializationErrorMessage =
+				"Failed to load tiger model for level: " +
+				g_levels[g_currentLevelIndex].path;
+
+			return loadResult;
+		}
+
+		g_tigers.push_back(std::move(tiger));
+	}
+
+	return S_OK;
 }
 
 static VOID ResetLevelEntities()
@@ -332,17 +390,23 @@ static VOID ResetLevelEntities()
 
 	g_player.ResetForLevel(playerStartPosition);
 
-	const MazeCellPosition& tigerStart = g_maze.tigerStart;
+	for (size_t index = 0;
+		index < g_tigers.size() &&
+		index < g_enemySpawnPositions.size();
+		index++)
+	{
+		const MazeCellPosition& spawnPosition = g_enemySpawnPositions[index];
 
-	const D3DXVECTOR3 tigerStartPosition =
-		CalculateMazeCellCenter(
-			g_maze,
-			tigerStart.row,
-			tigerStart.column);
+		const D3DXVECTOR3 worldPosition =
+			CalculateMazeCellCenter(
+				g_maze,
+				spawnPosition.row,
+				spawnPosition.column);
 
-	g_tiger.ResetForLevel(
-		tigerStartPosition,
-		g_player.GetPosition());
+		g_tigers[index]->ResetForLevel(
+			worldPosition,
+			g_player.GetPosition());
+	}
 }
 
 static VOID ResetLevelPlayState()
@@ -395,10 +459,10 @@ static HRESULT InitializeGameComponents()
 	if (FAILED(skyBoxBufferResult))
 		return skyBoxBufferResult;
 
-	const HRESULT tigerLoadResult = g_tiger.Load(g_pd3dDevice, g_tigerModelPath);
+	const HRESULT tigerCreationResult = CreateTigersForCurrentLevel();
 
-	if (FAILED(tigerLoadResult))
-		return tigerLoadResult;
+	if (FAILED(tigerCreationResult))
+		return tigerCreationResult;
 
 	ResetLevelEntities();
 	ResetLevelPlayState();
@@ -1000,9 +1064,17 @@ static HRESULT TransitionToLevel(size_t levelIndex)
 
 		g_initializationErrorMessage =
 			"Failed to create geometry for level: " +
-			g_levelPaths[levelIndex];
+			g_levels[levelIndex].path;
 
 		return geometryResult;
+	}
+
+	const HRESULT tigerCreationResult = CreateTigersForCurrentLevel();
+
+	if (FAILED(tigerCreationResult))
+	{
+		ReleaseGeometryBuffers();
+		return tigerCreationResult;
 	}
 
 	ResetLevelEntities();
@@ -1015,7 +1087,7 @@ static HRESULT TransitionToLevel(size_t levelIndex)
 static VOID ReleaseResources()
 {
 	g_skyBox.ReleaseResources();
-	g_tiger.ReleaseResources();
+	g_tigers.clear();
 
 	ReleaseGeometryBuffers();
 	ReleaseSceneTextures();
@@ -1169,23 +1241,33 @@ static VOID UpdateDynamicObjects(FLOAT deltaTimeSeconds)
 		return;
 
 	// 총알 움직임 계산
-	g_player.UpdateBullets(g_maze, g_tiger, deltaTimeSeconds);
+	g_player.UpdateBullets(g_maze, g_tigers, deltaTimeSeconds);
 	// 호랑이 움직임 계산
-	g_tiger.Move(g_maze, deltaTimeSeconds);
+	for (auto& tiger : g_tigers)
+	{
+		tiger->Move(g_maze, deltaTimeSeconds);
+	}
 }
 
 static VOID UpdateCombatState()
 {
-	if (g_isNoClipEnabled == TRUE || !g_tiger.IsAlive())
+	if (g_isNoClipEnabled == TRUE)
 	{
 		return;
 	}
 
-	if (DoSpheresOverlap(
-		g_player.GetCollisionSphere(),
-		g_tiger.GetCollisionSphere()))
+	const CollisionSphere playerSphere = g_player.GetCollisionSphere();
+
+	for (const auto& tiger : g_tigers)
 	{
-		g_gameState = GameState::GameOver;
+		if (!tiger->IsAlive())
+			continue;
+
+		if (DoSpheresOverlap(playerSphere, tiger->GetCollisionSphere()))
+		{
+			g_gameState = GameState::GameOver;
+			return;
+		}
 	}
 }
 
@@ -1641,10 +1723,14 @@ static VOID RenderWorld()
 	}
 
 	// 호랑이
-	D3DXMATRIX tigerWorldMatrix = g_tiger.GetWorldMatrix();
+	for (const auto& tiger : g_tigers)
+	{
+		D3DXMATRIX tigerWorldMatrix = tiger->GetWorldMatrix();
 
-	g_pd3dDevice->SetTransform(D3DTS_WORLD, &tigerWorldMatrix);
-	g_tiger.Render(g_pd3dDevice);
+		g_pd3dDevice->SetTransform(D3DTS_WORLD, &tigerWorldMatrix);
+
+		tiger->Render(g_pd3dDevice);
+	}
 }
 
 static VOID Render()

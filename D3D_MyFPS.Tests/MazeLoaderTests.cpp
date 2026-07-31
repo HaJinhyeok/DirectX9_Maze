@@ -3,6 +3,7 @@
 #include "../LevelCatalog.h"
 #include "../BulletCollision.h"
 #include "../CombatCollision.h"
+#include "../EnemySpawn.h"
 
 #include <cmath>
 #include <cstdio>
@@ -64,7 +65,7 @@ namespace
 	bool TestLoadsValidMaze()
 	{
 		const MazeLoadResult result = LoadMazeFromText(
-			"X*T\n"
+			"X*.\n"
 			".@.\n"
 			"..P\n");
 
@@ -78,8 +79,6 @@ namespace
 			result.maze.GetHeight() == 3 &&
 			result.maze.playerStart.row == 2 &&
 			result.maze.playerStart.column == 2 &&
-			result.maze.tigerStart.row == 0 &&
-			result.maze.tigerStart.column == 2 &&
 			result.maze.exit.row == 0 &&
 			result.maze.exit.column == 0 &&
 			result.maze.notices.size() == 1;
@@ -304,8 +303,8 @@ namespace
 			LoadLevelCatalogFromText(
 				"# Levels\n"
 				"\n"
-				"  Level01.txt  \n"
-				"Level02.txt\n");
+				"  Level01.txt | 1 | 1001  \n"
+				"Level02.txt|2|2001\n");
 
 		if (!result.isSuccessful)
 		{
@@ -313,9 +312,13 @@ namespace
 			return false;
 		}
 
-		return result.levelPaths.size() == 2 &&
-			result.levelPaths[0] == "Level01.txt" &&
-			result.levelPaths[1] == "Level02.txt";
+		return result.levels.size() == 2 &&
+			result.levels[0].path == "Level01.txt" &&
+			result.levels[0].enemyCount == 1 &&
+			result.levels[0].enemySpawnSeed == 1001u &&
+			result.levels[1].path == "Level02.txt" &&
+			result.levels[1].enemyCount == 2 &&
+			result.levels[1].enemySpawnSeed == 2001u;
 	}
 
 	bool TestRejectsEmptyLevelCatalog()
@@ -334,9 +337,9 @@ namespace
 	{
 		const LevelCatalogLoadResult result =
 			LoadLevelCatalogFromText(
-				"Level01.txt\n"
-				"Level02.txt\n"
-				"Level01.txt\n");
+				"Level01.txt|1|1001\n"
+				"Level02.txt|2|2001\n"
+				"Level01.txt|3|3001\n");
 
 		return !result.isSuccessful &&
 			Contains(result.errorMessage, "Duplicate level path") &&
@@ -347,7 +350,7 @@ namespace
 	bool TestRejectsInvalidCharacter()
 	{
 		const MazeLoadResult result = LoadMazeFromText(
-			"X?T\n"
+			"X?.\n"
 			"...\n"
 			"..P\n");
 
@@ -360,7 +363,7 @@ namespace
 	bool TestRejectsMismatchedRowWidth()
 	{
 		const MazeLoadResult result = LoadMazeFromText(
-			"X*T\n"
+			"X*.\n"
 			"..\n"
 			"..P\n");
 
@@ -383,26 +386,18 @@ namespace
 	{
 		const MazeLoadResult missingPlayer =
 			LoadMazeFromText(
-				"X*T\n"
+				"X*.\n"
 				"...\n"
 				"...\n");
 
-		const MazeLoadResult missingTiger =
-			LoadMazeFromText(
-				"X*.\n"
-				"...\n"
-				"..P\n");
-
 		const MazeLoadResult missingExit =
 			LoadMazeFromText(
-				"..T\n"
+				"...\n"
 				"...\n"
 				"..P\n");
 
 		return !missingPlayer.isSuccessful &&
 			Contains(missingPlayer.errorMessage, "'P'") &&
-			!missingTiger.isSuccessful &&
-			Contains(missingTiger.errorMessage, "'T'") &&
 			!missingExit.isSuccessful &&
 			Contains(missingExit.errorMessage, "'X'");
 	}
@@ -411,7 +406,7 @@ namespace
 	{
 		const MazeLoadResult result =
 			LoadMazeFromText(
-				"X*T\n"
+				"X*.\n"
 				"P..\n"
 				"..P\n");
 
@@ -473,6 +468,132 @@ namespace
 		return HasPosition(evenTopLeft, -15.0f, 5.0f, 5.0f) &&
 			HasPosition(evenBottomRight, 15.0f, 5.0f, -5.0f) &&
 			HasPosition(oddCenter, 0.0f, 5.0f, 0.0f);
+	}
+
+	bool AreSameCells(
+		const MazeCellPosition& first,
+		const MazeCellPosition& second) noexcept
+	{
+		return first.row == second.row &&
+			first.column == second.column;
+	}
+
+	bool TestGeneratesValidEnemySpawns()
+	{
+		MazeDefinition maze;
+		maze.cells =
+		{
+			"*****",
+			"*...*",
+			"*...*",
+			"*...*",
+			"*****"
+		};
+		maze.playerStart = { 1, 1 };
+		maze.exit = { 3, 3 };
+		maze.notices = { {2, 2} };
+
+		const EnemySpawnResult result = GenerateEnemySpawnPositions(maze, 3, 1234u);
+
+		if (!result.isSuccessful || result.positions.size() != 3)
+			return false;
+
+		for (size_t index = 0; index < result.positions.size(); index++)
+		{
+			const MazeCellPosition& position = result.positions[index];
+
+			if (maze.GetCell(position.row, position.column) == '*' ||
+				AreSameCells(position, maze.playerStart) ||
+				AreSameCells(position, maze.exit) ||
+				AreSameCells(position, maze.notices.front()))
+			{
+				return false;
+			}
+
+			for (size_t previousIndex = 0; previousIndex < index; previousIndex++)
+			{
+				if (AreSameCells(position, result.positions[previousIndex]))
+					return false;
+			}
+		}
+
+		return true;
+	}
+
+	bool TestReusesEnemySpawnSeed()
+	{
+		MazeDefinition maze;
+		maze.cells =
+		{
+			"....",
+			"....",
+			"...."
+		};
+		maze.playerStart = { 0, 0 };
+		maze.exit = { 2, 3 };
+
+		const EnemySpawnResult first = GenerateEnemySpawnPositions(maze, 4, 5678u);
+		const EnemySpawnResult second = GenerateEnemySpawnPositions(maze, 4, 5678u);
+
+		if (!first.isSuccessful ||
+			!second.isSuccessful ||
+			first.positions.size() != second.positions.size())
+		{
+			return false;
+		}
+
+		for (size_t index = 0; index < first.positions.size(); index++)
+		{
+			if (!AreSameCells(first.positions[index], second.positions[index]))
+				return false;
+		}
+
+		return true;
+	}
+
+	bool TestRejectsTooManyEnemySpawns()
+	{
+		MazeDefinition maze;
+		maze.cells =
+		{
+			"P.X"
+		};
+		maze.playerStart = { 0, 0 };
+		maze.exit = { 0, 2 };
+
+		const EnemySpawnResult result = GenerateEnemySpawnPositions(maze, 2, 1234u);
+
+		return !result.isSuccessful &&
+			Contains(result.errorMessage, "Not enough valid enemy spawn cells");
+	}
+
+	bool TestRejectsMalformedLevelCatalogEntry()
+	{
+		const LevelCatalogLoadResult result =
+			LoadLevelCatalogFromText("Level01.txt|1\n");
+
+		return !result.isSuccessful &&
+			Contains(result.errorMessage, "Invalid level catalog entry") &&
+			Contains(result.errorMessage, "line 1") &&
+			Contains(result.errorMessage, "Expected format");
+	}
+
+	bool TestRejectsNegativeEnemyCount()
+	{
+		const LevelCatalogLoadResult result =
+			LoadLevelCatalogFromText("Level01.txt|-1|1001\n");
+
+		return !result.isSuccessful &&
+			Contains(result.errorMessage, "Enemy count must be a non-negative integer");
+	}
+
+	bool TestRejectsInvalidEnemySpawnSeed()
+	{
+		const LevelCatalogLoadResult result =
+			LoadLevelCatalogFromText("Level01.txt|1|invalid\n");
+
+		return !result.isSuccessful &&
+			Contains(result.errorMessage, "Enemy spawn seed must be an unsigned integer");
 	}
 }
 
@@ -573,8 +694,38 @@ int main()
 			"TestReportsInitialSphereOverlap",
 			TestReportsInitialSphereOverlap);
 
+	failedTestCount +=
+		RunTest(
+			"TestGeneratesValidEnemySpawns",
+			TestGeneratesValidEnemySpawns);
+
+	failedTestCount +=
+		RunTest(
+			"TestReusesEnemySpawnSeed",
+			TestReusesEnemySpawnSeed);
+
+	failedTestCount +=
+		RunTest(
+			"TestRejectsTooManyEnemySpawns",
+			TestRejectsTooManyEnemySpawns);
+
+	failedTestCount +=
+		RunTest(
+			"TestRejectsMalformedLevelCatalogEntry",
+			TestRejectsMalformedLevelCatalogEntry);
+
+	failedTestCount +=
+		RunTest(
+			"TestRejectsNegativeEnemyCount",
+			TestRejectsNegativeEnemyCount);
+
+	failedTestCount +=
+		RunTest(
+			"TestRejectsInvalidEnemySpawnSeed",
+			TestRejectsInvalidEnemySpawnSeed);
+
 	std::cout
-		<< "Tests: 19, Failed: "
+		<< "Tests: 25, Failed: "
 		<< failedTestCount
 		<< '\n';
 

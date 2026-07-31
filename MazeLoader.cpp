@@ -50,7 +50,6 @@ namespace
 		case '*':
 		case '.':
 		case 'P':
-		case 'T':
 		case 'X':
 		case '@':
 			return true;
@@ -120,7 +119,6 @@ namespace
 		std::string& errorMessage)
 	{
 		bool hasPlayerStart = false;
-		bool hasTigerStart = false;
 		bool hasExit = false;
 
 		for (size_t rowIndex = 0; rowIndex < maze.cells.size(); rowIndex++)
@@ -142,20 +140,6 @@ namespace
 						columnIndex,
 						hasPlayerStart,
 						maze.playerStart,
-						errorMessage))
-					{
-						return false;
-					}
-					break;
-
-				case 'T':
-					if (!AssignUniqueMazeMarker(
-						filePath,
-						character,
-						rowIndex,
-						columnIndex,
-						hasTigerStart,
-						maze.tigerStart,
 						errorMessage))
 					{
 						return false;
@@ -192,12 +176,6 @@ namespace
 		if (!hasPlayerStart)
 		{
 			errorMessage = "Missing required maze marker 'P': " + filePath;
-			return false;
-		}
-
-		if (!hasTigerStart)
-		{
-			errorMessage = "Missing required maze marker 'T': " + filePath;
 			return false;
 		}
 

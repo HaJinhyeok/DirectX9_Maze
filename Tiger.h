@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include <d3dx9.h>
+#include <memory>
+#include <vector>
 
 #include "main.h"
 #include "XFileModel.h"
@@ -75,4 +77,7 @@ public:
 	bool IsAlive() const noexcept;
 	CollisionSphere GetCollisionSphere() const noexcept;
 };
+
+using TigerCollection =
+	std::vector<std::unique_ptr<Tiger>>;
 

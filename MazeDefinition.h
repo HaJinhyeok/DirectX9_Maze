@@ -13,7 +13,6 @@ struct MazeDefinition
 {
 	std::vector<std::string> cells;
 	MazeCellPosition playerStart;
-	MazeCellPosition tigerStart;
 	MazeCellPosition exit;
 	std::vector<MazeCellPosition> notices;
 

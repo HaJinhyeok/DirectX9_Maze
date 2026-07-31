@@ -5,8 +5,7 @@
 #include "main.h"
 #include "MazeDefinition.h"
 #include "CombatCollision.h"
-
-class Tiger;
+#include "Tiger.h"
 
 class Player
 {
@@ -91,7 +90,7 @@ public:
 	VOID Rotate(BOOL isCounterClockwise, BOOL isVertical, FLOAT angle);
 	VOID Jump();
 	VOID FireBullet(LPPOINT cursorPosition);
-	VOID UpdateBullets(const MazeDefinition& maze, Tiger& tiger, FLOAT deltaTimeSeconds);
+	VOID UpdateBullets(const MazeDefinition& maze, TigerCollection& tigers, FLOAT deltaTimeSeconds);
 	VOID RenderBullets(LPDIRECT3DDEVICE9 device, LPD3DXMESH sphere);
 	VOID ResetForLevel(const D3DXVECTOR3& position);
 };
