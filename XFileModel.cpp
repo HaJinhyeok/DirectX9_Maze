@@ -122,7 +122,7 @@ HRESULT XFileModel::Load(LPDIRECT3DDEVICE9 device, char* xFilePath)
 					SafeRelease(m_textures[i]);
 
 					// 텍스처가 없어도 재질 색상으로 렌더링할 수 있으므로 로딩은 계속한다.
-					MessageBox(NULL, "Could not find texture map", "D3D_MyFPS", MB_OK | MB_ICONWARNING);
+					MessageBox(NULL, "Could not find texture map", "DirectX9_Maze", MB_OK | MB_ICONWARNING);
 				}
 			}
 		}

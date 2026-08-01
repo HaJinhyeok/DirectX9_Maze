@@ -1,4 +1,4 @@
-# D3D_MyFPS 작업 지침
+# DirectX9_Maze 작업 지침
 
 ## 문서 확인 순서
 

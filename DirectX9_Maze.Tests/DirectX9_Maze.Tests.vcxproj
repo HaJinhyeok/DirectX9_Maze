@@ -22,7 +22,7 @@
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{494ae5b8-415a-4cdb-be8d-56d820d1abb3}</ProjectGuid>
-    <RootNamespace>D3DMyFPSTests</RootNamespace>
+    <RootNamespace>DirectX9MazeTests</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

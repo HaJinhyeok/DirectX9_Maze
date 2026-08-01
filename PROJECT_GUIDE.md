@@ -1,4 +1,4 @@
-# D3D_MyFPS 프로젝트 가이드
+# DirectX9_Maze 프로젝트 가이드
 
 ## 목적
 

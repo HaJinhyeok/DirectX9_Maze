@@ -4,7 +4,7 @@ DirectX9 기반 1인칭 미로 탐색 게임입니다. 취업 준비 기간에 �
 
 - 시연 영상: https://youtu.be/5bMy5FtiVVI
 - 솔루션: `DirectX9_Maze.sln`
-- 주요 프로젝트: `D3D_MyFPS.vcxproj`
+- 주요 프로젝트: `DirectX9_Maze.vcxproj`
 
 ![게임 플레이 화면](docs/images/gameplay.png)
 
@@ -64,7 +64,7 @@ DirectX9 기반 1인칭 미로 탐색 게임입니다. 취업 준비 기간에 �
 | `FpsCounter.*` | 메인 루프의 delta time을 이용한 FPS 계산 |
 | `PerformanceRecorder.*` | 실제 frame time 표본과 평균·p95·최대값 측정 |
 | `ComUtils.h` | COM 포인터의 null 안전한 공통 해제 |
-| `D3D_MyFPS.Tests` | Direct3D 실행 없이 순수 로직을 검증하는 콘솔 테스트 |
+| `DirectX9_Maze.Tests` | Direct3D 실행 없이 순수 로직을 검증하는 콘솔 테스트 |
 | `Assets/Data/Levels` | 파일·절차적 미로의 레벨 목록과 작성 규칙 |
 
 ## 핵심 기술
@@ -163,7 +163,7 @@ C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x86
 1. 위 개발 환경과 DirectX SDK를 설치합니다.
 2. 저장소 루트의 `DirectX9_Maze.sln`을 Visual Studio 2022로 엽니다.
 3. 솔루션 구성을 `Debug`, 플랫폼을 `x86`으로 선택합니다.
-4. `D3D_MyFPS` 프로젝트를 시작 프로젝트로 설정합니다.
+4. `DirectX9_Maze` 프로젝트를 시작 프로젝트로 설정합니다.
 5. `Build > Build Solution`으로 빌드합니다.
 6. `Debug > Start Without Debugging`으로 실행합니다.
 
@@ -187,7 +187,7 @@ Visual Studio 2022 Community 기본 설치 경로를 사용하는 경우, 저장
 순수 로직 자동 테스트는 같은 위치에서 다음 명령으로 실행합니다.
 
 ```powershell
-.\Debug\D3D_MyFPS.Tests.exe
+.\Debug\DirectX9_Maze.Tests.exe
 ```
 
 모든 테스트가 통과하면 종료 코드 `0`, 하나라도 실패하면 종료 코드 `1`을 반환합니다.

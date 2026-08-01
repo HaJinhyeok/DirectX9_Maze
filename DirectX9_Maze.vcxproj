@@ -22,7 +22,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{5fe3f921-2326-4048-a0a5-a63ab1242356}</ProjectGuid>
-    <RootNamespace>D3DMyFPS</RootNamespace>
+    <RootNamespace>DirectX9Maze</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>DirectX9_Maze</ProjectName>
   </PropertyGroup>
