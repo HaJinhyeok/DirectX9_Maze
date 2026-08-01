@@ -127,6 +127,20 @@ COM 리소스는 `SafeRelease`로 해제 후 null 상태를 보장하고, 공통
 
 적 3마리에서 30마리로 늘린 고정 미로 측정에서 평균과 p95 frame time은 각각 약 10% 증가했습니다. 자세한 조건과 수치는 [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md)에 기록했습니다.
 
+## 개선 전후 요약
+
+이 프로젝트는 기존 완성작에 기능만 추가한 것이 아니라, 현재 관점에서 구조와 실패 경로를 다시 검토하고 검증 가능한 형태로 개선했습니다.
+
+| 개선 전 | 개선 후 |
+| --- | --- |
+| 코드의 고정 크기 문자 배열 미로 | 검증형 외부 파일, 레벨 목록과 시드 기반 절차적 미로 |
+| 고정 위치의 단일 난수 이동 적 | 유효 셀 기반 다중 스폰과 공유 BFS 최단 경로 추적 |
+| 프레임 끝 위치 중심의 이동·충돌 | 시간 기반 이동, 축 분리 플레이어 충돌과 투사체 연속 충돌 |
+| 호출부별 COM 해제와 불완전한 실패 처리 | 공통 안전 해제·버퍼 생성과 장치 리셋·부분 실패 정리 |
+| 빌드와 육안 실행 중심 검증 | 순수 로직 테스트 40개, 스모크 테스트와 정량 성능 측정 |
+
+주제별 문제, 선택, 검증 근거와 남은 한계는 [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md)에 정리했습니다.
+
 ## 개발 환경
 
 - Visual Studio 2022와 `Desktop development with C++` 워크로드
@@ -199,6 +213,7 @@ Visual Studio 2022 Community 기본 설치 경로를 사용하는 경우, 저장
 - 대표 레벨과 적 3·10·30마리 조건에서 평균·p95·최대 frame time 측정
 - 수동 검증 절차: [`docs/SMOKE_TEST.md`](docs/SMOKE_TEST.md)
 - 성능 측정 조건과 결과: [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md)
+- 개선 전후 문제·선택·검증 근거: [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md)
 - 외부 에셋 출처와 공개 상태: [`docs/ASSET_LICENSES.md`](docs/ASSET_LICENSES.md)
 
 ## 구현하며 다룬 문제
@@ -226,4 +241,4 @@ Visual Studio 2022 Community 기본 설치 경로를 사용하는 경우, 저장
 - 다중 적은 현재 동일한 X 파일 모델 자원을 인스턴스마다 개별 로드하므로 적 수를 크게 늘리기 전에 공유 모델 자원 구조가 필요합니다.
 - 현재는 `Debug|x86`만 검증되었으며 `x64`와 `Release` 구성은 별도 정리가 필요합니다.
 
-장기 개선 방향과 진행 상태는 [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)와 [`docs/ROADMAP.md`](docs/ROADMAP.md)를 참고하세요. 프로젝트별 C++ 네이밍 기준은 [`docs/CODING_CONVENTIONS.md`](docs/CODING_CONVENTIONS.md), 작업 중 정리한 개념과 선택 이유는 [`docs/LEARNING_NOTES.md`](docs/LEARNING_NOTES.md), 성능 측정은 [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md), 외부 에셋의 출처와 공개 판단은 [`docs/ASSET_LICENSES.md`](docs/ASSET_LICENSES.md)에 기록되어 있습니다.
+장기 개선 방향과 진행 상태는 [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)와 [`docs/ROADMAP.md`](docs/ROADMAP.md)를 참고하세요. 프로젝트별 C++ 네이밍 기준은 [`docs/CODING_CONVENTIONS.md`](docs/CODING_CONVENTIONS.md), 작업 중 정리한 개념과 선택 이유는 [`docs/LEARNING_NOTES.md`](docs/LEARNING_NOTES.md), 개선 전후 근거는 [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md), 성능 측정은 [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md), 외부 에셋의 출처와 공개 판단은 [`docs/ASSET_LICENSES.md`](docs/ASSET_LICENSES.md)에 기록되어 있습니다.
