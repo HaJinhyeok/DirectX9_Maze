@@ -10,6 +10,9 @@
 *.userosscache
 *.sln.docstates
 
+# Personal development notes
+/local-notes/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
