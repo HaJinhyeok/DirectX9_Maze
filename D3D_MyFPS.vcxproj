@@ -162,6 +162,7 @@
     <ClCompile Include="Notice.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="PlayerCollision.cpp" />
+    <ClCompile Include="ProceduralMaze.cpp" />
     <ClCompile Include="SettingsOverlay.cpp" />
     <ClCompile Include="SkyBox.cpp" />
     <ClCompile Include="main.cpp" />
@@ -187,6 +188,7 @@
     <ClInclude Include="Notice.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="PlayerCollision.h" />
+    <ClInclude Include="ProceduralMaze.h" />
     <ClInclude Include="SettingsOverlay.h" />
     <ClInclude Include="SkyBox.h" />
     <ClInclude Include="main.h" />

@@ -1,4 +1,6 @@
 # Levels are loaded in this order.
-# path|enemyCount|enemySpawnSeed
-Assets\Data\Levels\Level01.txt|1|1001
-Assets\Data\Levels\Level02.txt|2|2001
+# file|path|enemyCount|enemySpawnSeed
+# procedural|passageRows|passageColumns|mazeSeed|enemyCount|enemySpawnSeed
+file|Assets\Data\Levels\Level01.txt|1|1001
+file|Assets\Data\Levels\Level02.txt|2|2001
+procedural|8|10|3001|3|3002

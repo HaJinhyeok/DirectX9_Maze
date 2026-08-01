@@ -1,4 +1,6 @@
-﻿
+﻿#include <algorithm>
+#include <cmath>
+
 #include "MazeGenerator.h"
 #include "Input.h"
 #include "Frustum.h"
@@ -10,6 +12,7 @@
 #include "LevelCatalog.h"
 #include "CombatCollision.h"
 #include "EnemySpawn.h"
+#include "ProceduralMaze.h"
 
 const D3DXVECTOR3 kWorldUp(0.0f, 1.0f, 0.0f);
 
@@ -26,6 +29,8 @@ constexpr LONG kMinimumWindowTrackWidth = 600;
 constexpr LONG kMinimumWindowTrackHeight = 600;
 constexpr int kTileVertexCount = 4;
 constexpr char kLevelCatalogPath[] = "Assets\\Data\\Levels\\LevelList.txt";
+constexpr FLOAT kCameraFieldOfView = D3DX_PI / 4.0f;
+constexpr FLOAT kTopViewPaddingScale = 1.1f;
 
 using WallFaceVertices = std::array<CustomVertex, kVerticesPerWallFace>;
 
@@ -46,8 +51,7 @@ static UiVertex g_popupVertices[4] =
 	D3DXVECTOR3(100.0f, 550.0f, 0.0f), 1.0f, D3DCOLOR_XRGB(0, 255, 0), D3DXVECTOR2(0.0f, 0.0f)
 };
 
-// 탑뷰 카메라 위치와 위쪽 방향
-const static D3DXVECTOR3 g_topViewEye(0.0f, 200.0f, 0.0f);
+// 탑뷰 카메라의 위쪽 방향
 const static D3DXVECTOR3 g_topViewUp(0.0f, 0.0f, 1.0f);
 
 static char g_tigerModelPath[] = "Assets\\Models\\Tiger\\tiger.x";
@@ -275,6 +279,45 @@ static bool HasNextLevel() noexcept
 		g_currentLevelIndex < g_levels.size() - 1;
 }
 
+static std::string DescribeLevelMazeSource(const LevelCatalogEntry& level)
+{
+	if (level.mazeSourceType == MazeSourceType::File)
+	{
+		return level.path;
+	}
+
+	return
+		"procedural(rows=" +
+		std::to_string(level.passageRowCount) +
+		", columns=" +
+		std::to_string(level.passageColumnCount) +
+		", seed=" +
+		std::to_string(level.mazeSeed) +
+		")";
+}
+
+static MazeLoadResult CreateMazeForLevel(const LevelCatalogEntry& level)
+{
+	if (level.mazeSourceType == MazeSourceType::File)
+	{
+		return LoadMazeFromFile(level.path);
+	}
+
+	ProceduralMazeConfig config;
+	config.passageRowCount = level.passageRowCount;
+	config.passageColumnCount = level.passageColumnCount;
+	config.seed = level.mazeSeed;
+
+	const ProceduralMazeResult generationResult = GenerateProceduralMaze(config);
+
+	MazeLoadResult result;
+	result.isSuccessful = generationResult.isSuccessful;
+	result.maze = generationResult.maze;
+	result.errorMessage = generationResult.errorMessage;
+
+	return result;
+}
+
 static HRESULT LoadLevelMaze(size_t levelIndex)
 {
 	g_initializationErrorMessage.clear();
@@ -290,8 +333,7 @@ static HRESULT LoadLevelMaze(size_t levelIndex)
 
 	const LevelCatalogEntry& level = g_levels[levelIndex];
 
-	const MazeLoadResult loadResult =
-		LoadMazeFromFile(level.path);
+	const MazeLoadResult loadResult = CreateMazeForLevel(level);
 
 	if (!loadResult.isSuccessful)
 	{
@@ -310,7 +352,7 @@ static HRESULT LoadLevelMaze(size_t levelIndex)
 	{
 		g_initializationErrorMessage =
 			"Failed to generate enemy spawns for level: " +
-			level.path +
+			DescribeLevelMazeSource(level) +
 			", " +
 			spawnResult.errorMessage;
 
@@ -367,7 +409,7 @@ static HRESULT CreateTigersForCurrentLevel()
 
 			g_initializationErrorMessage =
 				"Failed to load tiger model for level: " +
-				g_levels[g_currentLevelIndex].path;
+				DescribeLevelMazeSource(g_levels[g_currentLevelIndex]);
 
 			return loadResult;
 		}
@@ -1064,7 +1106,7 @@ static HRESULT TransitionToLevel(size_t levelIndex)
 
 		g_initializationErrorMessage =
 			"Failed to create geometry for level: " +
-			g_levels[levelIndex].path;
+			DescribeLevelMazeSource(g_levels[levelIndex]);
 
 		return geometryResult;
 	}
@@ -1549,34 +1591,75 @@ static VOID ConfigureLighting()
 	g_pd3dDevice->LightEnable(1, TRUE);
 }
 
+static FLOAT CalculateTopViewHeight(FLOAT aspectRatio)
+{
+	const FLOAT halfMazeWidth = g_maze.GetWidth() * kTileSize * 0.5f;
+	const FLOAT halfMazeDepth = g_maze.GetHeight() * kTileSize * 0.5f;
+
+	const FLOAT tangentHalfFieldOfView = std::tan(kCameraFieldOfView * 0.5f);
+
+	const FLOAT verticalDistance = halfMazeDepth / tangentHalfFieldOfView;
+	const FLOAT horizontalDistance = halfMazeWidth / (tangentHalfFieldOfView * aspectRatio);
+
+	const FLOAT requiredDistance =
+		(std::max)(
+			verticalDistance,
+			horizontalDistance);
+
+	return requiredDistance *
+		kTopViewPaddingScale +
+		kTileSize;
+}
+
 static VOID ConfigureCamera()
 {
+	FLOAT aspectRatio = 1.0f;
+
+	if (g_clientWidth > 0 &&
+		g_clientHeight > 0)
+	{
+		aspectRatio =
+			static_cast<FLOAT>(g_clientWidth) /
+			static_cast<FLOAT>(g_clientHeight);
+	}
+
 	D3DXMATRIX viewMatrix;
-	D3DXVECTOR3 playerPosition = g_player.GetPosition();
-	D3DXVECTOR3 playerLookAt = g_player.GetLookAt();
+	const D3DXVECTOR3 playerPosition = g_player.GetPosition();
+	const D3DXVECTOR3 playerLookAt = g_player.GetLookAt();
 
 	// 1인칭 시점
 	if (!IsTopViewActive())
 	{
-		D3DXMatrixLookAtLH(&viewMatrix, &playerPosition, &playerLookAt, &kWorldUp);
-		g_pd3dDevice->SetTransform(D3DTS_VIEW, &viewMatrix);
+		D3DXMatrixLookAtLH(
+			&viewMatrix,
+			&playerPosition,
+			&playerLookAt,
+			&kWorldUp);
 	}
 	// 탑뷰 시점
 	else
 	{
-		D3DXMatrixLookAtLH(&viewMatrix, &g_topViewEye, &g_topViewTarget, &g_topViewUp);
-		g_pd3dDevice->SetTransform(D3DTS_VIEW, &viewMatrix);
+		const D3DXVECTOR3 topViewEye(
+			0.0f,
+			CalculateTopViewHeight(aspectRatio),
+			0.0f);
+
+		D3DXMatrixLookAtLH(
+			&viewMatrix,
+			&topViewEye,
+			&g_topViewTarget,
+			&g_topViewUp);
 	}
 
-	FLOAT aspectRatio = 1.0f;
-
-	if (g_clientWidth > 0 && g_clientHeight > 0)
-	{
-		aspectRatio = static_cast<FLOAT>(g_clientWidth) / static_cast<FLOAT>(g_clientHeight);
-	}
+	g_pd3dDevice->SetTransform(D3DTS_VIEW, &viewMatrix);
 
 	D3DXMATRIX projectionMatrix;
-	D3DXMatrixPerspectiveFovLH(&projectionMatrix, D3DX_PI / 4, aspectRatio, 0.1f, 1000.0f);
+	D3DXMatrixPerspectiveFovLH(
+		&projectionMatrix,
+		kCameraFieldOfView,
+		aspectRatio,
+		0.1f,
+		1000.0f);
 	g_pd3dDevice->SetTransform(D3DTS_PROJECTION, &projectionMatrix);
 
 	// frustum plane을 계산할, view matrix와 projection matrix의 곱

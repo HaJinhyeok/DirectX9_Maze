@@ -4,12 +4,15 @@
 #include "../BulletCollision.h"
 #include "../CombatCollision.h"
 #include "../EnemySpawn.h"
+#include "../ProceduralMaze.h"
 
 #include <cmath>
 #include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <queue>
+#include <vector>
 
 namespace
 {
@@ -94,6 +97,65 @@ namespace
 
 		std::cerr << "[FAIL] " << testName << '\n';
 		return 1;
+	}
+
+	bool IsMazeExitReachable(const MazeDefinition& maze)
+	{
+		if (!maze.IsInside(
+			maze.playerStart.row,
+			maze.playerStart.column))
+		{
+			return false;
+		}
+
+		std::vector<std::vector<bool>> visited(
+			maze.GetHeight(),
+			std::vector<bool>(maze.GetWidth(), false));
+
+		std::queue<MazeCellPosition> searchQueue;
+		searchQueue.push(maze.playerStart);
+		visited[maze.playerStart.row][maze.playerStart.column] = true;
+
+		constexpr MazeCellPosition kOffsets[] =
+		{
+			{ -1, 0 },
+			{ 1, 0 },
+			{ 0, -1 },
+			{ 0, 1 }
+		};
+
+		while (!searchQueue.empty())
+		{
+			const MazeCellPosition current = searchQueue.front();
+			searchQueue.pop();
+
+			if (current.row == maze.exit.row &&
+				current.column == maze.exit.column)
+			{
+				return true;
+			}
+
+			for (const MazeCellPosition& offset : kOffsets)
+			{
+				const MazeCellPosition next
+				{
+					current.row + offset.row,
+					current.column + offset.column
+				};
+
+				if (!maze.IsInside(next.row, next.column) ||
+					maze.GetCell(next.row, next.column) == '*' ||
+					visited[next.row][next.column])
+				{
+					continue;
+				}
+
+				visited[next.row][next.column] = true;
+				searchQueue.push(next);
+			}
+		}
+
+		return false;
 	}
 
 	bool Contains(const std::string& text, const std::string& expectedText)
@@ -595,6 +657,171 @@ namespace
 		return !result.isSuccessful &&
 			Contains(result.errorMessage, "Enemy spawn seed must be an unsigned integer");
 	}
+
+	bool TestRejectsInvalidProceduralMazeSize()
+	{
+		ProceduralMazeConfig config;
+		config.passageRowCount = 0;
+		config.passageColumnCount = 5;
+		config.seed = 1234u;
+
+		const ProceduralMazeResult result = GenerateProceduralMaze(config);
+
+		return !result.isSuccessful &&
+			Contains(result.errorMessage, "must be positive");
+	}
+
+	bool TestGeneratesProceduralMazeWithExpectedSize()
+	{
+		ProceduralMazeConfig config;
+		config.passageRowCount = 3;
+		config.passageColumnCount = 4;
+		config.seed = 1234u;
+
+		const ProceduralMazeResult result = GenerateProceduralMaze(config);
+
+		if (!result.isSuccessful)
+		{
+			std::cerr << result.errorMessage << '\n';
+			return false;
+		}
+
+		const MazeDefinition& maze = result.maze;
+
+		return maze.GetHeight() == 7 &&
+			maze.GetWidth() == 9 &&
+			maze.playerStart.row == 1 &&
+			maze.playerStart.column == 1 &&
+			maze.GetCell(
+				maze.playerStart.row,
+				maze.playerStart.column) == 'P' &&
+			maze.GetCell(
+				maze.exit.row,
+				maze.exit.column) == 'X' &&
+			(maze.exit.row != maze.playerStart.row ||
+				maze.exit.column != maze.playerStart.column);
+	}
+
+	bool TestReusesProceduralMazeSeed()
+	{
+		ProceduralMazeConfig config;
+		config.passageRowCount = 6;
+		config.passageColumnCount = 7;
+		config.seed = 5678u;
+
+		const ProceduralMazeResult first = GenerateProceduralMaze(config);
+		const ProceduralMazeResult second = GenerateProceduralMaze(config);
+
+		return first.isSuccessful &&
+			second.isSuccessful &&
+			first.maze.cells == second.maze.cells &&
+			first.maze.playerStart.row == second.maze.playerStart.row &&
+			first.maze.playerStart.column == second.maze.playerStart.column &&
+			first.maze.exit.row == second.maze.exit.row &&
+			first.maze.exit.column == second.maze.exit.column;
+	}
+
+	bool TestGeneratesReachableProceduralMaze()
+	{
+		ProceduralMazeConfig config;
+		config.passageRowCount = 8;
+		config.passageColumnCount = 9;
+		config.seed = 9012u;
+
+		const ProceduralMazeResult result = GenerateProceduralMaze(config);
+
+		return result.isSuccessful &&
+			IsMazeExitReachable(result.maze);
+	}
+
+	bool TestGeneratesClosedProceduralMazeBoundary()
+	{
+		ProceduralMazeConfig config;
+		config.passageRowCount = 5;
+		config.passageColumnCount = 6;
+		config.seed = 3456u;
+
+		const ProceduralMazeResult result = GenerateProceduralMaze(config);
+
+		if (!result.isSuccessful)
+		{
+			return false;
+		}
+
+		const MazeDefinition& maze = result.maze;
+		const int lastRow = maze.GetHeight() - 1;
+		const int lastColumn = maze.GetWidth() - 1;
+
+		for (int column = 0; column < maze.GetWidth(); ++column)
+		{
+			if (maze.GetCell(0, column) != '*' ||
+				maze.GetCell(lastRow, column) != '*')
+			{
+				return false;
+			}
+		}
+
+		for (int row = 0; row < maze.GetHeight(); ++row)
+		{
+			if (maze.GetCell(row, 0) != '*' ||
+				maze.GetCell(row, lastColumn) != '*')
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	bool TestLoadsMixedLevelCatalog()
+	{
+		const LevelCatalogLoadResult result =
+			LoadLevelCatalogFromText(
+				"file|Level01.txt|1|1001\n"
+				"procedural|8|10|3001|3|3002\n");
+
+		if (!result.isSuccessful)
+		{
+			std::cerr << result.errorMessage << '\n';
+			return false;
+		}
+
+		if (result.levels.size() != 2)
+		{
+			return false;
+		}
+
+		const LevelCatalogEntry& fileLevel = result.levels[0];
+		const LevelCatalogEntry& proceduralLevel = result.levels[1];
+
+		return fileLevel.mazeSourceType == MazeSourceType::File &&
+			fileLevel.path == "Level01.txt" &&
+			fileLevel.enemyCount == 1 &&
+			fileLevel.enemySpawnSeed == 1001u &&
+			proceduralLevel.mazeSourceType == MazeSourceType::Procedural &&
+			proceduralLevel.passageRowCount == 8 &&
+			proceduralLevel.passageColumnCount == 10 &&
+			proceduralLevel.mazeSeed == 3001u &&
+			proceduralLevel.enemyCount == 3 &&
+			proceduralLevel.enemySpawnSeed == 3002u;
+	}
+
+	bool TestRejectsDuplicateProceduralMaze()
+	{
+		const LevelCatalogLoadResult result =
+			LoadLevelCatalogFromText(
+				"procedural|8|10|3001|2|4001\n"
+				"procedural|8|10|3001|3|4002\n");
+
+		return !result.isSuccessful &&
+			Contains(
+				result.errorMessage,
+				"Duplicate procedural maze") &&
+			Contains(result.errorMessage, "line 2") &&
+			Contains(result.errorMessage, "rows 8") &&
+			Contains(result.errorMessage, "columns 10") &&
+			Contains(result.errorMessage, "seed 3001");
+	}
 }
 
 int main()
@@ -724,8 +951,43 @@ int main()
 			"TestRejectsInvalidEnemySpawnSeed",
 			TestRejectsInvalidEnemySpawnSeed);
 
+	failedTestCount +=
+		RunTest(
+			"TestRejectsInvalidProceduralMazeSize",
+			TestRejectsInvalidProceduralMazeSize);
+
+	failedTestCount +=
+		RunTest(
+			"TestGeneratesProceduralMazeWithExpectedSize",
+			TestGeneratesProceduralMazeWithExpectedSize);
+
+	failedTestCount +=
+		RunTest(
+			"TestReusesProceduralMazeSeed",
+			TestReusesProceduralMazeSeed);
+
+	failedTestCount +=
+		RunTest(
+			"TestGeneratesReachableProceduralMaze",
+			TestGeneratesReachableProceduralMaze);
+
+	failedTestCount +=
+		RunTest(
+			"TestGeneratesClosedProceduralMazeBoundary",
+			TestGeneratesClosedProceduralMazeBoundary);
+
+	failedTestCount +=
+		RunTest(
+			"TestLoadsMixedLevelCatalog",
+			TestLoadsMixedLevelCatalog);
+
+	failedTestCount +=
+		RunTest(
+			"TestRejectsDuplicateProceduralMaze",
+			TestRejectsDuplicateProceduralMaze);
+
 	std::cout
-		<< "Tests: 25, Failed: "
+		<< "Tests: 32, Failed: "
 		<< failedTestCount
 		<< '\n';
 

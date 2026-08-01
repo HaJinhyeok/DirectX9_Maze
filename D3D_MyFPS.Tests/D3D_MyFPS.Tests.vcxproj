@@ -131,10 +131,12 @@
     <ClCompile Include="..\LevelCatalog.cpp" />
     <ClCompile Include="..\MazeCoordinates.cpp" />
     <ClCompile Include="..\MazeLoader.cpp" />
+    <ClCompile Include="..\ProceduralMaze.cpp" />
     <ClCompile Include="MazeLoaderTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\EnemySpawn.h" />
+    <ClInclude Include="..\ProceduralMaze.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
