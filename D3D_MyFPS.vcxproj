@@ -159,6 +159,7 @@
     <ClCompile Include="LevelCatalog.cpp" />
     <ClCompile Include="MazeCoordinates.cpp" />
     <ClCompile Include="MazeLoader.cpp" />
+    <ClCompile Include="MazePathfinding.cpp" />
     <ClCompile Include="Notice.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="PlayerCollision.cpp" />
@@ -185,6 +186,7 @@
     <ClInclude Include="MazeCoordinates.h" />
     <ClInclude Include="MazeDefinition.h" />
     <ClInclude Include="MazeLoader.h" />
+    <ClInclude Include="MazePathfinding.h" />
     <ClInclude Include="Notice.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="PlayerCollision.h" />

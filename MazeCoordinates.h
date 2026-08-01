@@ -14,3 +14,8 @@ MazeWorldPosition CalculateMazeCellCenterPosition(
 	int row,
 	int column,
 	float tileSize) noexcept;
+
+MazeCellPosition CalculateMazeCellPosition(
+	const MazeDefinition& maze,
+	const MazeWorldPosition& position,
+	float tileSize) noexcept;

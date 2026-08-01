@@ -5,6 +5,7 @@
 #include "../CombatCollision.h"
 #include "../EnemySpawn.h"
 #include "../ProceduralMaze.h"
+#include "../MazePathfinding.h"
 
 #include <cmath>
 #include <cstdio>
@@ -540,6 +541,55 @@ namespace
 			first.column == second.column;
 	}
 
+	bool TestConvertsMazeWorldPositionsToCells()
+	{
+		MazeDefinition maze;
+		maze.cells =
+		{
+			"....",
+			"....",
+			"...."
+		};
+
+		for (int row = 0; row < maze.GetHeight(); ++row)
+		{
+			for (int column = 0;
+				column < maze.GetWidth();
+				++column)
+			{
+				const MazeWorldPosition worldPosition =
+					CalculateMazeCellCenterPosition(
+						maze,
+						row,
+						column,
+						10.0f);
+
+				const MazeCellPosition convertedCell =
+					CalculateMazeCellPosition(
+						maze,
+						worldPosition,
+						10.0f);
+
+				if (!AreSameCells(
+					convertedCell,
+					MazeCellPosition{ row, column }))
+				{
+					return false;
+				}
+			}
+		}
+
+		const MazeCellPosition invalidCell =
+			CalculateMazeCellPosition(
+				maze,
+				MazeWorldPosition{},
+				0.0f);
+
+		return AreSameCells(
+			invalidCell,
+			MazeCellPosition{ -1, -1 });
+	}
+
 	bool TestGeneratesValidEnemySpawns()
 	{
 		MazeDefinition maze;
@@ -822,6 +872,124 @@ namespace
 			Contains(result.errorMessage, "columns 10") &&
 			Contains(result.errorMessage, "seed 3001");
 	}
+
+	bool TestBuildsMazeDistanceField()
+	{
+		MazeDefinition maze;
+		maze.cells =
+		{
+			"*****",
+			"*...*",
+			"***.*",
+			"*...*",
+			"*****"
+		};
+
+		const MazePathfindingResult result =
+			BuildMazeDistanceField(
+				maze,
+				MazeCellPosition{ 1, 1 });
+
+		if (!result.isSuccessful)
+		{
+			std::cerr << result.errorMessage << '\n';
+			return false;
+		}
+
+		return
+			result.distanceField.GetDistance(1, 1) == 0 &&
+			result.distanceField.GetDistance(1, 2) == 1 &&
+			result.distanceField.GetDistance(1, 3) == 2 &&
+			result.distanceField.GetDistance(2, 3) == 3 &&
+			result.distanceField.GetDistance(3, 3) == 4 &&
+			result.distanceField.GetDistance(3, 2) == 5 &&
+			result.distanceField.GetDistance(3, 1) == 6 &&
+			result.distanceField.GetDistance(0, 0) == kUnreachableMazeDistance;
+	}
+
+	bool TestSelectsCloserMazeCell()
+	{
+		MazeDistanceField distanceField;
+		distanceField.distances =
+		{
+			{ -1, -1, -1, -1 },
+			{ -1,  2,  1,  0 },
+			{ -1,  3, -1, -1 },
+			{ -1, -1, -1, -1 }
+		};
+
+		MazeCellPosition nextCell{ -1, -1 };
+
+		const bool hasNextCell =
+			TryGetNextMazeCell(
+				distanceField,
+				MazeCellPosition{ 2, 1 },
+				nextCell);
+
+		return hasNextCell &&
+			nextCell.row == 1 &&
+			nextCell.column == 1;
+	}
+
+	bool TestRejectsInvalidPathfindingTarget()
+	{
+		MazeDefinition maze;
+		maze.cells =
+		{
+			"***",
+			"*.*",
+			"***"
+		};
+
+		const MazePathfindingResult wallTargetResult =
+			BuildMazeDistanceField(
+				maze,
+				MazeCellPosition{ 0, 0 });
+
+		const MazePathfindingResult outsideTargetResult =
+			BuildMazeDistanceField(
+				maze,
+				MazeCellPosition{ -1, 1 });
+
+		return !wallTargetResult.isSuccessful &&
+			!wallTargetResult.errorMessage.empty() &&
+			!outsideTargetResult.isSuccessful &&
+			!outsideTargetResult.errorMessage.empty();
+	}
+
+	bool TestDoesNotSelectInvalidNextMazeCell()
+	{
+		MazeDistanceField distanceField;
+		distanceField.distances =
+		{
+			{ -1, -1, -1, -1 },
+			{ -1,  2,  1,  0 },
+			{ -1,  3, -1, -1 },
+			{ -1, -1, -1, -1 }
+		};
+
+		MazeCellPosition targetNextCell{ -1, -1 };
+		MazeCellPosition unreachableNextCell{ -1, -1 };
+
+		const bool hasTargetNextCell =
+			TryGetNextMazeCell(
+				distanceField,
+				MazeCellPosition{ 1, 3 },
+				targetNextCell);
+
+		const bool hasUnreachableNextCell =
+			TryGetNextMazeCell(
+				distanceField,
+				MazeCellPosition{ 0, 0 },
+				unreachableNextCell);
+
+		return !hasTargetNextCell &&
+			targetNextCell.row == -1 &&
+			targetNextCell.column == -1 &&
+			!hasUnreachableNextCell &&
+			unreachableNextCell.row == -1 &&
+			unreachableNextCell.column == -1;
+	}
 }
 
 int main()
@@ -865,6 +1033,11 @@ int main()
 		RunTest(
 			"TestCalculatesMazeCellCenters",
 			TestCalculatesMazeCellCenters);
+
+	failedTestCount +=
+		RunTest(
+			"TestConvertsMazeWorldPositionsToCells",
+			TestConvertsMazeWorldPositionsToCells);
 
 	failedTestCount +=
 		RunTest(
@@ -986,8 +1159,28 @@ int main()
 			"TestRejectsDuplicateProceduralMaze",
 			TestRejectsDuplicateProceduralMaze);
 
+	failedTestCount +=
+		RunTest(
+			"TestBuildsMazeDistanceField",
+			TestBuildsMazeDistanceField);
+
+	failedTestCount +=
+		RunTest(
+			"TestSelectsCloserMazeCell",
+			TestSelectsCloserMazeCell);
+
+	failedTestCount +=
+		RunTest(
+			"TestRejectsInvalidPathfindingTarget",
+			TestRejectsInvalidPathfindingTarget);
+
+	failedTestCount +=
+		RunTest(
+			"TestDoesNotSelectInvalidNextMazeCell",
+			TestDoesNotSelectInvalidNextMazeCell);
+
 	std::cout
-		<< "Tests: 32, Failed: "
+		<< "Tests: 37, Failed: "
 		<< failedTestCount
 		<< '\n';
 

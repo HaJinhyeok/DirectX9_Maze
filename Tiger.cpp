@@ -1,19 +1,11 @@
 ﻿#include "Tiger.h"
+#include "MazeCoordinates.h"
 
-namespace
-{
-	bool IsWalkableCell(
-		const MazeDefinition& maze,
-		int row,
-		int column)
-	{
-		return maze.IsInside(row, column) && maze.GetCell(row, column) != '*';
-	}
-}
+#include <cmath>
 
 Tiger::Tiger(D3DXVECTOR3 position)
 {
-	ResetForLevel(position, position + D3DXVECTOR3(0.0f, 0.0f, -1.0f));
+	ResetForLevel(position);
 }
 
 Tiger::~Tiger() = default;
@@ -38,482 +30,120 @@ int Tiger::Render(LPDIRECT3DDEVICE9 device)
 	return m_model.Render(device);
 }
 
-VOID Tiger::Move(const MazeDefinition& maze, FLOAT deltaTimeSeconds)
+VOID Tiger::Move(
+	const MazeDefinition& maze,
+	const MazeDistanceField& distanceField,
+	FLOAT deltaTimeSeconds)
 {
-	if (!IsAlive())
+	if (!IsAlive() || deltaTimeSeconds <= 0.0f)
 	{
 		return;
 	}
 
-	m_accumulatedTimeSeconds += deltaTimeSeconds;
+	const D3DXVECTOR3 currentPosition = GetPosition();
 
-	while (m_accumulatedTimeSeconds >= kTigerUpdateIntervalSeconds)
+	const MazeCellPosition currentCell =
+		CalculateMazeCellPosition(
+			maze,
+			MazeWorldPosition
+			{
+				currentPosition.x,
+				currentPosition.y,
+				currentPosition.z
+			},
+			kTileSize);
+
+	if (m_moveTargetCell.row < 0 ||
+		m_moveTargetCell.column < 0)
 	{
-		// 호랑이가 통로를 따라 움직이게 한다.
-		// 호랑이가 현재 바라보는 방향 정보와 맵 정보를 이용해서 현재 방향으로 더 전진해도 되는지 여부 판단
-		// 현재 바라보는 방향이 벽으로 막혀있을 경우, 시계방향으로 90도씩 회전시켜 다시 전진 여부 판단
-		// 현재 바라보는 방향이 막혀있지 않더라도, 여러 갈래 길일 경우 랜덤하게 진행방향 바꾸도록 해볼까
-		// => 랜덤(50%?)으로 방향 전환할 지 안 할 지 결정하는
-		D3DXVECTOR3 currentLookAt = D3DXVECTOR3(-m_worldMatrix._31, -m_worldMatrix._32, -m_worldMatrix._33);
-		D3DXVec3Normalize(&currentLookAt, &currentLookAt);
-
-		D3DXVECTOR3 currentPosition = D3DXVECTOR3(m_worldMatrix._41, m_worldMatrix._42, m_worldMatrix._43);
-
-		const int mazeWidth = maze.GetWidth();
-		const int mazeHeight = maze.GetHeight();
-
-		const int column = static_cast<int>(floorf(currentPosition.x / kTileSize + mazeWidth / 2.0f));
-		const int row = static_cast<int>(ceilf(mazeHeight / 2.0f - currentPosition.z / kTileSize)) - 1;
-
-		const float cellCenterX = (-mazeWidth / 2.0f + column + 0.5f) * kTileSize;
-		const float cellCenterZ = (mazeHeight / 2.0f - row - 0.5f) * kTileSize;
-
-		if (fabsf(currentPosition.x - cellCenterX) <= kEpsilon &&
-			fabsf(currentPosition.z - cellCenterZ) <= kEpsilon)
+		if (!TryGetNextMazeCell(
+			distanceField,
+			currentCell,
+			m_moveTargetCell))
 		{
-			if (m_isRotating == TRUE)
-			{
-				this->Rotate(m_isClockwise);
-			}
-			else if (m_isRotating == FALSE && m_rotationCount == 1)
-			{
-				m_rotationCount--;
-			}
-			else
-			{
-				// random_device로 시드값 생성해 메르센 트위스트 알고리즘으로 난수 생성
-				mt19937 randomEngine(m_randomDevice());
-
-				// 상하좌우 칸으로 전진 가능한지 판별
-				{
-					// 0 - 상
-					m_isWallOpen[0] = IsWalkableCell(maze, row - 1, column);
-					// 1 - 하
-					m_isWallOpen[1] = IsWalkableCell(maze, row + 1, column);
-					// 2 - 좌
-					m_isWallOpen[2] = IsWalkableCell(maze, row, column - 1);
-					// 3 - 우
-					m_isWallOpen[3] = IsWalkableCell(maze, row, column + 1);
-				}
-
-				// 진행 방향이 막혀있을 경우
-				// 진행 방향이 열려있고, 왼쪽과 오른쪽이 막혀있을 경우 == 일단은 그냥 직진
-				// 진행 방향이 열려있고, 왼쪽 또는 오른쪽도 열려있을 경우 == 일단은 회전, 몇 갈래인지 카운트해서 랜덤하게 회전시켜 진행
-				if (currentLookAt.x > 0 && fabsf(currentLookAt.z) <= kEpsilon)
-				{
-					// +x direction
-					if (m_isWallOpen[3] == FALSE)
-					{
-						// 전진 막혔으니 일단 무조건 회전은 함
-						m_isRotating = TRUE;
-						m_rotationCount++;
-						if (!m_isWallOpen[0] && m_isWallOpen[1])
-						{
-							m_isClockwise = TRUE;
-						}
-						else if (m_isWallOpen[0] && !m_isWallOpen[1])
-						{
-							m_isClockwise = FALSE;
-						}
-						else if (m_isWallOpen[0] && m_isWallOpen[1])
-						{
-							uniform_int_distribution<INT> distribution(0, 1);
-							if (distribution(randomEngine) == 0)
-							{
-								m_isClockwise = TRUE;
-							}
-							else
-							{
-								m_isClockwise = FALSE;
-							}
-						}
-						else
-						{
-							// 양쪽 다 막혔으므로 회전 2회
-							m_rotationCount++;
-						}
-					}
-					else
-					{
-						if (!m_isWallOpen[0] && !m_isWallOpen[1])
-						{
-							m_isRotating = FALSE;
-						}
-						else if (!m_isWallOpen[0] && m_isWallOpen[1])
-						{
-							uniform_int_distribution<INT> distribution(0, 1);
-							if (distribution(randomEngine) == 0)
-							{
-								m_isRotating = FALSE;
-							}
-							else
-							{
-								m_isRotating = TRUE;
-								m_isClockwise = TRUE;
-								m_rotationCount++;
-							}
-						}
-						else if (m_isWallOpen[0] && !m_isWallOpen[1])
-						{
-							uniform_int_distribution<INT> distribution(0, 1);
-							if (distribution(randomEngine) == 0)
-							{
-								m_isRotating = FALSE;
-							}
-							else
-							{
-								m_isRotating = TRUE;
-								m_isClockwise = FALSE;
-								m_rotationCount++;
-							}
-						}
-						else
-						{
-							uniform_int_distribution<INT> distribution(0, 2);
-							if (distribution(randomEngine) == 0)
-							{
-								m_isRotating = FALSE;
-							}
-							else if (distribution(randomEngine) == 1)
-							{
-								m_isRotating = TRUE;
-								m_isClockwise = TRUE;
-								m_rotationCount++;
-							}
-							else
-							{
-								m_isRotating = TRUE;
-								m_isClockwise = FALSE;
-								m_rotationCount++;
-							}
-						}
-					}
-				}
-				else if (currentLookAt.x < 0 && fabsf(currentLookAt.z) <= kEpsilon)
-				{
-					// -x direction
-					if (m_isWallOpen[2] == FALSE)
-					{
-						// 전진 막혔으니 일단 무조건 회전은 함
-						m_isRotating = TRUE;
-						m_rotationCount++;
-						if (!m_isWallOpen[1] && m_isWallOpen[0])
-						{
-							m_isClockwise = TRUE;
-						}
-						else if (m_isWallOpen[1] && !m_isWallOpen[0])
-						{
-							m_isClockwise = FALSE;
-						}
-						else if (m_isWallOpen[1] && m_isWallOpen[0])
-						{
-							uniform_int_distribution<INT> distribution(0, 1);
-							if (distribution(randomEngine) == 0)
-							{
-								m_isClockwise = TRUE;
-							}
-							else
-							{
-								m_isClockwise = FALSE;
-							}
-						}
-						else
-						{
-							m_rotationCount++;
-						}
-					}
-					else
-					{
-						if (!m_isWallOpen[1] && !m_isWallOpen[0])
-						{
-							m_isRotating = FALSE;
-						}
-						else if (!m_isWallOpen[1] && m_isWallOpen[0])
-						{
-							uniform_int_distribution<INT> distribution(0, 1);
-							if (distribution(randomEngine) == 0)
-							{
-								m_isRotating = FALSE;
-							}
-							else
-							{
-								m_isRotating = TRUE;
-								m_isClockwise = TRUE;
-								m_rotationCount++;
-							}
-						}
-						else if (m_isWallOpen[1] && !m_isWallOpen[0])
-						{
-							uniform_int_distribution<INT> distribution(0, 1);
-							if (distribution(randomEngine) == 0)
-							{
-								m_isRotating = FALSE;
-							}
-							else
-							{
-								m_isRotating = TRUE;
-								m_isClockwise = FALSE;
-								m_rotationCount++;
-							}
-						}
-						else
-						{
-							uniform_int_distribution<INT> distribution(0, 2);
-							if (distribution(randomEngine) == 0)
-							{
-								m_isRotating = FALSE;
-							}
-							else if (distribution(randomEngine) == 1)
-							{
-								m_isRotating = TRUE;
-								m_isClockwise = TRUE;
-								m_rotationCount++;
-							}
-							else
-							{
-								m_isRotating = TRUE;
-								m_isClockwise = FALSE;
-								m_rotationCount++;
-							}
-						}
-					}
-				}
-				else if (currentLookAt.z > 0 && fabsf(currentLookAt.x) <= kEpsilon)
-				{
-					// +z direction
-					if (m_isWallOpen[0] == FALSE)
-					{
-						// 전진 막혔으니 일단 무조건 회전은 함
-						m_isRotating = TRUE;
-						m_rotationCount++;
-						if (!m_isWallOpen[2] && m_isWallOpen[3])
-						{
-							m_isClockwise = TRUE;
-						}
-						else if (m_isWallOpen[2] && !m_isWallOpen[3])
-						{
-							m_isClockwise = FALSE;
-						}
-						else if (m_isWallOpen[2] && m_isWallOpen[3])
-						{
-							uniform_int_distribution<INT> distribution(0, 1);
-							if (distribution(randomEngine) == 0)
-							{
-								m_isClockwise = TRUE;
-							}
-							else
-							{
-								m_isClockwise = FALSE;
-							}
-						}
-						else
-						{
-							// 양쪽 다 막혔으므로 회전 2회
-							m_rotationCount++;
-						}
-					}
-					else
-					{
-						if (!m_isWallOpen[2] && !m_isWallOpen[3])
-						{
-							m_isRotating = FALSE;
-						}
-						else if (!m_isWallOpen[2] && m_isWallOpen[3])
-						{
-							uniform_int_distribution<INT> distribution(0, 1);
-							if (distribution(randomEngine) == 0)
-							{
-								m_isRotating = FALSE;
-							}
-							else
-							{
-								m_isRotating = TRUE;
-								m_isClockwise = TRUE;
-								m_rotationCount++;
-							}
-						}
-						else if (m_isWallOpen[2] && !m_isWallOpen[3])
-						{
-							uniform_int_distribution<INT> distribution(0, 1);
-							if (distribution(randomEngine) == 0)
-							{
-								m_isRotating = FALSE;
-							}
-							else
-							{
-								m_isRotating = TRUE;
-								m_isClockwise = FALSE;
-								m_rotationCount++;
-							}
-						}
-						else
-						{
-							uniform_int_distribution<INT> distribution(0, 2);
-							if (distribution(randomEngine) == 0)
-							{
-								m_isRotating = FALSE;
-							}
-							else if (distribution(randomEngine) == 1)
-							{
-								m_isRotating = TRUE;
-								m_isClockwise = TRUE;
-								m_rotationCount++;
-							}
-							else
-							{
-								m_isRotating = TRUE;
-								m_isClockwise = FALSE;
-								m_rotationCount++;
-							}
-						}
-					}
-				}
-				else if (currentLookAt.z < 0 && fabsf(currentLookAt.x) <= kEpsilon)
-				{
-					// -z direction
-					if (m_isWallOpen[1] == FALSE)
-					{
-						// 전진 막혔으니 일단 무조건 회전은 함
-						m_isRotating = TRUE;
-						m_rotationCount++;
-						if (!m_isWallOpen[3] && m_isWallOpen[2])
-						{
-							m_isClockwise = TRUE;
-						}
-						else if (m_isWallOpen[3] && !m_isWallOpen[2])
-						{
-							m_isClockwise = FALSE;
-						}
-						else if (m_isWallOpen[3] && m_isWallOpen[2])
-						{
-							uniform_int_distribution<INT> distribution(0, 1);
-							if (distribution(randomEngine) == 0)
-							{
-								m_isClockwise = TRUE;
-							}
-							else
-							{
-								m_isClockwise = FALSE;
-							}
-						}
-						else
-						{
-							// 양쪽 다 막혔으므로 회전 2회
-							m_rotationCount++;
-						}
-					}
-					else
-					{
-						// 전진이 불가능하진 않으므로 회전은 하더라도 1회만
-						if (!m_isWallOpen[3] && !m_isWallOpen[2])
-						{
-							// 양쪽 막히면 그냥 직진
-							m_isRotating = FALSE;
-						}
-						else if (!m_isWallOpen[3] && m_isWallOpen[2])
-						{
-							uniform_int_distribution<INT> distribution(0, 1);
-							if (distribution(randomEngine) == 0)
-							{
-								m_isRotating = FALSE;
-							}
-							else
-							{
-								m_isRotating = TRUE;
-								m_isClockwise = TRUE;
-								m_rotationCount++;
-							}
-						}
-						else if (m_isWallOpen[3] && !m_isWallOpen[2])
-						{
-							uniform_int_distribution<INT> distribution(0, 1);
-							if (distribution(randomEngine) == 0)
-							{
-								m_isRotating = FALSE;
-							}
-							else
-							{
-								m_isRotating = TRUE;
-								m_isClockwise = FALSE;
-								m_rotationCount++;
-							}
-						}
-						else
-						{
-							uniform_int_distribution<INT> distribution(0, 2);
-							if (distribution(randomEngine) == 0)
-							{
-								m_isRotating = FALSE;
-							}
-							else if (distribution(randomEngine) == 1)
-							{
-								m_isRotating = TRUE;
-								m_isClockwise = TRUE;
-								m_rotationCount++;
-							}
-							else
-							{
-								m_isRotating = TRUE;
-								m_isClockwise = FALSE;
-								m_rotationCount++;
-							}
-						}
-					}
-				}
-			}
+			return;
 		}
-
-		if (m_rotationAmount == 90)
-		{
-			if (m_rotationCount == 2)
-			{
-				m_rotationCount--;
-			}
-			else
-			{
-				m_isRotating = FALSE;
-			}
-			// 90도 회전 후 벡터값 조정?
-			m_rotationAmount = 0;
-		}
-		else if (m_isRotating == FALSE)
-		{
-			D3DXMATRIX translationMatrix;
-			FLOAT movementScale = kTigerMoveDistance;
-			movementScale /= sqrtf(currentLookAt.x * currentLookAt.x + currentLookAt.y * currentLookAt.y + currentLookAt.z * currentLookAt.z);
-			D3DXMatrixTranslation(&translationMatrix, currentLookAt.x * movementScale, currentLookAt.y * movementScale, currentLookAt.z * movementScale);
-			D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
-		}
-
-		m_accumulatedTimeSeconds -= kTigerUpdateIntervalSeconds;
 	}
-}
 
-// 90도 회전시키고 나서 벡터값 조정이 필요할 듯
-VOID Tiger::Rotate(BOOL clockwise)
-{
-	D3DXMATRIX rotationMatrix, translationMatrix;
-	D3DXVECTOR3 currentPosition = D3DXVECTOR3(m_worldMatrix._41, m_worldMatrix._42, m_worldMatrix._43);
-	// 원점으로 이동
-	D3DXMatrixTranslation(&translationMatrix, -currentPosition.x, -currentPosition.y, -currentPosition.z);
-	D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
-	// 3도 회전
-	if (clockwise == TRUE)
+	const MazeWorldPosition targetWorldPosition =
+		CalculateMazeCellCenterPosition(
+			maze,
+			m_moveTargetCell.row,
+			m_moveTargetCell.column,
+			kTileSize);
+
+	const D3DXVECTOR3 targetPosition(
+		targetWorldPosition.x,
+		currentPosition.y,
+		targetWorldPosition.z);
+
+	D3DXVECTOR3 movementDirection = targetPosition - currentPosition;
+
+	const FLOAT remainingDistance = D3DXVec3Length(&movementDirection);
+
+	if (remainingDistance <= kEpsilon)
 	{
-		D3DXMatrixRotationY(&rotationMatrix, D3DXToRadian(3.0f));
+		SetPosition(targetPosition);
+		m_moveTargetCell = MazeCellPosition{ -1, -1 };
+		return;
+	}
+
+	D3DXVec3Normalize(&movementDirection, &movementDirection);
+
+	const FLOAT movementDistance = kTigerMoveSpeed * deltaTimeSeconds;
+
+	D3DXVECTOR3 nextPosition;
+
+	if (movementDistance >= remainingDistance)
+	{
+		nextPosition = targetPosition;
+		m_moveTargetCell = MazeCellPosition{ -1, -1 };
 	}
 	else
 	{
-		D3DXMatrixRotationY(&rotationMatrix, D3DXToRadian(-3.0f));
+		nextPosition =
+			currentPosition +
+			movementDirection * movementDistance;
 	}
-	D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &rotationMatrix);
-	m_rotationAmount += 3;
-	// 다시 제자리로 이동
-	D3DXMatrixTranslation(&translationMatrix, currentPosition.x, currentPosition.y, currentPosition.z);
-	D3DXMatrixMultiply(&m_worldMatrix, &m_worldMatrix, &translationMatrix);
+
+	const FLOAT yaw = static_cast<FLOAT>(
+		std::atan2(
+			-movementDirection.x,
+			-movementDirection.z));
+
+	D3DXMATRIX scalingMatrix;
+	D3DXMATRIX rotationMatrix;
+	D3DXMATRIX translationMatrix;
+	D3DXMATRIX scaledRotationMatrix;
+
+	D3DXMatrixScaling(
+		&scalingMatrix,
+		kTigerScale,
+		kTigerScale,
+		kTigerScale * 2.0f / 3.0f);
+
+	D3DXMatrixRotationY(
+		&rotationMatrix,
+		yaw);
+
+	D3DXMatrixTranslation(
+		&translationMatrix,
+		nextPosition.x,
+		nextPosition.y,
+		nextPosition.z);
+
+	D3DXMatrixMultiply(
+		&scaledRotationMatrix,
+		&scalingMatrix,
+		&rotationMatrix);
+
+	D3DXMatrixMultiply(
+		&m_worldMatrix,
+		&scaledRotationMatrix,
+		&translationMatrix);
 }
 
-VOID Tiger::ResetForLevel(const D3DXVECTOR3& position, const D3DXVECTOR3& lookAt)
+VOID Tiger::ResetForLevel(const D3DXVECTOR3& position)
 {
 	// scale 먼저 하고 translation
 	D3DXMatrixScaling(
@@ -534,19 +164,8 @@ VOID Tiger::ResetForLevel(const D3DXVECTOR3& position, const D3DXVECTOR3& lookAt
 		&m_worldMatrix,
 		&translationMatrix);
 
-	m_lookAt = lookAt;
 	m_health = kTigerMaxHealth;
-	m_isRotating = FALSE;
-	m_isClockwise = TRUE;
-
-	for (int i = 0; i < 4; i++)
-	{
-		m_isWallOpen[i] = TRUE;
-	}
-
-	m_rotationAmount = 0;
-	m_rotationCount = 0;
-	m_accumulatedTimeSeconds = 0.0f;
+	m_moveTargetCell = MazeCellPosition{ -1, -1 };
 }
 
 void Tiger::TakeDamage(int damage) noexcept

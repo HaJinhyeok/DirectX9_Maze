@@ -1,5 +1,6 @@
 ﻿#include <algorithm>
 #include <cmath>
+#include <utility>
 
 #include "MazeGenerator.h"
 #include "Input.h"
@@ -13,6 +14,8 @@
 #include "CombatCollision.h"
 #include "EnemySpawn.h"
 #include "ProceduralMaze.h"
+#include "MazeCoordinates.h"
+#include "MazePathfinding.h"
 
 const D3DXVECTOR3 kWorldUp(0.0f, 1.0f, 0.0f);
 
@@ -146,6 +149,8 @@ static FpsCounter g_fpsCounter;
 static TigerCollection g_tigers;
 static SkyBox g_skyBox;
 static MazeDefinition g_maze;
+static MazeDistanceField g_playerDistanceField;
+static MazeCellPosition g_distanceFieldTargetCell{ -1, -1 };
 static std::vector<MazeCellPosition> g_enemySpawnPositions;
 static std::vector<LevelCatalogEntry> g_levels;
 static size_t g_currentLevelIndex = 0;
@@ -445,9 +450,7 @@ static VOID ResetLevelEntities()
 				spawnPosition.row,
 				spawnPosition.column);
 
-		g_tigers[index]->ResetForLevel(
-			worldPosition,
-			g_player.GetPosition());
+		g_tigers[index]->ResetForLevel(worldPosition);
 	}
 }
 
@@ -459,9 +462,49 @@ static VOID ResetLevelPlayState()
 	g_didPlayerMove = FALSE;
 	g_isMouseButtonDown = FALSE;
 	g_topViewMode = TopViewMode::Disabled;
+	g_playerDistanceField.distances.clear();
+	g_distanceFieldTargetCell = MazeCellPosition{ -1, -1 };
 
 	g_mazeExit.ReleaseButton();
 	InitializeInput();
+}
+
+static VOID UpdatePlayerDistanceField()
+{
+	const D3DXVECTOR3 playerPosition = g_player.GetPosition();
+
+	const MazeWorldPosition playerWorldPosition
+	{
+		playerPosition.x,
+		playerPosition.y,
+		playerPosition.z
+	};
+
+	const MazeCellPosition playerCell =
+		CalculateMazeCellPosition(
+			g_maze,
+			playerWorldPosition,
+			kTileSize);
+
+	if (playerCell.row == g_distanceFieldTargetCell.row &&
+		playerCell.column == g_distanceFieldTargetCell.column)
+	{
+		return;
+	}
+
+	MazePathfindingResult pathfindingResult =
+		BuildMazeDistanceField(
+			g_maze,
+			playerCell);
+
+	if (!pathfindingResult.isSuccessful)
+	{
+		return;
+	}
+
+	g_playerDistanceField = std::move(pathfindingResult.distanceField);
+
+	g_distanceFieldTargetCell = playerCell;
 }
 
 static VOID UpdateBillboardFacing()
@@ -1282,12 +1325,17 @@ static VOID UpdateDynamicObjects(FLOAT deltaTimeSeconds)
 	if (!IsGameplayActive())
 		return;
 
+	UpdatePlayerDistanceField();
+
 	// 총알 움직임 계산
 	g_player.UpdateBullets(g_maze, g_tigers, deltaTimeSeconds);
 	// 호랑이 움직임 계산
 	for (auto& tiger : g_tigers)
 	{
-		tiger->Move(g_maze, deltaTimeSeconds);
+		tiger->Move(
+			g_maze,
+			g_playerDistanceField,
+			deltaTimeSeconds);
 	}
 }
 

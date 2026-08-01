@@ -131,6 +131,7 @@
     <ClCompile Include="..\LevelCatalog.cpp" />
     <ClCompile Include="..\MazeCoordinates.cpp" />
     <ClCompile Include="..\MazeLoader.cpp" />
+    <ClCompile Include="..\MazePathfinding.cpp" />
     <ClCompile Include="..\ProceduralMaze.cpp" />
     <ClCompile Include="MazeLoaderTests.cpp" />
   </ItemGroup>
