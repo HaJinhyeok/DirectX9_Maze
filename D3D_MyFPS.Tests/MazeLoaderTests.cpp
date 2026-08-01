@@ -6,6 +6,7 @@
 #include "../EnemySpawn.h"
 #include "../ProceduralMaze.h"
 #include "../MazePathfinding.h"
+#include "../PerformanceRecorder.h"
 
 #include <cmath>
 #include <cstdio>
@@ -990,6 +991,142 @@ namespace
 			unreachableNextCell.row == -1 &&
 			unreachableNextCell.column == -1;
 	}
+
+	bool TestPerformanceRecorderWaitsForWarmup()
+	{
+		PerformanceRecorder recorder;
+		recorder.Start(1.0f, 1.0f);
+
+		if (recorder.GetState() != PerformanceCaptureState::WarmingUp)
+		{
+			return false;
+		}
+
+		recorder.Update(0.5f);
+
+		if (recorder.GetState() !=
+			PerformanceCaptureState::WarmingUp ||
+			recorder.GetSummary().sampleCount != 0)
+		{
+			return false;
+		}
+
+		recorder.Update(0.5f);
+
+		if (recorder.GetState() !=
+			PerformanceCaptureState::Capturing ||
+			recorder.GetSummary().sampleCount != 0)
+		{
+			return false;
+		}
+
+		recorder.Update(1.0f);
+
+		const PerformanceSummary& summary = recorder.GetSummary();
+
+		return recorder.GetState() ==
+			PerformanceCaptureState::Completed &&
+			summary.sampleCount == 1 &&
+			NearlyEqual(
+				summary.capturedDurationSeconds,
+				1.0f) &&
+			NearlyEqual(
+				summary.averageFrameTimeMilliseconds,
+				1000.0f) &&
+			NearlyEqual(
+				summary.percentile95FrameTimeMilliseconds,
+				1000.0f) &&
+			NearlyEqual(
+				summary.maximumFrameTimeMilliseconds,
+				1000.0f);
+	}
+
+	bool TestPerformanceRecorderCalculatesPercentiles()
+	{
+		PerformanceRecorder recorder;
+		recorder.Start(0.0f, 0.2f);
+
+		for (int frameTimeMilliseconds = 1;
+			frameTimeMilliseconds <= 20;
+			++frameTimeMilliseconds)
+		{
+			recorder.Update(
+				frameTimeMilliseconds / 1000.0f);
+		}
+
+		const PerformanceSummary& summary = recorder.GetSummary();
+
+		return recorder.GetState() ==
+			PerformanceCaptureState::Completed &&
+			summary.sampleCount == 20 &&
+			NearlyEqual(
+				summary.capturedDurationSeconds,
+				0.21f) &&
+			NearlyEqual(
+				summary.averageFrameTimeMilliseconds,
+				10.5f) &&
+			NearlyEqual(
+				summary.percentile95FrameTimeMilliseconds,
+				19.0f) &&
+			NearlyEqual(
+				summary.maximumFrameTimeMilliseconds,
+				20.0f);
+	}
+
+	bool TestPerformanceRecorderRejectsInvalidDurationsAndResets()
+	{
+		PerformanceRecorder recorder;
+
+		recorder.Start(-1.0f, 1.0f);
+
+		if (recorder.GetState() !=
+			PerformanceCaptureState::Idle)
+		{
+			return false;
+		}
+
+		recorder.Start(0.0f, 0.0f);
+
+		if (recorder.GetState() !=
+			PerformanceCaptureState::Idle)
+		{
+			return false;
+		}
+
+		recorder.Start(0.0f, 0.01f);
+		recorder.Update(0.01f);
+
+		if (recorder.GetState() !=
+			PerformanceCaptureState::Completed ||
+			recorder.GetSummary().sampleCount != 1)
+		{
+			return false;
+		}
+
+		recorder.Reset();
+
+		const PerformanceSummary& summary =
+			recorder.GetSummary();
+
+		return recorder.GetState() ==
+			PerformanceCaptureState::Idle &&
+			NearlyEqual(
+				recorder.GetRemainingSeconds(),
+				0.0f) &&
+			summary.sampleCount == 0 &&
+			NearlyEqual(
+				summary.capturedDurationSeconds,
+				0.0f) &&
+			NearlyEqual(
+				summary.averageFrameTimeMilliseconds,
+				0.0f) &&
+			NearlyEqual(
+				summary.percentile95FrameTimeMilliseconds,
+				0.0f) &&
+			NearlyEqual(
+				summary.maximumFrameTimeMilliseconds,
+				0.0f);
+	}
 }
 
 int main()
@@ -1179,8 +1316,23 @@ int main()
 			"TestDoesNotSelectInvalidNextMazeCell",
 			TestDoesNotSelectInvalidNextMazeCell);
 
+	failedTestCount +=
+		RunTest(
+			"TestPerformanceRecorderWaitsForWarmup",
+			TestPerformanceRecorderWaitsForWarmup);
+
+	failedTestCount +=
+		RunTest(
+			"TestPerformanceRecorderCalculatesPercentiles",
+			TestPerformanceRecorderCalculatesPercentiles);
+
+	failedTestCount +=
+		RunTest(
+			"TestPerformanceRecorderRejectsInvalidDurationsAndResets",
+			TestPerformanceRecorderRejectsInvalidDurationsAndResets);
+
 	std::cout
-		<< "Tests: 37, Failed: "
+		<< "Tests: 40, Failed: "
 		<< failedTestCount
 		<< '\n';
 

@@ -161,6 +161,7 @@
     <ClCompile Include="MazeLoader.cpp" />
     <ClCompile Include="MazePathfinding.cpp" />
     <ClCompile Include="Notice.cpp" />
+    <ClCompile Include="PerformanceRecorder.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="PlayerCollision.cpp" />
     <ClCompile Include="ProceduralMaze.cpp" />
@@ -188,6 +189,7 @@
     <ClInclude Include="MazeLoader.h" />
     <ClInclude Include="MazePathfinding.h" />
     <ClInclude Include="Notice.h" />
+    <ClInclude Include="PerformanceRecorder.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="PlayerCollision.h" />
     <ClInclude Include="ProceduralMaze.h" />

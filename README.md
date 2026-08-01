@@ -36,6 +36,7 @@ DirectX9 기반 1인칭 미로 탐색 게임입니다. 취업 준비 기간에 �
 | `Q`/`E` | 좌우 회전 |
 | `1` | 낮/밤 전환 |
 | `F2` (Debug 빌드) | 컬링 확인용 탑뷰 전환 |
+| `F3` (Debug 빌드) | 3초 워밍업 후 10초 성능 측정 |
 | `3` | 손전등 전환 |
 | `4` | 자유시점 전환 |
 | `Esc` | 일시정지 |
@@ -61,6 +62,7 @@ DirectX9 기반 1인칭 미로 탐색 게임입니다. 취업 준비 기간에 �
 | `Assets/Models`, `Assets/Textures` | 런타임 모델과 용도별 텍스처 |
 | `Input.*` | 키 입력 상태 관리 |
 | `FpsCounter.*` | 메인 루프의 delta time을 이용한 FPS 계산 |
+| `PerformanceRecorder.*` | 실제 frame time 표본과 평균·p95·최대값 측정 |
 | `ComUtils.h` | COM 포인터의 null 안전한 공통 해제 |
 | `D3D_MyFPS.Tests` | Direct3D 실행 없이 순수 로직을 검증하는 콘솔 테스트 |
 | `Assets/Data/Levels` | 파일·절차적 미로의 레벨 목록과 작성 규칙 |
@@ -129,12 +131,14 @@ Visual Studio 2022 Community 기본 설치 경로를 사용하는 경우, 저장
 - Windows 환경에서 게임 실행 정상 확인
 - UTF-8 소스 변환 후 한글 문자열 출력 정상 확인
 - 필수 텍스처 누락 시 초기화 실패 안내 후 크래시 없이 종료됨을 확인
-- 미로 로더·생성기, 레벨 목록, 셀 좌표 변환, 경로 탐색, 스폰과 투사체·구체 연속 충돌 자동 테스트 37개 통과
+- 미로 로더·생성기, 레벨 목록, 셀 좌표 변환, 경로 탐색, 스폰, 투사체·구체 연속 충돌과 성능 기록기 자동 테스트 40개 통과
 - 서로 다른 크기의 파일 레벨 2개와 절차적 레벨 1개의 전환 및 상태·리소스 재설정 확인
 - 적 피격·사망, 플레이어 접촉 게임 오버와 현재 레벨 재시작 확인
 - 레벨 1·2·3에서 각각 적 1·2·3마리가 시드 기반 위치에 생성되고 처치 후 재생성되지 않음을 확인
 - 여러 적이 공유 거리 필드로 플레이어를 추적하고 벽·모서리를 통과하지 않으며 이동 방향을 바라보는 것을 확인
+- 대표 레벨과 적 3·10·30마리 조건에서 평균·p95·최대 frame time 측정
 - 수동 검증 절차: [`docs/SMOKE_TEST.md`](docs/SMOKE_TEST.md)
+- 성능 측정 조건과 결과: [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md)
 - 외부 에셋 출처와 공개 상태: [`docs/ASSET_LICENSES.md`](docs/ASSET_LICENSES.md)
 
 ## 구현하며 다룬 문제
@@ -162,4 +166,4 @@ Visual Studio 2022 Community 기본 설치 경로를 사용하는 경우, 저장
 - 다중 적은 현재 동일한 X 파일 모델 자원을 인스턴스마다 개별 로드하므로 적 수를 크게 늘리기 전에 공유 모델 자원 구조가 필요합니다.
 - 현재는 `Debug|x86`만 검증되었으며 `x64`와 `Release` 구성은 별도 정리가 필요합니다.
 
-장기 개선 방향과 진행 상태는 [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)와 [`docs/ROADMAP.md`](docs/ROADMAP.md)를 참고하세요. 프로젝트별 C++ 네이밍 기준은 [`docs/CODING_CONVENTIONS.md`](docs/CODING_CONVENTIONS.md), 작업 중 정리한 개념과 선택 이유는 [`docs/LEARNING_NOTES.md`](docs/LEARNING_NOTES.md), 외부 에셋의 출처와 공개 판단은 [`docs/ASSET_LICENSES.md`](docs/ASSET_LICENSES.md)에 기록되어 있습니다.
+장기 개선 방향과 진행 상태는 [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)와 [`docs/ROADMAP.md`](docs/ROADMAP.md)를 참고하세요. 프로젝트별 C++ 네이밍 기준은 [`docs/CODING_CONVENTIONS.md`](docs/CODING_CONVENTIONS.md), 작업 중 정리한 개념과 선택 이유는 [`docs/LEARNING_NOTES.md`](docs/LEARNING_NOTES.md), 성능 측정은 [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md), 외부 에셋의 출처와 공개 판단은 [`docs/ASSET_LICENSES.md`](docs/ASSET_LICENSES.md)에 기록되어 있습니다.

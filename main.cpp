@@ -16,6 +16,7 @@
 #include "ProceduralMaze.h"
 #include "MazeCoordinates.h"
 #include "MazePathfinding.h"
+#include "PerformanceRecorder.h"
 
 const D3DXVECTOR3 kWorldUp(0.0f, 1.0f, 0.0f);
 
@@ -34,6 +35,8 @@ constexpr int kTileVertexCount = 4;
 constexpr char kLevelCatalogPath[] = "Assets\\Data\\Levels\\LevelList.txt";
 constexpr FLOAT kCameraFieldOfView = D3DX_PI / 4.0f;
 constexpr FLOAT kTopViewPaddingScale = 1.1f;
+constexpr FLOAT kPerformanceWarmupDurationSeconds = 3.0f;
+constexpr FLOAT kPerformanceCaptureDurationSeconds = 10.0f;
 
 using WallFaceVertices = std::array<CustomVertex, kVerticesPerWallFace>;
 
@@ -146,6 +149,7 @@ static vector<Notice> g_notices;
 static Exit g_mazeExit;
 static SettingsOverlay g_settingsOverlay;
 static FpsCounter g_fpsCounter;
+static PerformanceRecorder g_performanceRecorder;
 static TigerCollection g_tigers;
 static SkyBox g_skyBox;
 static MazeDefinition g_maze;
@@ -1276,6 +1280,14 @@ static VOID HandleFeatureToggleInput()
 			? TopViewMode::Disabled
 			: TopViewMode::CullingDebug;
 	}
+
+	// 성능 측정 시작
+	if (IsKeyPressed(VK_F3) == TRUE)
+	{
+		g_performanceRecorder.Start(
+			kPerformanceWarmupDurationSeconds,
+			kPerformanceCaptureDurationSeconds);
+	}
 #endif // _DEBUG
 
 	// player flashlight on/off
@@ -1592,13 +1604,58 @@ static VOID RenderUi()
 	}
 
 	// 성능 지표 표시
-	SetRect(&textRect, clientWidth - 220, 0, clientWidth - 20, 50);
-	std::snprintf(
-		textBuffer,
-		sizeof(textBuffer),
-		"FPS: %3d\nFrame: %.2f ms",
-		g_fpsCounter.GetFps(),
-		g_fpsCounter.GetAverageFrameTimeMilliseconds());
+	SetRect(&textRect, clientWidth - 260, 0, clientWidth - 20, 180);
+
+	switch (g_performanceRecorder.GetState())
+	{
+		case PerformanceCaptureState::WarmingUp:
+			std::snprintf(
+				textBuffer,
+				sizeof(textBuffer),
+				"FPS: %3d\nFrame: %.2f ms\nWarm-up: %.1f s",
+				g_fpsCounter.GetFps(),
+				g_fpsCounter.GetAverageFrameTimeMilliseconds(),
+				g_performanceRecorder.GetRemainingSeconds());
+			break;
+
+		case PerformanceCaptureState::Capturing:
+			std::snprintf(
+				textBuffer,
+				sizeof(textBuffer),
+				"FPS: %3d\nFrame: %.2f ms\nRecording: %.1f s",
+				g_fpsCounter.GetFps(),
+				g_fpsCounter.GetAverageFrameTimeMilliseconds(),
+				g_performanceRecorder.GetRemainingSeconds());
+			break;
+
+		case PerformanceCaptureState::Completed:
+		{
+			const PerformanceSummary& summary = g_performanceRecorder.GetSummary();
+
+			std::snprintf(
+				textBuffer,
+				sizeof(textBuffer),
+				"FPS: %3d\nFrame: %.2f ms\nAvg: %.2f ms\np95: %.2f ms\nMax: %.2f ms\nSamples: %d",
+				g_fpsCounter.GetFps(),
+				g_fpsCounter.GetAverageFrameTimeMilliseconds(),
+				summary.averageFrameTimeMilliseconds,
+				summary.percentile95FrameTimeMilliseconds,
+				summary.maximumFrameTimeMilliseconds,
+				summary.sampleCount);
+			break;
+		}
+
+		case PerformanceCaptureState::Idle:
+		default:
+			std::snprintf(
+				textBuffer,
+				sizeof(textBuffer),
+				"FPS: %3d\nFrame: %.2f ms",
+				g_fpsCounter.GetFps(),
+				g_fpsCounter.GetAverageFrameTimeMilliseconds());
+			break;
+	}
+
 	g_pFrameFont->DrawTextA(
 		NULL,
 		textBuffer,
@@ -2165,6 +2222,7 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 				UpdateGame(deltaTimeSeconds);
 				Render();
 				g_fpsCounter.Update(frameTimeSeconds);
+				g_performanceRecorder.Update(frameTimeSeconds);
 			}
 		}
 	}
