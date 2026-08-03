@@ -149,7 +149,7 @@ COM 리소스는 `SafeRelease`로 해제 후 null 상태를 보장하고, 공통
 - ISO C++17 (`/std:c++17`)
 - DirectX SDK June 2010
 
-현재 기준 구성은 솔루션의 `Debug|x86`입니다. 이 구성은 프로젝트에서 `Debug|Win32`로 매핑되며 다음 DirectX SDK 기본 설치 경로를 참조합니다.
+검증 기준 구성은 솔루션의 `Debug|x86`과 `Release|x86`입니다. 두 구성은 프로젝트에서 각각 `Debug|Win32`, `Release|Win32`로 매핑되며 다음 DirectX SDK 기본 설치 경로를 참조합니다.
 
 ```text
 C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include
@@ -192,16 +192,56 @@ Visual Studio 2022 Community 기본 설치 경로를 사용하는 경우, 저장
 
 모든 테스트가 통과하면 종료 코드 `0`, 하나라도 실패하면 종료 코드 `1`을 반환합니다.
 
+### Release 패키지 실행
+
+1. `DirectX9_Maze-Release-x86.zip`을 원하는 위치에 압축 해제합니다.
+2. 아래 x86 런타임이 없다면 Microsoft 공식 배포본을 설치합니다.
+3. 압축 해제된 `DirectX9_Maze/DirectX9_Maze.exe`를 실행합니다.
+
+필수 런타임:
+
+- [`d3dx9_43.dll`을 제공하는 DirectX End-User Runtimes (June 2010)](https://www.microsoft.com/en-US/download/details.aspx?id=8109)
+- [`MSVCP140.dll`, `VCRUNTIME140.dll`을 제공하는 최신 Visual C++ Redistributable x86](https://aka.ms/vc14/vc_redist.x86.exe)
+
+### Release 패키지 생성
+
+저장소 루트에서 Release 빌드와 자동 테스트를 실행합니다.
+
+```powershell
+& "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" `
+  .\DirectX9_Maze.sln /p:Configuration=Release /p:Platform=x86
+
+.\Release\DirectX9_Maze.Tests.exe
+```
+
+그다음 현재 PowerShell 프로세스에만 실행 정책 예외를 적용해 패키징 스크립트를 실행합니다.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File .\Scripts\Build-ReleasePackage.ps1
+```
+
+생성 결과:
+
+```text
+artifacts/DirectX9_Maze/
+artifacts/DirectX9_Maze-Release-x86.zip
+```
+
 ### 구성 제약
 
-- 현재 빌드와 실행이 확인된 구성은 `Debug|x86`입니다.
-- `x64`와 `Release` 구성은 DirectX SDK include, library와 linker 설정이 동일하게 구성되어 있지 않아 검증 대상에서 제외합니다.
+- 빌드와 실행이 확인된 구성은 `Debug|x86`과 `Release|x86`입니다.
+- `x64` 구성은 DirectX SDK x64 library와 linker 설정을 구성하지 않아 지원 및 검증 대상에서 제외합니다.
 - `d3dx9.h` 또는 `d3dx9.lib`를 찾지 못하면 DirectX SDK 설치 여부와 위 기본 경로를 확인합니다.
-- 텍스처나 호랑이 모델이 표시되지 않으면 실행 작업 디렉터리가 저장소 루트인지 확인합니다.
+- Release 실행에는 DirectX June 2010 추가 런타임과 Visual C++ Redistributable x86이 필요합니다.
+- 텍스처나 호랑이 모델이 표시되지 않으면 실행 작업 디렉터리가 저장소 또는 압축 해제된 패키지의 루트인지 확인합니다.
 
 ## 현재 검증 상태
 
 - `Debug|x86` 빌드 성공: 경고 0개, 오류 0개
+- `Release|x86` 빌드 성공: 경고 0개, 오류 0개
+- Debug 및 Release 자동 테스트 각각 40개 통과
+- 허용 문서와 에셋 18개를 포함한 ZIP 생성 및 패키지 폴더 실행 확인
 - Windows 환경에서 게임 실행 정상 확인
 - UTF-8 소스 변환 후 한글 문자열 출력 정상 확인
 - 필수 텍스처 누락 시 초기화 실패 안내 후 크래시 없이 종료됨을 확인
@@ -239,6 +279,6 @@ Visual Studio 2022 Community 기본 설치 경로를 사용하는 경우, 저장
 - UI 좌표와 일부 게임 설정 값이 `main.cpp`에 하드코딩되어 있습니다.
 - 자동 테스트는 미로 로더, 레벨 목록, 좌표·경로 탐색과 순수 충돌 계산에 한정되며 Direct3D 리소스 전환, 적 상태와 실제 추적 동작은 수동 검증에 의존합니다.
 - 다중 적은 현재 동일한 X 파일 모델 자원을 인스턴스마다 개별 로드하므로 적 수를 크게 늘리기 전에 공유 모델 자원 구조가 필요합니다.
-- 현재는 `Debug|x86`만 검증되었으며 `x64`와 `Release` 구성은 별도 정리가 필요합니다.
+- `x64` 구성은 DirectX SDK library와 linker 설정을 별도로 구성하지 않아 지원하지 않습니다.
 
 장기 개선 방향과 진행 상태는 [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)와 [`docs/ROADMAP.md`](docs/ROADMAP.md)를 참고하세요. 프로젝트별 C++ 네이밍 기준은 [`docs/CODING_CONVENTIONS.md`](docs/CODING_CONVENTIONS.md), 작업 중 정리한 개념과 선택 이유는 [`docs/LEARNING_NOTES.md`](docs/LEARNING_NOTES.md), 개선 전후 근거는 [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md), 성능 측정은 [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md), 외부 에셋의 출처와 공개 판단은 [`docs/ASSET_LICENSES.md`](docs/ASSET_LICENSES.md)에 기록되어 있습니다.

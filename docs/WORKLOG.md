@@ -2469,3 +2469,39 @@
 - 솔루션의 프로젝트 표시명과 경로, 각 프로젝트의 `RootNamespace`를 새 이름에 맞췄다.
 - README, 프로젝트 지침, 코딩 컨벤션, 학습 노트와 오류 창 제목에 남은 현재 명칭을 갱신했다.
 - 과거 작업 당시 실제 이름을 설명하는 Worklog 기록은 변경하지 않았다.
+
+## 2026-08-03 - P4-17 패키지 공개 문서 구성
+
+### 문서 허용 목록
+
+- 실행 패키지에서도 README의 상대 링크가 유지되도록 `PROJECT_GUIDE.md`와 `docs/images` 경로를 보존한다.
+- `ASSET_LICENSES`, `IMPROVEMENTS`, `PERFORMANCE`, `SMOKE_TEST`, `ROADMAP`, `CODING_CONVENTIONS`, `LEARNING_NOTES`만 공개 문서 허용 목록에 포함한다.
+- 로컬 검토 문서인 `TECHNICAL_REVIEW.md`와 개발 과정 전체 기록인 `WORKLOG.md`는 패키지에서 제외한다.
+- 실행 파일, 에셋과 허용 문서가 모두 존재하는지 출력 폴더를 지우기 전에 검사하도록 패키징 스크립트를 보강했다.
+- ZIP을 풀었을 때 파일이 흩어지지 않도록 `DirectX9_Maze` 최상위 패키지 폴더 자체를 압축한다.
+
+## 2026-08-03 - P4-17 Release 패키지 검증 완료
+
+### Release 빌드와 테스트
+
+- 샌드박스 빌드는 FileTracker 접근 거부와 실행 환경의 `Path`·`PATH` 중복으로 실패했다.
+- 시스템 환경 변수는 변경하지 않고 외부 빌드 프로세스에서만 중복 이름을 정리해 다시 실행했다.
+- 이름 변경 이후 `Release|x86` 전체 빌드가 경고 0개, 오류 0개로 성공했다.
+- 샌드박스에서 Release 테스트 실행이 출력 없이 차단돼 외부에서 다시 실행했으며 자동 테스트 40개가 모두 통과했다.
+
+### 패키지 생성과 구조 검증
+
+- 기본 PowerShell 실행 정책이 로컬 스크립트를 차단했으며, 시스템 정책을 바꾸지 않고 하위 프로세스에만 `ExecutionPolicy Bypass`를 적용했다.
+- `artifacts/DirectX9_Maze`와 `DirectX9_Maze-Release-x86.zip`을 생성했다.
+- 최종 문서를 포함해 재생성한 ZIP 크기는 `4,027,897`바이트이며 내부에 `DirectX9_Maze` 최상위 폴더가 유지된다.
+- Release 원본과 패키지 실행 파일의 SHA-256이 일치했다.
+- 원본과 패키지의 에셋 파일 수가 각각 18개로 일치했다.
+- PDB, 소스, 테스트 실행 파일, `TECHNICAL_REVIEW.md`, `WORKLOG.md`가 포함되지 않았음을 확인했다.
+- `dumpbin /DEPENDENTS`로 `d3dx9_43.dll`, `MSVCP140.dll`, `VCRUNTIME140.dll`과 Windows 시스템 DLL 의존성을 확인했다.
+- 사용자가 실제 패키지 폴더에서 게임, 텍스처, 레벨, 적, 이동, 발사와 종료가 정상 동작함을 확인했다.
+
+### 문서화와 완료
+
+- README에 Release 빌드·테스트·패키징 명령, 압축 실행 절차와 Microsoft 공식 x86 런타임 경로를 추가했다.
+- `x64` 미지원과 깨끗한 PC에서의 런타임 설치 검증이 남았음을 공개 한계로 유지했다.
+- 완료 조건을 충족해 Roadmap의 `P4-17`을 완료로 변경하고 다음 작업으로 `P4-18` 최종 포트폴리오 재평가를 등록했다.
